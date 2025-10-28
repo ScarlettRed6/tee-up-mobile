@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Env 
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+backend/.env
+tee-up-mobile/.env
+
+# Build
+dist/
+build/
+.web-build/
+.cache/
+tmp/
+temp/
+
+# React Native and Expo
+.expo/
+.expo-shared/
+*.apk
+*.aab
+*.jks
+*.keystore
+android/
+ios/
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
