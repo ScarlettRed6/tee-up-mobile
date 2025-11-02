@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function DiscoverScreen() {
+export default function DiscoverScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView 
@@ -66,7 +66,10 @@ export default function DiscoverScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.viewMoreArrow}>
+            <TouchableOpacity 
+              style={styles.viewMoreArrow}
+              onPress={() => navigation.navigate('RecentListings')}
+            >
               <Text style={styles.arrowSymbol}>→</Text>
               <Text style={styles.viewMoreText}>Click to view more</Text>
             </TouchableOpacity>
@@ -135,7 +138,10 @@ export default function DiscoverScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.viewMoreArrow}>
+            <TouchableOpacity 
+              style={styles.viewMoreArrow}
+              onPress={() => navigation.navigate('RecommendedForYou')}
+            >
               <Text style={styles.arrowSymbol}>→</Text>
               <Text style={styles.viewMoreText}>Click to view more</Text>
             </TouchableOpacity>
