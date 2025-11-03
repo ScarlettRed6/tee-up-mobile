@@ -34,6 +34,11 @@ temp/
 android/
 ios/
 
+# Backend
+backend/node_modules/
+backend/.env
+backend/package-lock.json
+
 # Editor and OS
 .vscode/
 .idea/
