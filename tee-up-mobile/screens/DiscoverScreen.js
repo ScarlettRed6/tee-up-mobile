@@ -5,28 +5,30 @@ import { Ionicons } from '@expo/vector-icons';
 export default function DiscoverScreen({ navigation }) {
   return (
     <View style={styles.container}>
+      {/* Floating Header Icons */}
+      <View style={styles.headerIcons}>
+        <TouchableOpacity style={styles.iconButton}>
+          <Ionicons name="search-outline" size={22} color="#333" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton}>
+          <Ionicons name="people-outline" size={22} color="#333" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('SavedListings')}>
+          <Ionicons name="heart-outline" size={22} color="#333" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton}>
+          <View style={styles.profileAvatar}>
+            <Ionicons name="person" size={16} color="#FF6B35" />
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Icons */}
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="search-outline" size={22} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="people-outline" size={22} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="heart-outline" size={22} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={16} color="#FF6B35" />
-            </View>
-          </TouchableOpacity>
-        </View>
+        {/* Spacer handled by paddingTop in scrollContent */}
 
         {/* Page Title */}
         <View style={styles.titleSection}>
@@ -151,7 +153,10 @@ export default function DiscoverScreen({ navigation }) {
 
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Discover')}
+        >
           <Ionicons name="home" size={22} color="#000" />
           <Text style={styles.navLabelActive}>Home</Text>
         </TouchableOpacity>
@@ -186,14 +191,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+    paddingTop: 110,
   },
   headerIcons: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#F6EDE2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E6D9CC',
+    zIndex: 10,
   },
   iconButton: {
     padding: 4,

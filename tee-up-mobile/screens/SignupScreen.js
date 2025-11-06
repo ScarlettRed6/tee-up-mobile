@@ -1,7 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Pressable, ScrollView } from 'react-native';
 
 export default function SignupScreen({ navigation }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const isFormValid = name.trim().length > 0 && email.trim().length > 0 && password.trim().length > 0 && confirmPassword.trim().length > 0;
+
+  const handleSignup = () => {
+    if (isFormValid) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Discover' }],
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -9,30 +25,54 @@ export default function SignupScreen({ navigation }) {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Name</Text>
-          <TextInput style={styles.input} />
+          <TextInput 
+            value={name}
+            onChangeText={setName}
+            style={styles.input} 
+          />
           <View style={styles.underline} />
         </View>
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Email</Text>
-          <TextInput keyboardType="email-address" style={styles.input} />
+          <TextInput 
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address" 
+            style={styles.input} 
+          />
           <View style={styles.underline} />
         </View>
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Password</Text>
-          <TextInput secureTextEntry style={styles.input} />
+          <TextInput 
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry 
+            style={styles.input} 
+          />
           <View style={styles.underline} />
         </View>
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Confirm password</Text>
-          <TextInput secureTextEntry style={styles.input} />
+          <TextInput 
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry 
+            style={styles.input} 
+          />
           <View style={styles.underline} />
         </View>
 
-        <TouchableOpacity activeOpacity={0.8} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Sign up</Text>
+        <TouchableOpacity 
+          activeOpacity={0.8} 
+          style={[styles.primaryButton, !isFormValid && styles.primaryButtonDisabled]}
+          onPress={handleSignup}
+          disabled={!isFormValid}
+        >
+          <Text style={[styles.primaryButtonText, !isFormValid && styles.primaryButtonTextDisabled]}>Sign up</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -91,10 +131,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  primaryButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+    shadowOpacity: 0.05,
+    elevation: 2,
+  },
   primaryButtonText: {
     fontFamily: 'Exo_700Bold',
     color: '#111',
     fontSize: 18,
+  },
+  primaryButtonTextDisabled: {
+    color: '#999',
   },
   bottomRow: {
     position: 'absolute',
