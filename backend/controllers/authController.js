@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { findUserByEmail, createUser } from "../models/userModel.js";
-import dotenv from "dotenv";
+/* import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config(); */
 
 export async function register(req, res){
     const { name, email, password, confirmPassword } = req.body;
@@ -12,7 +12,7 @@ export async function register(req, res){
         if (existingUser) return res.status(400).json({ message: "Email already exists!" });
 
         if(password !== confirmPassword){
-            console.log("Password do not MATCH");
+            console.log("Passwords do not MATCH");
            return res.status(400).json({message: "Passwords do not match"});
         }
 
@@ -24,7 +24,6 @@ export async function register(req, res){
     }
 
 }//End of register async function
-
 
 export async function login(req, res){
     const { email, password } = req.body;
@@ -42,3 +41,5 @@ export async function login(req, res){
         res.status(500).json({ error: err.message });
     }
 }//End of login async function
+
+
