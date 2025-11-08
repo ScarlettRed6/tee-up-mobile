@@ -8,6 +8,8 @@ import DiscoverScreen from '../screens/DiscoverScreen';
 import RecommendedForYouScreen from '../screens/RecommendedForYouScreen';
 import RecentListingsScreen from '../screens/RecentListingsScreen';
 import SavedListingsScreen from '../screens/SavedListingsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +24,8 @@ export default function AppNavigator() {
         <Stack.Screen name="RecommendedForYou" component={RecommendedForYouScreen} />
         <Stack.Screen name="RecentListings" component={RecentListingsScreen} />
         <Stack.Screen name="SavedListings" component={SavedListingsScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

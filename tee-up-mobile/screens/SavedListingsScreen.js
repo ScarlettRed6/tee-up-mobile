@@ -49,7 +49,7 @@ export default function SavedListingsScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('SavedListings')}>
           <Ionicons name="heart-outline" size={22} color="#333" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.replace('Profile')}>
           <View style={styles.profileAvatar}>
             <Ionicons name="person" size={16} color="#FF6B35" />
           </View>
@@ -78,7 +78,7 @@ export default function SavedListingsScreen({ navigation }) {
       <View style={styles.bottomNav}>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.navigate('Discover')}
+          onPress={() => navigation.replace('Discover')}
         >
           <Ionicons name="home" size={22} color="#000" />
           <Text style={styles.navLabelActive}>Home</Text>
@@ -95,7 +95,10 @@ export default function SavedListingsScreen({ navigation }) {
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.replace('Profile')}
+        >
           <Ionicons name="person-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Profile</Text>
         </TouchableOpacity>
