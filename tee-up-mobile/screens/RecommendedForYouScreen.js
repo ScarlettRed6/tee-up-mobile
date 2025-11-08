@@ -85,7 +85,10 @@ export default function RecommendedForYouScreen({ navigation }) {
           <Ionicons name="chatbubble-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Inbox</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('PostItem')}
+        >
           <Ionicons name="add-circle-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Sell</Text>
         </TouchableOpacity>

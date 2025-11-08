@@ -10,6 +10,7 @@ import RecentListingsScreen from '../screens/RecentListingsScreen';
 import SavedListingsScreen from '../screens/SavedListingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import PostItemScreen from '../screens/PostItemScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +27,7 @@ export default function AppNavigator() {
         <Stack.Screen name="SavedListings" component={SavedListingsScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="PostItem" component={PostItemScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
