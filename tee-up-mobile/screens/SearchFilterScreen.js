@@ -15,6 +15,7 @@ export default function SearchFilterScreen({ navigation, route }) {
   const [minPrice, setMinPrice] = useState(initialFilters.minPrice || '');
   const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice || '');
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
+  const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold (only for Profile)
   const [location, setLocation] = useState(initialFilters.location || 'Makati City, NCR');
   const [recentSearches, setRecentSearches] = useState([
     'taylormade golf',
@@ -64,8 +65,11 @@ export default function SearchFilterScreen({ navigation, route }) {
       flex: selectedFlex,
     };
     
-    // Only include price and location for SearchResults
-    if (!isProfileFilter) {
+    // Include status filter for Profile page
+    if (isProfileFilter) {
+      filters.status = selectedStatus;
+    } else {
+      // Only include price and location for SearchResults
       filters.minPrice = minPrice;
       filters.maxPrice = maxPrice;
       filters.location = location;
@@ -306,7 +310,7 @@ export default function SearchFilterScreen({ navigation, route }) {
                       styles.flexPill,
                       selectedFlex === flex && styles.flexPillActive
                     ]}
-                    onPress={() => setSelectedFlex(flex)}
+                    onPress={() => setSelectedFlex(selectedFlex === flex ? null : flex)}
                   >
                     <Text style={[
                       styles.flexPillText,
@@ -316,6 +320,43 @@ export default function SearchFilterScreen({ navigation, route }) {
                     </Text>
                   </Pressable>
                 ))}
+              </View>
+            </View>
+          )}
+
+          {/* Status Filter - Only show for Profile, not SearchResults */}
+          {isProfileFilter && (
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Status</Text>
+              <View style={styles.filterPillsRow}>
+                <Pressable
+                  style={[
+                    styles.filterPill,
+                    selectedStatus === 'Available' && styles.filterPillActive
+                  ]}
+                  onPress={() => setSelectedStatus('Available')}
+                >
+                  <Text style={[
+                    styles.filterPillText,
+                    selectedStatus === 'Available' && styles.filterPillTextActive
+                  ]}>
+                    Available
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.filterPill,
+                    selectedStatus === 'Sold' && styles.filterPillActive
+                  ]}
+                  onPress={() => setSelectedStatus('Sold')}
+                >
+                  <Text style={[
+                    styles.filterPillText,
+                    selectedStatus === 'Sold' && styles.filterPillTextActive
+                  ]}>
+                    Sold
+                  </Text>
+                </Pressable>
               </View>
             </View>
           )}

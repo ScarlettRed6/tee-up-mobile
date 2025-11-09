@@ -13,11 +13,15 @@ export default function ProfileScreen({ navigation, route }) {
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
+  const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold
   const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
   const [showSortModal, setShowSortModal] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState(null); // Track which product's dropdown is open
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Confirmation modal for marking as sold
+  const [productToUpdate, setProductToUpdate] = useState(null); // Product ID to update
 
-  // All products data with listing dates
-  const allProducts = [
+  // All products data with listing dates and status
+  const [allProducts, setAllProducts] = useState([
     { 
       id: 1,
       name: 'Srixon ZXi5 Iron set 5-P', 
@@ -29,6 +33,7 @@ export default function ProfileScreen({ navigation, route }) {
       condition: 'Slightly Used',
       flex: 'Regular',
       listedDate: new Date('2025-10-20'), // Most recent
+      status: 'Available', // Available or Sold
     },
     { 
       id: 2,
@@ -41,6 +46,7 @@ export default function ProfileScreen({ navigation, route }) {
       condition: 'Slightly Used',
       flex: 'Stiff',
       listedDate: new Date('2025-10-18'), // Older
+      status: 'Available',
     },
     { 
       id: 3,
@@ -53,6 +59,7 @@ export default function ProfileScreen({ navigation, route }) {
       condition: 'Well Used',
       flex: 'Regular',
       listedDate: new Date('2025-10-15'), // Older
+      status: 'Sold', // This one is sold
     },
     { 
       id: 4,
@@ -65,6 +72,7 @@ export default function ProfileScreen({ navigation, route }) {
       condition: 'New',
       flex: 'Stiff',
       listedDate: new Date('2025-10-10'), // Oldest
+      status: 'Available',
     },
     {
       id: 5,
@@ -77,6 +85,7 @@ export default function ProfileScreen({ navigation, route }) {
       condition: 'New',
       flex: 'Regular',
       listedDate: new Date('2025-10-19'), // Recent
+      status: 'Available',
     },
     {
       id: 6,
@@ -89,8 +98,9 @@ export default function ProfileScreen({ navigation, route }) {
       condition: 'Slightly Used',
       flex: 'Stiff',
       listedDate: new Date('2025-10-12'), // Older
+      status: 'Sold', // This one is sold
     },
-  ];
+  ]);
 
   // Filter and sort products
   const filteredAndSortedProducts = React.useMemo(() => {
@@ -120,6 +130,11 @@ export default function ProfileScreen({ navigation, route }) {
       filtered = filtered.filter(product => product.flex === selectedFlex);
     }
 
+    // Status filter (Available/Sold)
+    if (selectedStatus) {
+      filtered = filtered.filter(product => product.status === selectedStatus);
+    }
+
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
@@ -143,53 +158,148 @@ export default function ProfileScreen({ navigation, route }) {
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, sortBy]);
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedStatus, sortBy, allProducts]);
+
+  const handleMarkAsSold = (productId) => {
+    // Show confirmation modal
+    setProductToUpdate(productId);
+    setShowConfirmModal(true);
+    setOpenDropdownId(null); // Close dropdown
+  };
+
+  const handleMarkAsAvailable = (productId) => {
+    // Mark as available immediately (no confirmation needed)
+    setAllProducts(prevProducts =>
+      prevProducts.map(product =>
+        product.id === productId
+          ? { ...product, status: 'Available' }
+          : product
+      )
+    );
+    setOpenDropdownId(null); // Close dropdown
+  };
+
+  const confirmMarkAsSold = () => {
+    if (productToUpdate) {
+      setAllProducts(prevProducts =>
+        prevProducts.map(product =>
+          product.id === productToUpdate
+            ? { ...product, status: 'Sold' }
+            : product
+        )
+      );
+    }
+    setShowConfirmModal(false);
+    setProductToUpdate(null);
+  };
+
+  const cancelMarkAsSold = () => {
+    setShowConfirmModal(false);
+    setProductToUpdate(null);
+  };
+
+  const handleViewAnalytics = (productId) => {
+    // Navigate to analytics screen or show analytics modal
+    console.log('View Analytics for product:', productId);
+    setOpenDropdownId(null); // Close dropdown
+    // TODO: Navigate to analytics screen when implemented
+  };
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
+    const isDropdownOpen = openDropdownId === item.id;
+    
     return (
-      <TouchableOpacity
-        key={item.id}
-        style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
-        onPress={() => navigation.navigate('ProductDetail', {
-          product: {
-            id: item.id,
-            title: item.name,
-            price: item.price.replace('₱', '').replace(',', ''),
-            location: 'Quezon City',
-            postedDate: 'October 20, 2025',
-            description: 'Excellent condition. Perfect for players looking to upgrade.',
-            category: item.category,
-            condition: item.condition,
-            seller: {
-              name: item.seller,
-              rating: 4.9,
-              reviewCount: 120,
-            },
-            images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-            reviews: [],
-          }
-        })}
-        activeOpacity={0.8}
-      >
-        <View style={styles.productImagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>
-            {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
-             item.name.includes('PING') ? 'PING G30' :
-             item.name.includes('AP2') ? 'Titleist AP2' : 
-             item.name.includes('TSR3') ? 'Titleist TSR3' :
-             item.name.includes('Callaway') ? 'Callaway Epic' : 'TaylorMade SIM'}
-          </Text>
-        </View>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productPrice}>{item.price}</Text>
-        <View style={styles.sellerInfo}>
-          <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-            <Ionicons name="person" size={12} color={item.sellerColor} />
+      <View key={item.id} style={[styles.productCardWrapper, isLeft ? styles.cardLeft : styles.cardRight]}>
+        <TouchableOpacity
+          style={styles.productCard}
+          onPress={() => navigation.navigate('ProductDetail', {
+            product: {
+              id: item.id,
+              title: item.name,
+              price: item.price.replace('₱', '').replace(',', ''),
+              location: 'Quezon City',
+              postedDate: 'October 20, 2025',
+              description: 'Excellent condition. Perfect for players looking to upgrade.',
+              category: item.category,
+              condition: item.condition,
+              seller: {
+                name: item.seller,
+                rating: 4.9,
+                reviewCount: 120,
+              },
+              images: [{ id: 1 }, { id: 2 }, { id: 3 }],
+              reviews: [],
+            }
+          })}
+          activeOpacity={0.8}
+        >
+          <View style={styles.productImagePlaceholder}>
+            <Text style={styles.imagePlaceholderText}>
+              {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
+               item.name.includes('PING') ? 'PING G30' :
+               item.name.includes('AP2') ? 'Titleist AP2' : 
+               item.name.includes('TSR3') ? 'Titleist TSR3' :
+               item.name.includes('Callaway') ? 'Callaway Epic' : 'TaylorMade SIM'}
+            </Text>
+            {item.status === 'Sold' && (
+              <View style={styles.soldBadge}>
+                <Text style={styles.soldBadgeText}>SOLD</Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.sellerName}>@{item.seller}</Text>
-        </View>
-      </TouchableOpacity>
+          <Text style={styles.productName}>{item.name}</Text>
+          <Text style={styles.productPrice}>{item.price}</Text>
+          <View style={styles.sellerInfo}>
+            <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+              <Ionicons name="person" size={12} color={item.sellerColor} />
+            </View>
+            <Text style={styles.sellerName}>@{item.seller}</Text>
+          </View>
+        </TouchableOpacity>
+        
+        {/* 3-dot menu button */}
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => setOpenDropdownId(isDropdownOpen ? null : item.id)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="ellipsis-vertical" size={18} color="#666" />
+        </TouchableOpacity>
+        
+        {/* Dropdown menu */}
+        {isDropdownOpen && (
+          <View style={styles.dropdownMenu}>
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => handleViewAnalytics(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="analytics-outline" size={18} color="#000" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>View Analytics</Text>
+            </TouchableOpacity>
+            {item.status === 'Available' ? (
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => handleMarkAsSold(item.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                <Text style={styles.dropdownText}>Mark as sold</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() => handleMarkAsAvailable(item.id)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="refresh-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                <Text style={styles.dropdownText}>Mark as available</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -202,6 +312,7 @@ export default function ProfileScreen({ navigation, route }) {
         category: selectedCategory,
         condition: selectedCondition,
         flex: selectedFlex,
+        status: selectedStatus,
       },
       returnTo: 'Profile',
     });
@@ -211,6 +322,7 @@ export default function ProfileScreen({ navigation, route }) {
     setSelectedCategory(filters.category || 'All');
     setSelectedCondition(filters.condition || null);
     setSelectedFlex(filters.flex || null);
+    setSelectedStatus(filters.status || 'Available');
     setSearchQuery(filters.searchQuery || '');
   };
 
@@ -230,28 +342,30 @@ export default function ProfileScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      {/* Header Icons - Top Right */}
-      <View style={styles.headerIcons}>
-        <View style={styles.headerIconsRight}>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => {
-              console.log('Settings icon pressed');
-              navigation.navigate('Settings');
-            }}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="settings-outline" size={20} color="#000" />
-          </TouchableOpacity>
+        {/* Header Icons - Top Right */}
+        <View style={styles.headerIcons}>
+          <View style={styles.headerIconsRight}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => {
+                console.log('Settings icon pressed');
+                navigation.navigate('Settings');
+              }}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="settings-outline" size={20} color="#000" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={() => setOpenDropdownId(null)}
+          scrollEventThrottle={16}
+        >
         {/* Profile Summary Card */}
         <View style={styles.profileSection}>
           <View style={styles.profilePhotoContainer}>
@@ -372,6 +486,46 @@ export default function ProfileScreen({ navigation, route }) {
         </View>
       </Modal>
 
+      {/* Confirm Mark as Sold Modal */}
+      <Modal
+        visible={showConfirmModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelMarkAsSold}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable 
+            style={styles.modalOverlayBackdrop}
+            onPress={cancelMarkAsSold}
+          />
+          <View style={styles.confirmModalContent}>
+            <View style={styles.confirmModalIcon}>
+              <Ionicons name="warning-outline" size={48} color="#FF6B35" />
+            </View>
+            <Text style={styles.confirmModalTitle}>Mark as Sold?</Text>
+            <Text style={styles.confirmModalMessage}>
+              Are you sure you want to mark this item as sold? This action will update the item's status and it will be moved to your sold listings.
+            </Text>
+            <View style={styles.confirmModalButtons}>
+              <TouchableOpacity
+                style={[styles.confirmModalButton, styles.cancelButton, { marginRight: 6 }]}
+                onPress={cancelMarkAsSold}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6 }]}
+                onPress={confirmMarkAsSold}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.confirmButtonText}>Mark as Sold</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>
         <TouchableOpacity 
@@ -395,7 +549,10 @@ export default function ProfileScreen({ navigation, route }) {
           <Ionicons name="add-circle-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Sell</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigateToBottomNav(navigation, 'Notifications')}
+        >
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
         </TouchableOpacity>

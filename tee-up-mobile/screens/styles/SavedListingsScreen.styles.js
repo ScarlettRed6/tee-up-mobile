@@ -5,32 +5,28 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: '#F6EDE2',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-    paddingHorizontal: 20,
-    paddingTop: 110,
-  },
-  headerIcons: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+  // Header Section
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 50,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     backgroundColor: '#F6EDE2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D9CC',
-    zIndex: 10,
   },
-  iconButton: {
-    padding: 4,
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileAvatar: {
     width: 32,
@@ -42,14 +38,18 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  titleSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
+  pageTitle: {
     fontFamily: 'Exo_700Bold',
-    fontSize: 28,
+    fontSize: 26,
     color: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+    paddingTop: 8,
+    paddingHorizontal: 20,
   },
   productGrid: {
     flexDirection: 'row',

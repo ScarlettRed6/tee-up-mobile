@@ -38,25 +38,35 @@ export default function RecommendedForYouScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Floating Header Icons */}
-      <View style={styles.headerIcons}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="search-outline" size={22} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="people-outline" size={22} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('SavedListings')}>
-          <Ionicons name="heart-outline" size={22} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigateToBottomNav(navigation, 'Profile')}
-        >
-          <View style={styles.profileAvatar}>
-            <Ionicons name="person" size={16} color="#FF6B35" />
-          </View>
-        </TouchableOpacity>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.pageTitle}>Recommended For You</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.headerIcon}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="people-outline" size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerIcon, { marginLeft: 16 }]}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SavedListings')}
+          >
+            <Ionicons name="heart-outline" size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerIcon, { marginLeft: 16 }]}
+            activeOpacity={0.7}
+            onPress={() => navigateToBottomNav(navigation, 'Profile')}
+          >
+            <View style={styles.profileAvatar}>
+              <Ionicons name="person" size={18} color="#FF6B35" />
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
@@ -64,12 +74,6 @@ export default function RecommendedForYouScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Spacer handled by paddingTop in scrollContent */}
-
-        {/* Page Title */}
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>Recommended For You</Text>
-        </View>
 
         {/* Product Grid */}
         <View style={styles.productGrid}>
@@ -100,7 +104,10 @@ export default function RecommendedForYouScreen({ navigation }) {
           <Ionicons name="add-circle-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Sell</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigateToBottomNav(navigation, 'Notifications')}
+        >
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
         </TouchableOpacity>

@@ -17,6 +17,7 @@ import ChatDetailScreen from '../screens/ChatDetailScreen';
 import SearchFilterScreen from '../screens/SearchFilterScreen';
 import SearchResultsScreen from '../screens/SearchResultsScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -60,7 +61,7 @@ export default function AppNavigator() {
           name="Discover" 
           component={DiscoverScreen}
           options={{
-            animation: 'simple_push',
+            animation: 'fade',
             gestureEnabled: false,
           }}
         />
@@ -89,7 +90,7 @@ export default function AppNavigator() {
           name="Profile" 
           component={ProfileScreen}
           options={{
-            animation: 'simple_push',
+            animation: 'fade',
             gestureEnabled: false,
           }}
         />
@@ -120,7 +121,7 @@ export default function AppNavigator() {
           name="Inbox" 
           component={InboxScreen}
           options={{
-            animation: 'simple_push',
+            animation: 'fade',
             gestureEnabled: false,
           }}
         />
@@ -150,6 +151,14 @@ export default function AppNavigator() {
           component={UserProfileScreen}
           options={{
             animation: 'simple_push',
+          }}
+        />
+        <Stack.Screen 
+          name="Notifications" 
+          component={NotificationsScreen}
+          options={{
+            animation: 'fade',
+            gestureEnabled: false,
           }}
         />
       </Stack.Navigator>

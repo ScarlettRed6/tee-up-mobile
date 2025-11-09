@@ -35,7 +35,7 @@ export default StyleSheet.create({
   },
   username: {
     fontFamily: 'Exo_700Bold',
-    fontSize: 18,
+    fontSize: 16,
     color: '#000',
     marginBottom: 8,
   },
@@ -59,13 +59,13 @@ export default StyleSheet.create({
   },
   productNameTop: {
     fontFamily: 'Exo_400Regular',
-    fontSize: 13,
+    fontSize: 15,
     color: '#000',
     marginBottom: 2,
   },
   productPriceTop: {
     fontFamily: 'Exo_700Bold',
-    fontSize: 13,
+    fontSize: 15,
     color: '#000',
   },
   profileButton: {

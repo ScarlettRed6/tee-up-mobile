@@ -276,7 +276,10 @@ export default function ProductDetailScreen({ navigation, route }) {
           <Ionicons name="add-circle-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Sell</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigateToBottomNav(navigation, 'Notifications')}
+        >
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
         </TouchableOpacity>

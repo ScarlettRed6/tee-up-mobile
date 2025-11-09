@@ -43,87 +43,81 @@ export default StyleSheet.create({
     fontSize: 26,
     color: '#000',
   },
+  // Scroll View
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
     paddingTop: 8,
-    paddingHorizontal: 20,
+    paddingBottom: 100,
   },
-  productGrid: {
+  // Notification Item
+  notificationItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 64,
   },
-  productCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 12,
-    width: '48%',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+  notificationItemEven: {
+    backgroundColor: '#FFFFFF',
   },
-  cardLeft: {
-    marginRight: '2%',
+  notificationItemOdd: {
+    backgroundColor: '#F6EDE2',
   },
-  cardRight: {
-    marginLeft: '2%',
-  },
-  productImagePlaceholder: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
+  // Avatar Container
+  avatarContainer: {
+    marginRight: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
   },
-  imagePlaceholderText: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-    textAlign: 'center',
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
-  productName: {
-    fontFamily: 'Exo_600SemiBold',
-    fontSize: 12,
-    color: '#000',
+  // Notification Content
+  notificationContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  notificationText: {
     marginBottom: 4,
   },
-  productCondition: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-    marginBottom: 6,
-  },
-  productPrice: {
+  username: {
     fontFamily: 'Exo_700Bold',
+    fontSize: 15,
+    color: '#000',
+  },
+  actionText: {
+    fontFamily: 'Exo_400Regular',
     fontSize: 14,
     color: '#000',
-    marginBottom: 8,
   },
-  sellerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  timestamp: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
-  sellerAvatar: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#F0F0F0',
+  // Empty State
+  emptyState: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 80,
   },
-  sellerName: {
+  emptyStateText: {
     fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
+    fontSize: 16,
+    color: '#999',
+    marginTop: 16,
   },
+  // Bottom Navigation
   bottomNav: {
     position: 'absolute',
     bottom: 0,
@@ -147,15 +141,17 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    minHeight: 44,
+    minWidth: 44,
   },
   navLabel: {
-    fontFamily: 'Exo_400Regular',
+    fontFamily: 'Exo_300Light',
     fontSize: 10,
     color: '#999',
     marginTop: 4,
   },
   navLabelActive: {
-    fontFamily: 'Exo_700Bold',
+    fontFamily: 'Exo_300Light',
     fontSize: 10,
     color: '#000',
     marginTop: 4,
