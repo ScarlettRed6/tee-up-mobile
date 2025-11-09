@@ -6,6 +6,11 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 
+# Logs
+logs/
+*.log
+*.txt
+
 # Env 
 .env
 .env.local
