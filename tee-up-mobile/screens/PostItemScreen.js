@@ -8,6 +8,7 @@ export default function PostItemScreen({ navigation }) {
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState(null);
   const [flex, setFlex] = useState(null);
+  const [hand, setHand] = useState(null); // Right Hand, Left Hand
   const [condition, setCondition] = useState(null);
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -15,8 +16,10 @@ export default function PostItemScreen({ navigation }) {
 
   const categories = ['Driver', 'Woods', 'Iron', 'Putters', 'Apparel', 'Accessories', 'Others'];
   const flexOptions = ['Ladies', 'Senior', 'Medium', 'Regular', 'Stiff', 'Extra Stiff'];
+  const handOptions = ['Right Hand', 'Left Hand'];
   const conditions = ['New', 'Slightly Used', 'Well Used'];
   const showFlexSection = category === 'Driver' || category === 'Woods' || category === 'Iron';
+  const showHandSection = category === 'Driver' || category === 'Woods' || category === 'Iron' || category === 'Putters';
 
   // Form validation
   const isFormValid = 
@@ -24,6 +27,7 @@ export default function PostItemScreen({ navigation }) {
     price.trim().length > 0 &&
     category !== null &&
     (!showFlexSection || flex !== null) &&
+    (!showHandSection || hand !== null) &&
     condition !== null &&
     description.trim().length > 0 &&
     location.trim().length > 0;
@@ -36,6 +40,7 @@ export default function PostItemScreen({ navigation }) {
         price,
         category,
         flex,
+        hand,
         condition,
         description,
         location,
@@ -118,6 +123,9 @@ export default function PostItemScreen({ navigation }) {
                   if (cat !== 'Driver' && cat !== 'Woods' && cat !== 'Iron') {
                     setFlex(null);
                   }
+                  if (cat !== 'Driver' && cat !== 'Woods' && cat !== 'Iron' && cat !== 'Putters') {
+                    setHand(null);
+                  }
                 }}
               >
                 <Text style={[
@@ -150,6 +158,32 @@ export default function PostItemScreen({ navigation }) {
                     flex === flexOption && styles.flexTextSelected
                   ]}>
                     {flexOption}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Hand Section (conditional) - Show when Driver/Woods/Iron/Putters is selected */}
+        {showHandSection && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Hand</Text>
+            <View style={styles.conditionRow}>
+              {handOptions.map((handOption) => (
+                <Pressable
+                  key={handOption}
+                  style={[
+                    styles.conditionPill,
+                    hand === handOption && styles.conditionPillSelected
+                  ]}
+                  onPress={() => setHand(handOption)}
+                >
+                  <Text style={[
+                    styles.conditionText,
+                    hand === handOption && styles.conditionTextSelected
+                  ]}>
+                    {handOption}
                   </Text>
                 </Pressable>
               ))}

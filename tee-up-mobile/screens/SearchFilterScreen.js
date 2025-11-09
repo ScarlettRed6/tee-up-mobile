@@ -15,6 +15,7 @@ export default function SearchFilterScreen({ navigation, route }) {
   const [minPrice, setMinPrice] = useState(initialFilters.minPrice || '');
   const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice || '');
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
+  const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
   const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold (only for Profile)
   const [location, setLocation] = useState(initialFilters.location || 'Makati City, NCR');
   const [recentSearches, setRecentSearches] = useState([
@@ -26,15 +27,16 @@ export default function SearchFilterScreen({ navigation, route }) {
   // Limit recent searches to 5 items
   const limitedRecentSearches = recentSearches.slice(0, 5);
 
-  const categories = isProfileFilter 
-    ? ['All', 'Driver', 'Woods', 'Iron', 'Accessories', 'Putters', 'Apparell', 'Others']
-    : ['All', 'Driver', 'Iron', 'Accessories', 'Putters', 'Apparell', 'Others'];
-  // Note: For Profile page, we include 'Woods' in the categories list
+  const categories = ['All', 'Driver', 'Woods', 'Iron', 'Accessories', 'Putters', 'Apparell', 'Others'];
   const flexOptions = ['Ladies', 'Senior', 'Medium', 'Regular', 'Stiff', 'Extra Stiff'];
   const conditions = ['New', 'Slightly Used', 'Well Used'];
+  const handOptions = ['Right Hand', 'Left Hand'];
 
   // Show flex filter when Iron, Woods, or Driver is selected
   const showFlexSection = selectedCategory === 'Iron' || selectedCategory === 'Driver' || selectedCategory === 'Woods';
+  
+  // Show hand filter when Driver, Woods, Iron, or Putters is selected
+  const showHandSection = selectedCategory === 'Driver' || selectedCategory === 'Woods' || selectedCategory === 'Iron' || selectedCategory === 'Putters';
 
   const handleClearRecentSearches = () => {
     setRecentSearches([]);
@@ -63,6 +65,7 @@ export default function SearchFilterScreen({ navigation, route }) {
       category: selectedCategory,
       condition: selectedCondition,
       flex: selectedFlex,
+      hand: selectedHand,
     };
     
     // Include status filter for Profile page
@@ -156,6 +159,7 @@ export default function SearchFilterScreen({ navigation, route }) {
                             minPrice,
                             maxPrice,
                             flex: selectedFlex,
+                            hand: selectedHand,
                             location,
                           }
                         });
@@ -198,6 +202,10 @@ export default function SearchFilterScreen({ navigation, route }) {
                   if (category !== 'Iron' && category !== 'Driver' && category !== 'Woods') {
                     setSelectedFlex(null);
                   }
+                  // Clear hand selection if category doesn't support hand
+                  if (category !== 'Iron' && category !== 'Driver' && category !== 'Woods' && category !== 'Putters') {
+                    setSelectedHand(null);
+                  }
                 }}
               >
                 <Text style={[
@@ -222,6 +230,10 @@ export default function SearchFilterScreen({ navigation, route }) {
                   // Clear flex selection if category doesn't support flex
                   if (category !== 'Iron' && category !== 'Driver' && category !== 'Woods') {
                     setSelectedFlex(null);
+                  }
+                  // Clear hand selection if category doesn't support hand
+                  if (category !== 'Iron' && category !== 'Driver' && category !== 'Woods' && category !== 'Putters') {
+                    setSelectedHand(null);
                   }
                 }}
               >
@@ -297,6 +309,32 @@ export default function SearchFilterScreen({ navigation, route }) {
               ))}
             </View>
           </View>
+
+          {/* Hand Filter (conditional) - Show when Driver/Woods/Iron/Putters is selected */}
+          {showHandSection && (
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Hand</Text>
+              <View style={styles.filterPillsRow}>
+                {handOptions.map((hand) => (
+                  <Pressable
+                    key={hand}
+                    style={[
+                      styles.filterPill,
+                      selectedHand === hand && styles.filterPillActive
+                    ]}
+                    onPress={() => setSelectedHand(selectedHand === hand ? null : hand)}
+                  >
+                    <Text style={[
+                      styles.filterPillText,
+                      selectedHand === hand && styles.filterPillTextActive
+                    ]}>
+                      {hand}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* Flex Filter (conditional) - Show when Driver/Iron/Woods is selected */}
           {showFlexSection && (

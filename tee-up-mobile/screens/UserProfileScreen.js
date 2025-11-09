@@ -26,6 +26,7 @@ export default function UserProfileScreen({ navigation, route }) {
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
+  const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
   const [sortBy, setSortBy] = useState('recentlyListed');
   const [showSortModal, setShowSortModal] = useState(false);
 
@@ -41,6 +42,7 @@ export default function UserProfileScreen({ navigation, route }) {
       category: 'Driver',
       condition: 'Slightly Used',
       flex: 'Stiff',
+      hand: 'Right Hand',
       listedDate: new Date('2025-10-18'),
     },
     { 
@@ -53,6 +55,7 @@ export default function UserProfileScreen({ navigation, route }) {
       category: 'Iron',
       condition: 'Well Used',
       flex: 'Regular',
+      hand: 'Left Hand',
       listedDate: new Date('2025-10-15'),
     },
     { 
@@ -65,6 +68,7 @@ export default function UserProfileScreen({ navigation, route }) {
       category: 'Woods',
       condition: 'Slightly Used',
       flex: 'Stiff',
+      hand: 'Right Hand',
       listedDate: new Date('2025-10-12'),
     },
     {
@@ -77,6 +81,7 @@ export default function UserProfileScreen({ navigation, route }) {
       category: 'Driver',
       condition: 'New',
       flex: 'Regular',
+      hand: 'Left Hand',
       listedDate: new Date('2025-10-10'),
     },
   ];
@@ -107,6 +112,11 @@ export default function UserProfileScreen({ navigation, route }) {
       filtered = filtered.filter(product => product.flex === selectedFlex);
     }
 
+    // Hand filter
+    if (selectedHand) {
+      filtered = filtered.filter(product => product.hand === selectedHand);
+    }
+
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
@@ -127,7 +137,7 @@ export default function UserProfileScreen({ navigation, route }) {
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, sortBy]);
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -184,6 +194,7 @@ export default function UserProfileScreen({ navigation, route }) {
         category: selectedCategory,
         condition: selectedCondition,
         flex: selectedFlex,
+        hand: selectedHand,
       },
       returnTo: 'UserProfile',
       user: user,
@@ -194,6 +205,7 @@ export default function UserProfileScreen({ navigation, route }) {
     setSelectedCategory(filters.category || 'All');
     setSelectedCondition(filters.condition || null);
     setSelectedFlex(filters.flex || null);
+    setSelectedHand(filters.hand || null);
     setSearchQuery(filters.searchQuery || '');
   };
 

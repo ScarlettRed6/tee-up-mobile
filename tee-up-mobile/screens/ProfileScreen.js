@@ -13,6 +13,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
+  const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
   const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold
   const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
   const [showSortModal, setShowSortModal] = useState(false);
@@ -32,6 +33,7 @@ export default function ProfileScreen({ navigation, route }) {
       category: 'Iron',
       condition: 'Slightly Used',
       flex: 'Regular',
+      hand: 'Right Hand',
       listedDate: new Date('2025-10-20'), // Most recent
       status: 'Available', // Available or Sold
     },
@@ -45,6 +47,7 @@ export default function ProfileScreen({ navigation, route }) {
       category: 'Driver',
       condition: 'Slightly Used',
       flex: 'Stiff',
+      hand: 'Right Hand',
       listedDate: new Date('2025-10-18'), // Older
       status: 'Available',
     },
@@ -58,6 +61,7 @@ export default function ProfileScreen({ navigation, route }) {
       category: 'Iron',
       condition: 'Well Used',
       flex: 'Regular',
+      hand: 'Left Hand',
       listedDate: new Date('2025-10-15'), // Older
       status: 'Sold', // This one is sold
     },
@@ -71,6 +75,7 @@ export default function ProfileScreen({ navigation, route }) {
       category: 'Driver',
       condition: 'New',
       flex: 'Stiff',
+      hand: 'Right Hand',
       listedDate: new Date('2025-10-10'), // Oldest
       status: 'Available',
     },
@@ -84,6 +89,7 @@ export default function ProfileScreen({ navigation, route }) {
       category: 'Driver',
       condition: 'New',
       flex: 'Regular',
+      hand: 'Left Hand',
       listedDate: new Date('2025-10-19'), // Recent
       status: 'Available',
     },
@@ -97,6 +103,7 @@ export default function ProfileScreen({ navigation, route }) {
       category: 'Woods',
       condition: 'Slightly Used',
       flex: 'Stiff',
+      hand: 'Right Hand',
       listedDate: new Date('2025-10-12'), // Older
       status: 'Sold', // This one is sold
     },
@@ -130,6 +137,11 @@ export default function ProfileScreen({ navigation, route }) {
       filtered = filtered.filter(product => product.flex === selectedFlex);
     }
 
+    // Hand filter
+    if (selectedHand) {
+      filtered = filtered.filter(product => product.hand === selectedHand);
+    }
+
     // Status filter (Available/Sold)
     if (selectedStatus) {
       filtered = filtered.filter(product => product.status === selectedStatus);
@@ -158,7 +170,7 @@ export default function ProfileScreen({ navigation, route }) {
     }
 
     return filtered;
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedStatus, sortBy, allProducts]);
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts]);
 
   const handleMarkAsSold = (productId) => {
     // Show confirmation modal
@@ -312,6 +324,7 @@ export default function ProfileScreen({ navigation, route }) {
         category: selectedCategory,
         condition: selectedCondition,
         flex: selectedFlex,
+        hand: selectedHand,
         status: selectedStatus,
       },
       returnTo: 'Profile',
@@ -322,6 +335,7 @@ export default function ProfileScreen({ navigation, route }) {
     setSelectedCategory(filters.category || 'All');
     setSelectedCondition(filters.condition || null);
     setSelectedFlex(filters.flex || null);
+    setSelectedHand(filters.hand || null);
     setSelectedStatus(filters.status || 'Available');
     setSearchQuery(filters.searchQuery || '');
   };
