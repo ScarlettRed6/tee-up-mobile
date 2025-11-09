@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/PostItemScreen.styles';
 
@@ -13,6 +13,10 @@ export default function PostItemScreen({ navigation }) {
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [photos, setPhotos] = useState([]);
+  
+  const scrollViewRef = useRef(null);
+  const descriptionSectionRef = useRef(null);
+  const locationSectionRef = useRef(null);
 
   const categories = ['Driver', 'Woods', 'Iron', 'Putters', 'Apparel', 'Accessories', 'Others'];
   const flexOptions = ['Ladies', 'Senior', 'Medium', 'Regular', 'Stiff', 'Extra Stiff'];
@@ -51,8 +55,41 @@ export default function PostItemScreen({ navigation }) {
     }
   };
 
+  const scrollToInput = (ref) => {
+    // Scroll to input field when focused
+    if (ref.current && scrollViewRef.current) {
+      setTimeout(() => {
+        ref.current.measureLayout(
+          scrollViewRef.current,
+          (x, y, width, height) => {
+            scrollViewRef.current?.scrollTo({
+              y: Math.max(0, y - 80),
+              animated: true,
+            });
+          },
+          () => {
+            // Fallback: scroll to end if measurement fails
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }
+        );
+      }, 300);
+    }
+  };
+
+  const handleDescriptionFocus = () => {
+    scrollToInput(descriptionSectionRef);
+  };
+
+  const handleLocationFocus = () => {
+    scrollToInput(locationSectionRef);
+  };
+
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
@@ -66,9 +103,13 @@ export default function PostItemScreen({ navigation }) {
       </View>
 
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        nestedScrollEnabled={true}
       >
         {/* Upload Photos Section */}
         <View style={styles.section}>
@@ -216,7 +257,7 @@ export default function PostItemScreen({ navigation }) {
         </View>
 
         {/* Description Section */}
-        <View style={styles.section}>
+        <View ref={descriptionSectionRef} style={styles.section}>
           <Text style={styles.label}>Description</Text>
           <TextInput
             value={description}
@@ -231,12 +272,14 @@ export default function PostItemScreen({ navigation }) {
             multiline
             numberOfLines={6}
             textAlignVertical="top"
+            onFocus={handleDescriptionFocus}
+            blurOnSubmit={false}
           />
           <Text style={styles.charCount}>{description.length}/300</Text>
         </View>
 
         {/* Location Section */}
-        <View style={styles.section}>
+        <View ref={locationSectionRef} style={styles.section}>
           <Text style={styles.label}>Location</Text>
           <View style={styles.locationInputContainer}>
             <Ionicons name="location-outline" size={20} color="#666" style={styles.locationIcon} />
@@ -246,11 +289,14 @@ export default function PostItemScreen({ navigation }) {
               style={styles.locationInput}
               placeholder="Enter location"
               placeholderTextColor="#999"
+              onFocus={handleLocationFocus}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
             />
           </View>
         </View>
 
-        {/* Spacer for bottom button */}
+        {/* Spacer for bottom button - increased for keyboard */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
@@ -277,6 +323,6 @@ export default function PostItemScreen({ navigation }) {
           </Text>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

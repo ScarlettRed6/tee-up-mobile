@@ -31,8 +31,9 @@ export default StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 200,
     paddingTop: 8,
+    flexGrow: 1,
   },
   section: {
     paddingHorizontal: 20,
@@ -235,7 +236,7 @@ export default StyleSheet.create({
     color: '#222',
   },
   bottomSpacer: {
-    height: 20,
+    height: 40,
   },
   buttonContainer: {
     position: 'absolute',
