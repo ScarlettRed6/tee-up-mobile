@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/RecommendedForYouScreen.styles';
+import { navigateToBottomNav } from '../navigation/navigationHelpers';
 
 export default function RecommendedForYouScreen({ navigation }) {
   const products = [
@@ -48,7 +49,10 @@ export default function RecommendedForYouScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('SavedListings')}>
           <Ionicons name="heart-outline" size={22} color="#333" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.replace('Profile')}>
+        <TouchableOpacity 
+          style={styles.iconButton} 
+          onPress={() => navigateToBottomNav(navigation, 'Profile')}
+        >
           <View style={styles.profileAvatar}>
             <Ionicons name="person" size={16} color="#FF6B35" />
           </View>
@@ -77,14 +81,14 @@ export default function RecommendedForYouScreen({ navigation }) {
       <View style={styles.bottomNav}>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.replace('Discover')}
+          onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
           <Ionicons name="home" size={22} color="#999" />
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.navigate('Inbox')}
+          onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
           <Ionicons name="chatbubble-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Inbox</Text>
@@ -102,7 +106,7 @@ export default function RecommendedForYouScreen({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.replace('Profile')}
+          onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
           <Ionicons name="person-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Profile</Text>

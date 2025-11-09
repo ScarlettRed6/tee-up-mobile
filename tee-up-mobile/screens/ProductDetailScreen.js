@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProductDetailScreen.styles';
+import { navigateToBottomNav } from '../navigation/navigationHelpers';
+import { isCurrentUser } from '../utils/userConstants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -180,7 +182,32 @@ export default function ProductDetailScreen({ navigation, route }) {
         {/* Seller Information Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Seller Information</Text>
-          <View style={styles.sellerInfoContainer}>
+          <TouchableOpacity
+            style={styles.sellerInfoContainer}
+            onPress={() => {
+              // Check if the seller is the current logged-in user
+              if (isCurrentUser(product.seller.name)) {
+                // Navigate to own profile page
+                navigateToBottomNav(navigation, 'Profile');
+              } else {
+                // Navigate to other user's profile page
+                navigation.navigate('UserProfile', {
+                  user: {
+                    username: product.seller.name,
+                    rating: product.seller.rating,
+                    reviewCount: product.seller.reviewCount,
+                    avatarColor: '#FF6B35', // Default color, can be passed from product
+                    activeListings: 8, // This would come from API
+                    followers: '3.2K',
+                    itemsSold: '2.1K',
+                    reputation: product.seller.rating,
+                    bio: 'Golf enthusiast and club collector. Always looking for the perfect set!',
+                  }
+                });
+              }
+            }}
+            activeOpacity={0.7}
+          >
             <View style={styles.sellerAvatar}>
               <Ionicons name="person" size={30} color="#FF6B35" />
             </View>
@@ -193,7 +220,8 @@ export default function ProductDetailScreen({ navigation, route }) {
                 </Text>
               </View>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
         </View>
 
         {/* Product Reviews Section */}
@@ -229,14 +257,14 @@ export default function ProductDetailScreen({ navigation, route }) {
       <View style={styles.bottomNav}>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.replace('Discover')}
+          onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
           <Ionicons name="home-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.navigate('Inbox')}
+          onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
           <Ionicons name="chatbubble-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Inbox</Text>
@@ -254,7 +282,7 @@ export default function ProductDetailScreen({ navigation, route }) {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.replace('Profile')}
+          onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
           <Ionicons name="person-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Profile</Text>

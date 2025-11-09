@@ -190,6 +190,7 @@ export default StyleSheet.create({
   },
   sellerDetails: {
     flex: 1,
+    marginRight: 8,
   },
   sellerName: {
     fontFamily: 'Exo_600SemiBold',

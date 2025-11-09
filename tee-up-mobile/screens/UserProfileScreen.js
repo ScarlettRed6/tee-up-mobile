@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import styles from './styles/ProfileScreen.styles';
+import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 
-export default function ProfileScreen({ navigation, route }) {
+export default function UserProfileScreen({ navigation, route }) {
+  // Get user data from route params
+  const user = route?.params?.user || {
+    username: 'issa123',
+    rating: 4.9,
+    reviewCount: 120,
+    avatarColor: '#333',
+    activeListings: 8,
+    followers: '3.2K',
+    itemsSold: '2.1K',
+    reputation: 4.8,
+    bio: 'Golf enthusiast and club collector. Always looking for the perfect set!',
+  };
+
   // Get filters from route params if navigating from filter screen
   const initialFilters = route?.params?.filters || {};
   
@@ -13,82 +26,58 @@ export default function ProfileScreen({ navigation, route }) {
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
-  const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
+  const [sortBy, setSortBy] = useState('recentlyListed');
   const [showSortModal, setShowSortModal] = useState(false);
 
-  // All products data with listing dates
+  // Sample products data for this user - in real app, this would come from API
   const allProducts = [
     { 
       id: 1,
-      name: 'Srixon ZXi5 Iron set 5-P', 
-      price: '₱26,500', 
-      priceValue: 26500,
-      seller: 'hockeyops', 
-      sellerColor: '#FF0000',
-      category: 'Iron',
-      condition: 'Slightly Used',
-      flex: 'Regular',
-      listedDate: new Date('2025-10-20'), // Most recent
-    },
-    { 
-      id: 2,
       name: 'PING G30 9.5 Slightly Used', 
       price: '₱7,500', 
       priceValue: 7500,
-      seller: 'hockeyops', 
-      sellerColor: '#FF0000',
+      seller: user.username, 
+      sellerColor: user.avatarColor,
       category: 'Driver',
       condition: 'Slightly Used',
       flex: 'Stiff',
-      listedDate: new Date('2025-10-18'), // Older
+      listedDate: new Date('2025-10-18'),
     },
     { 
-      id: 3,
+      id: 2,
       name: 'Titleist AP2 Forged 5-PW', 
       price: '₱9,000', 
       priceValue: 9000,
-      seller: 'hockeyops', 
-      sellerColor: '#FF0000',
+      seller: user.username, 
+      sellerColor: user.avatarColor,
       category: 'Iron',
       condition: 'Well Used',
       flex: 'Regular',
-      listedDate: new Date('2025-10-15'), // Older
+      listedDate: new Date('2025-10-15'),
     },
     { 
-      id: 4,
-      name: 'Titleist TSR3 9.0 BNEW', 
-      price: '₱26,500', 
-      priceValue: 26500,
-      seller: 'hockeyops', 
-      sellerColor: '#FF0000',
-      category: 'Driver',
-      condition: 'New',
-      flex: 'Stiff',
-      listedDate: new Date('2025-10-10'), // Oldest
-    },
-    {
-      id: 5,
-      name: 'Callaway Epic Flash Driver',
-      price: '₱15,000',
-      priceValue: 15000,
-      seller: 'hockeyops',
-      sellerColor: '#FF0000',
-      category: 'Driver',
-      condition: 'New',
-      flex: 'Regular',
-      listedDate: new Date('2025-10-19'), // Recent
-    },
-    {
-      id: 6,
+      id: 3,
       name: 'TaylorMade SIM Max 5 Wood',
       price: '₱12,000',
       priceValue: 12000,
-      seller: 'hockeyops',
-      sellerColor: '#FF0000',
+      seller: user.username,
+      sellerColor: user.avatarColor,
       category: 'Woods',
       condition: 'Slightly Used',
       flex: 'Stiff',
-      listedDate: new Date('2025-10-12'), // Older
+      listedDate: new Date('2025-10-12'),
+    },
+    {
+      id: 4,
+      name: 'Callaway Epic Flash Driver',
+      price: '₱15,000',
+      priceValue: 15000,
+      seller: user.username,
+      sellerColor: user.avatarColor,
+      category: 'Driver',
+      condition: 'New',
+      flex: 'Regular',
+      listedDate: new Date('2025-10-10'),
     },
   ];
 
@@ -113,8 +102,6 @@ export default function ProfileScreen({ navigation, route }) {
       filtered = filtered.filter(product => product.condition === selectedCondition);
     }
 
-    // Price filter - removed for Profile page (only used in SearchResults)
-
     // Flex filter
     if (selectedFlex) {
       filtered = filtered.filter(product => product.flex === selectedFlex);
@@ -123,11 +110,9 @@ export default function ProfileScreen({ navigation, route }) {
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
-        // Sort by most recent listing date first (newest first)
         filtered.sort((a, b) => b.listedDate - a.listedDate);
         break;
       case 'oldestListing':
-        // Sort by oldest listing date first
         filtered.sort((a, b) => a.listedDate - b.listedDate);
         break;
       case 'mostExpensive':
@@ -137,7 +122,6 @@ export default function ProfileScreen({ navigation, route }) {
         filtered.sort((a, b) => a.priceValue - b.priceValue);
         break;
       default:
-        // Default to recently listed
         filtered.sort((a, b) => b.listedDate - a.listedDate);
         break;
     }
@@ -163,8 +147,8 @@ export default function ProfileScreen({ navigation, route }) {
             condition: item.condition,
             seller: {
               name: item.seller,
-              rating: 4.9,
-              reviewCount: 120,
+              rating: user.rating,
+              reviewCount: user.reviewCount,
             },
             images: [{ id: 1 }, { id: 2 }, { id: 3 }],
             reviews: [],
@@ -174,11 +158,10 @@ export default function ProfileScreen({ navigation, route }) {
       >
         <View style={styles.productImagePlaceholder}>
           <Text style={styles.imagePlaceholderText}>
-            {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
-             item.name.includes('PING') ? 'PING G30' :
+            {item.name.includes('PING') ? 'PING G30' :
              item.name.includes('AP2') ? 'Titleist AP2' : 
-             item.name.includes('TSR3') ? 'Titleist TSR3' :
-             item.name.includes('Callaway') ? 'Callaway Epic' : 'TaylorMade SIM'}
+             item.name.includes('TaylorMade') ? 'TaylorMade SIM' :
+             item.name.includes('Callaway') ? 'Callaway Epic' : 'Product'}
           </Text>
         </View>
         <Text style={styles.productName}>{item.name}</Text>
@@ -194,7 +177,6 @@ export default function ProfileScreen({ navigation, route }) {
   };
 
   const handleFilterPress = () => {
-    // Navigate to SearchFilterScreen with current filters
     navigation.navigate('SearchFilter', {
       searchQuery,
       filters: {
@@ -203,7 +185,8 @@ export default function ProfileScreen({ navigation, route }) {
         condition: selectedCondition,
         flex: selectedFlex,
       },
-      returnTo: 'Profile',
+      returnTo: 'UserProfile',
+      user: user,
     });
   };
 
@@ -228,23 +211,42 @@ export default function ProfileScreen({ navigation, route }) {
     { value: 'cheapest', label: 'Cheapest' },
   ];
 
+  // Render stars based on rating
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(
+        <Ionicons key={i} name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
+      );
+    }
+    if (hasHalfStar) {
+      stars.push(
+        <Ionicons key="half" name="star-half" size={18} color="#FFD700" style={{ marginRight: 4 }} />
+      );
+    }
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(
+        <Ionicons key={`empty-${i}`} name="star-outline" size={18} color="#FFD700" style={{ marginRight: 4 }} />
+      );
+    }
+    return stars;
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header Icons - Top Right */}
-      <View style={styles.headerIcons}>
-        <View style={styles.headerIconsRight}>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => {
-              console.log('Settings icon pressed');
-              navigation.navigate('Settings');
-            }}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="settings-outline" size={20} color="#000" />
-          </TouchableOpacity>
-        </View>
+      {/* Header with Back Button - No Settings Icon */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -255,27 +257,23 @@ export default function ProfileScreen({ navigation, route }) {
         {/* Profile Summary Card */}
         <View style={styles.profileSection}>
           <View style={styles.profilePhotoContainer}>
-            <View style={styles.profilePhoto}>
-              <Ionicons name="person" size={50} color="#FF6B35" />
+            <View style={[styles.profilePhoto, { borderColor: user.avatarColor }]}>
+              <Ionicons name="person" size={50} color={user.avatarColor} />
             </View>
           </View>
           
-          <Text style={styles.username}>hockeyops</Text>
+          <Text style={styles.username}>{user.username}</Text>
           
           <View style={styles.statsContainer}>
-            <Text style={styles.statText}>Active Listings: 10</Text>
-            <Text style={styles.statText}>5.5K followers</Text>
-            <Text style={styles.statText}>3.2K items sold</Text>
+            <Text style={styles.statText}>Active Listings: {user.activeListings}</Text>
+            <Text style={styles.statText}>{user.followers} followers</Text>
+            <Text style={styles.statText}>{user.itemsSold} items sold</Text>
           </View>
           
           <View style={styles.reputationContainer}>
-            <Text style={styles.reputationText}>User Reputation: 5.0</Text>
+            <Text style={styles.reputationText}>User Reputation: {user.reputation}</Text>
             <View style={styles.starsContainer}>
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" />
+              {renderStars(user.reputation)}
             </View>
           </View>
         </View>
@@ -283,7 +281,7 @@ export default function ProfileScreen({ navigation, route }) {
         {/* Bio Section */}
         <View style={styles.bioSection}>
           <Text style={styles.bioText}>
-            I buy/sell/trade golf clubs! Feel free to offer on any of my listings!
+            {user.bio}
           </Text>
         </View>
 
@@ -401,12 +399,10 @@ export default function ProfileScreen({ navigation, route }) {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => {
-            // Already on Profile, do nothing
-          }}
+          onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color="#999" />
+          <Text style={styles.navLabel}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

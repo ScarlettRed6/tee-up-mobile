@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/InboxScreen.styles';
+import { navigateToBottomNav } from '../navigation/navigationHelpers';
 
 export default function InboxScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,7 +156,7 @@ export default function InboxScreen({ navigation }) {
       <View style={styles.bottomNav}>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.replace('Discover')}
+          onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
           <Ionicons name="home-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Home</Text>
@@ -182,7 +183,7 @@ export default function InboxScreen({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => navigation.replace('Profile')}
+          onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
           <Ionicons name="person-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Profile</Text>

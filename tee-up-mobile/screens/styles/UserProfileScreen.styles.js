@@ -5,14 +5,7 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: '#F6EDE2',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-    paddingTop: 60,
-  },
-  headerIcons: {
+  header: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -22,18 +15,23 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 1000,
     elevation: 1000,
-  },
-  headerIconsRight: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  iconButton: {
+  backButton: {
     padding: 8,
     minWidth: 40,
     minHeight: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+    paddingTop: 60,
   },
   profileSection: {
     alignItems: 'center',
@@ -255,7 +253,6 @@ export default StyleSheet.create({
     color: '#000',
     marginTop: 4,
   },
-  // Empty State
   emptyState: {
     width: '100%',
     paddingVertical: 40,
@@ -266,7 +263,6 @@ export default StyleSheet.create({
     fontSize: 16,
     color: '#999',
   },
-  // Sort Modal
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
