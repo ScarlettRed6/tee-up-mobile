@@ -11,6 +11,10 @@ import SavedListingsScreen from '../screens/SavedListingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import PostItemScreen from '../screens/PostItemScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import InboxScreen from '../screens/InboxScreen';
+import ChatDetailScreen from '../screens/ChatDetailScreen';
+import SearchFilterScreen from '../screens/SearchFilterScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,6 +32,10 @@ export default function AppNavigator() {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="PostItem" component={PostItemScreen} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="Inbox" component={InboxScreen} />
+        <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+        <Stack.Screen name="SearchFilter" component={SearchFilterScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import styles from './styles/RecommendedForYouScreen.styles';
 
 export default function RecommendedForYouScreen({ navigation }) {
   const products = [
@@ -81,7 +82,10 @@ export default function RecommendedForYouScreen({ navigation }) {
           <Ionicons name="home" size={22} color="#999" />
           <Text style={styles.navLabel}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Inbox')}
+        >
           <Ionicons name="chatbubble-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Inbox</Text>
         </TouchableOpacity>
@@ -107,160 +111,4 @@ export default function RecommendedForYouScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F6EDE2',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-    paddingHorizontal: 20,
-    paddingTop: 110,
-  },
-  headerIcons: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#F6EDE2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D9CC',
-    zIndex: 10,
-  },
-  iconButton: {
-    padding: 4,
-  },
-  profileAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  titleSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 28,
-    color: '#000',
-  },
-  productGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  productCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 12,
-    width: '48%',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  cardLeft: {
-    marginRight: '2%',
-  },
-  cardRight: {
-    marginLeft: '2%',
-  },
-  productImagePlaceholder: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  imagePlaceholderText: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-    textAlign: 'center',
-  },
-  productName: {
-    fontFamily: 'Exo_600SemiBold',
-    fontSize: 12,
-    color: '#000',
-    marginBottom: 4,
-  },
-  productCondition: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-    marginBottom: 6,
-  },
-  productPrice: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 14,
-    color: '#000',
-    marginBottom: 8,
-  },
-  sellerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sellerAvatar: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sellerName: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    paddingVertical: 12,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: -2 },
-    elevation: 8,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navLabel: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#999',
-    marginTop: 4,
-  },
-});
 

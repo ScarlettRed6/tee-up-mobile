@@ -1,13 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import styles from './styles/DiscoverScreen.styles';
 
 export default function DiscoverScreen({ navigation }) {
+  // Helper function to navigate to product detail
+  const navigateToProductDetail = (productData) => {
+    navigation.navigate('ProductDetail', { product: productData });
+  };
+
   return (
     <View style={styles.container}>
       {/* Floating Header Icons */}
       <View style={styles.headerIcons}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity 
+          style={styles.iconButton}
+          onPress={() => navigation.navigate('SearchFilter')}
+        >
           <Ionicons name="search-outline" size={22} color="#333" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
@@ -40,7 +49,34 @@ export default function DiscoverScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Newly Added Listings</Text>
           <View style={styles.productRow}>
-            <View style={[styles.productCard, { marginRight: 12 }]}>
+            <TouchableOpacity 
+              style={[styles.productCard, { marginRight: 12 }]}
+              onPress={() => navigateToProductDetail({
+                id: 1,
+                title: 'Srixon ZXi5 Iron set 5-P',
+                price: '26,500',
+                location: 'Quezon City',
+                postedDate: 'October 20, 2025',
+                description: 'Excellent condition iron set. Perfect for intermediate players looking to upgrade.',
+                category: 'Iron',
+                condition: 'Slightly Used',
+                seller: {
+                  name: 'hockeyops',
+                  rating: 4.9,
+                  reviewCount: 120,
+                },
+                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
+                reviews: [
+                  {
+                    id: 1,
+                    heading: 'Great Quality!',
+                    text: 'The seller is very trustworthy and the clubs are in excellent condition.',
+                    reviewer: { name: 'hockeyops' },
+                  },
+                ],
+              })}
+              activeOpacity={0.8}
+            >
               <View style={styles.productImagePlaceholder}>
                 <Text style={styles.imagePlaceholderText}>Srixon ZXi5</Text>
               </View>
@@ -52,9 +88,36 @@ export default function DiscoverScreen({ navigation }) {
                 </View>
                 <Text style={styles.sellerName}>hockeyops</Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
-            <View style={[styles.productCard, { marginRight: 12 }]}>
+            <TouchableOpacity 
+              style={[styles.productCard, { marginRight: 12 }]}
+              onPress={() => navigateToProductDetail({
+                id: 2,
+                title: 'PING G30 9.5 Slightly Used',
+                price: '7,500',
+                location: 'Manila',
+                postedDate: 'October 18, 2025',
+                description: 'Used lightly. Excellent condition. Perfect for new players.',
+                category: 'Driver',
+                condition: 'Slightly Used',
+                seller: {
+                  name: 'issa123',
+                  rating: 4.7,
+                  reviewCount: 85,
+                },
+                images: [{ id: 1 }, { id: 2 }, { id: 3 }],
+                reviews: [
+                  {
+                    id: 1,
+                    heading: 'Loved It!',
+                    text: 'The seller is very trustworthy and...',
+                    reviewer: { name: 'issa123' },
+                  },
+                ],
+              })}
+              activeOpacity={0.8}
+            >
               <View style={styles.productImagePlaceholder}>
                 <Text style={styles.imagePlaceholderText}>PING G30</Text>
               </View>
@@ -66,7 +129,7 @@ export default function DiscoverScreen({ navigation }) {
                 </View>
                 <Text style={styles.sellerName}>issa123</Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity 
               style={styles.viewMoreArrow}
@@ -112,7 +175,34 @@ export default function DiscoverScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recommended For You</Text>
           <View style={styles.productRow}>
-            <View style={[styles.productCard, { marginRight: 12 }]}>
+            <TouchableOpacity 
+              style={[styles.productCard, { marginRight: 12 }]}
+              onPress={() => navigateToProductDetail({
+                id: 3,
+                title: 'Titleist AP2 Forged 5-PW',
+                price: '9,000',
+                location: 'Makati',
+                postedDate: 'October 15, 2025',
+                description: 'Professional grade forged irons. Well maintained and ready to play.',
+                category: 'Iron',
+                condition: 'Well Used',
+                seller: {
+                  name: 'hockeyops',
+                  rating: 4.9,
+                  reviewCount: 120,
+                },
+                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
+                reviews: [
+                  {
+                    id: 1,
+                    heading: 'Excellent!',
+                    text: 'The seller is very trustworthy and the clubs exceeded expectations.',
+                    reviewer: { name: 'hockeyops' },
+                  },
+                ],
+              })}
+              activeOpacity={0.8}
+            >
               <View style={styles.productImagePlaceholder}>
                 <Text style={styles.imagePlaceholderText}>Titleist AP2</Text>
               </View>
@@ -124,9 +214,36 @@ export default function DiscoverScreen({ navigation }) {
                 </View>
                 <Text style={styles.sellerName}>hockeyops</Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
-            <View style={[styles.productCard, { marginRight: 12 }]}>
+            <TouchableOpacity 
+              style={[styles.productCard, { marginRight: 12 }]}
+              onPress={() => navigateToProductDetail({
+                id: 4,
+                title: 'Titleist TSR3 9.10 BNEW',
+                price: '26,500',
+                location: 'Quezon City',
+                postedDate: 'October 10, 2025',
+                description: 'Brand new in box. Never used. Still has original packaging.',
+                category: 'Driver',
+                condition: 'New',
+                seller: {
+                  name: 'hockeyops',
+                  rating: 4.9,
+                  reviewCount: 120,
+                },
+                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
+                reviews: [
+                  {
+                    id: 1,
+                    heading: 'Perfect!',
+                    text: 'The seller is very trustworthy and delivered exactly as described.',
+                    reviewer: { name: 'hockeyops' },
+                  },
+                ],
+              })}
+              activeOpacity={0.8}
+            >
               <View style={styles.productImagePlaceholder}>
                 <Text style={styles.imagePlaceholderText}>Titleist TSR3</Text>
               </View>
@@ -138,7 +255,7 @@ export default function DiscoverScreen({ navigation }) {
                 </View>
                 <Text style={styles.sellerName}>hockeyops</Text>
               </View>
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity 
               style={styles.viewMoreArrow}
@@ -162,7 +279,10 @@ export default function DiscoverScreen({ navigation }) {
           <Ionicons name="home" size={22} color="#000" />
           <Text style={styles.navLabelActive}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Inbox')}
+        >
           <Ionicons name="chatbubble-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Inbox</Text>
         </TouchableOpacity>
@@ -188,207 +308,4 @@ export default function DiscoverScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F6EDE2',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-    paddingTop: 110,
-  },
-  headerIcons: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#F6EDE2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D9CC',
-    zIndex: 10,
-  },
-  iconButton: {
-    padding: 4,
-  },
-  profileAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  titleSection: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  title: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 32,
-    color: '#000',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 14,
-    color: '#333',
-    opacity: 0.8,
-  },
-  section: {
-    marginBottom: 32,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    fontFamily: 'Exo_600SemiBold',
-    fontSize: 18,
-    color: '#000',
-    marginBottom: 16,
-  },
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  productCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 12,
-    width: 140,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  productImagePlaceholder: {
-    width: '100%',
-    height: 100,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  imagePlaceholderText: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-    textAlign: 'center',
-  },
-  productName: {
-    fontFamily: 'Exo_600SemiBold',
-    fontSize: 12,
-    color: '#000',
-    marginBottom: 6,
-  },
-  productPrice: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 14,
-    color: '#000',
-    marginBottom: 8,
-  },
-  sellerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sellerAvatar: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sellerName: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#666',
-  },
-  viewMoreArrow: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  arrowSymbol: {
-    fontSize: 24,
-    color: '#999',
-    marginBottom: 4,
-  },
-  viewMoreText: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#999',
-    textAlign: 'center',
-  },
-  categoriesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  categoryPill: {
-    backgroundColor: '#F3F3F3',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  categoryText: {
-    fontFamily: 'Exo_500Medium',
-    fontSize: 13,
-    color: '#000',
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    paddingVertical: 12,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: -2 },
-    elevation: 8,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navLabel: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 10,
-    color: '#999',
-    marginTop: 4,
-  },
-  navLabelActive: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 10,
-    color: '#000',
-    marginTop: 4,
-  },
-});
 
