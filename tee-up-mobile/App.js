@@ -21,8 +21,10 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <StatusBar style="dark" />
-      <AppNavigator />
+      <View style={{ flex: 1 }}>
+        <StatusBar style="dark" />
+        <AppNavigator />
+      </View>
     </AuthProvider>
   );
 }
