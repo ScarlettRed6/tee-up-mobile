@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView } from 'react-native';
 import styles from './styles/SignupScreen.styles';
+import { authContext } from '../context/authContext';
 
 export default function SignupScreen({ navigation }) {
+  const { register } = useContext(authContext);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,13 +12,16 @@ export default function SignupScreen({ navigation }) {
 
   const isFormValid = name.trim().length > 0 && email.trim().length > 0 && password.trim().length > 0 && confirmPassword.trim().length > 0;
 
-  const handleSignup = () => {
-    if (isFormValid) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Discover' }],
-      });
+  const handleSignup = async () => {
+    if (!isFormValid) return;
+
+    try{
+      await register({name, email, password, confirmPassword});
+      console.log("Registered Successfully!");
+    }catch(err){
+      console.log("Registration Failed:", err.message);
     }
+
   };
 
   return (

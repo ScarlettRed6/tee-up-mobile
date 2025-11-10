@@ -1,20 +1,25 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Pressable } from 'react-native';
 import styles from './styles/LoginScreen.styles';
+import { authContext } from '../context/authContext';
 
 export default function LoginScreen({ navigation }) {
+  const { login } = useContext(authContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const isFormValid = email.trim().length > 0 && password.trim().length > 0;
 
-  const handleLogin = () => {
-    if (isFormValid) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Discover' }],
-      });
+  const handleLogin = async () => {
+    if (!isFormValid) return;
+
+    try{
+      await login(email, password);
+      console.log("Logged in!");
+    }catch(err){
+      console.log("Login failed:", err.message);
     }
+
   };
 
   return (

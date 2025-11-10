@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
 import { useFonts, Exo_400Regular, Exo_500Medium, Exo_600SemiBold, Exo_700Bold, Exo_400Regular_Italic } from '@expo-google-fonts/exo';
+import { AuthProvider } from './context/authContext';
 
 
 export default function App() {
@@ -19,10 +20,12 @@ export default function App() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar style="dark" />
-      <AppNavigator />
-    </View>
+    <AuthProvider>
+      <View style={{ flex: 1 }}>
+        <StatusBar style="dark" />
+          <AppNavigator />
+      </View>
+    </AuthProvider>
   );
 }
 

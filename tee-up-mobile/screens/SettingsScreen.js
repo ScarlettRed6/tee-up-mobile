@@ -1,15 +1,14 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/SettingsScreen.styles';
+import { authContext } from '../context/authContext';
 
 export default function SettingsScreen({ navigation }) {
-  const handleLogout = () => {
-    // Handle logout logic here
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+  const { logout } = useContext(authContext);
+  const handleLogout = async () => {
+    await logout();
+    console.log("Logout succes!");
   };
 
   const settingsOptions = [
