@@ -1,20 +1,24 @@
-import React from 'react';
-import { BaseNavigationContainer, NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '../screens/HomeScreen';
-import LoginScreen from '../screens/LoginScreen';
-
-const Stack = createNativeStackNavigator();
+import React, { useContext } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { authContext } from '../context/authContext';
+import AppStack from './AppStack';
+import AuthStack from './AuthStack';
+import { View, Text } from 'react-native';
 
 export default function AppNavigator() {
+  const { token, loading } = useContext(authContext);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='Home'>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-      </Stack.Navigator>
+      {token ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
-
-

@@ -6,6 +6,11 @@ yarn-error.log*
 package-lock.json
 yarn.lock
 
+# Logs
+logs/
+*.log
+*.txt
+
 # Env 
 .env
 .env.local
@@ -33,6 +38,11 @@ temp/
 *.keystore
 android/
 ios/
+
+# Backend
+backend/node_modules/
+backend/.env
+backend/package-lock.json
 
 # Editor and OS
 .vscode/
