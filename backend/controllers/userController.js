@@ -2,7 +2,7 @@ import { findUserById } from "../models/userModel.js";
 
 export async function getUserProfile(req, res){
     try{
-        const user = await findUserById(req.use.id);
+        const user = await findUserById(req.user.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const {id, name, email } = user;
