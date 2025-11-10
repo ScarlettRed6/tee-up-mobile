@@ -16,7 +16,14 @@ export default function SignupScreen({ navigation }) {
     if (!isFormValid) return;
 
     try{
-      await register({name, email, password, confirmPassword});
+      const token = await register({name, email, password, confirmPassword});
+
+      if (token) {
+        navigation.reset({
+          index: 0,
+          routes: [{name: 'Discover'}],
+        });
+      }
       console.log("Registered Successfully!");
     }catch(err){
       console.log("Registration Failed:", err.message);
