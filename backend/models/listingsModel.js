@@ -35,6 +35,6 @@ export async function updateListing(id, title, description, category, brand, con
 
 //DELETES
 export async function deleteListing(id) {
-    const result = await pool.query(`DELETE FROM listing WHERE id = $1 RETURNING *`, [id]);
+    const result = await pool.query(`DELETE FROM listing WHERE listing_id = $1 RETURNING *`, [id]);
     return result.rows[0];
 }

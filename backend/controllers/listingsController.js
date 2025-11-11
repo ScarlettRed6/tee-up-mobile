@@ -50,7 +50,11 @@ export async function updateListingItem(req, res) {
 
 export async function deleteListingItem(req, res) {
     try{
+        const { id } = req.params;
+        const deletedListing = await deleteListing(id);
+        if (!deletedListing) return res.status(404).json({ message: "Listing item not found!, CAN'T DELETE AN ITEM THAT DOESN'T EXISTS!" });
 
+        res.status(200).json({ message: "Listing deleted successfully!",  listing: deletedListing});
     }catch(err){
         res.status(500).json({ error: err.message });
     }
