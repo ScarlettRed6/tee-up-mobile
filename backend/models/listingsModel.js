@@ -27,10 +27,10 @@ export async function getListingById(id) {
 export async function updateListing(id, title, description, category, brand, condition, price, status, photos) {
     const result = await pool.query(
         `UPDATE listing SET title = $1, description = $2, category = $3, brand = $4, condition = $5, price = $6, status = $7, photos = $8
-        WHERE id = $9 RETURNING *`,
+        WHERE listing_id = $9 RETURNING *`,
         [title, description, category, brand, condition, price, status, photos, id]
     );
-    return result.rows;
+    return result.rows[0];
 }
 
 //DELETES
