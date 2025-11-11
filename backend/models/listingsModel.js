@@ -18,7 +18,7 @@ export async function getAllListings(){
 
 export async function getListingById(id) {
     const result = await pool.query(
-        `SELECT * FROM listing WHERE id = $1`, [id]
+        `SELECT * FROM listing WHERE listing_id = $1`, [id]
     );
     return result.rows[0];
 }

@@ -27,7 +27,7 @@ export async function getListingItemById(req, res) {
     try{
         const { id } = req.params;
         const result = await getListingById(id);
-        res.status(200).json(result.rows);
+        res.status(200).json(result);
     }catch(err){
         res.status(500).json({ error: err.message });
     }
@@ -35,7 +35,7 @@ export async function getListingItemById(req, res) {
 
 export async function updateListingItem(req, res) {
     try{
-
+        
     }catch(err){
         res.status(500).json({ error: err.message });
     }
