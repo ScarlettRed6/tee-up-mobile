@@ -3,7 +3,8 @@ from "../models/listingsModel.js";
 
 
 export async function createListing(req, res) {
-    const { user_id, title, description, category, brand, condition, price, status, photos }
+    const user_id = req.user.id;
+    const { title, description, category, brand, condition, price, status, photos }
     = req.body;
     try{
         const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photos);
@@ -36,11 +37,15 @@ export async function getListingItemById(req, res) {
 export async function updateListingItem(req, res) {
     try{
         const { id } = req.params;
-        const { title, description, category, brand, condition, price, status, photos }
-        = req.body;
+        const userId = req.user.id;
+        const { title, description, category, brand, condition, price, status, photos } = req.body;
+
+        const listing = getListingById(id);
+        if(!listing) return res.status(404).jsong({ message: "Listing not found!" });
+        
+        if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
 
         const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photos);
-        if (!updatedListing) return res.status(404).json({ message: "Listing item not found!, CAN'T UPDATE AN ITEM THAT DOESN'T EXISTS!" });
 
         res.status(200).json({ message: "Listing updated successfully!",  listing: updatedListing});
     }catch(err){
@@ -51,6 +56,7 @@ export async function updateListingItem(req, res) {
 export async function deleteListingItem(req, res) {
     try{
         const { id } = req.params;
+        const user_id = req.user.id;
         const deletedListing = await deleteListing(id);
         if (!deletedListing) return res.status(404).json({ message: "Listing item not found!, CAN'T DELETE AN ITEM THAT DOESN'T EXISTS!" });
 
