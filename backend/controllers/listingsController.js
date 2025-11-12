@@ -56,9 +56,14 @@ export async function updateListingItem(req, res) {
 export async function deleteListingItem(req, res) {
     try{
         const { id } = req.params;
-        const user_id = req.user.id;
+        const userId = req.user.id;
+
+        const listing = getListingById(id);
+        if(!listing) return res.status(404).jsong({ message: "Listing not found!" });
+
+        if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
+
         const deletedListing = await deleteListing(id);
-        if (!deletedListing) return res.status(404).json({ message: "Listing item not found!, CAN'T DELETE AN ITEM THAT DOESN'T EXISTS!" });
 
         res.status(200).json({ message: "Listing deleted successfully!",  listing: deletedListing});
     }catch(err){
