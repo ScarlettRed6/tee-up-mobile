@@ -41,7 +41,7 @@ export async function updateListingItem(req, res) {
         const { title, description, category, brand, condition, price, status, photos } = req.body;
 
         const listing = getListingById(id);
-        if(!listing) return res.status(404).jsong({ message: "Listing not found!" });
+        if(!listing) return res.status(404).json({ message: "Listing not found!" });
         
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
 
@@ -59,7 +59,7 @@ export async function deleteListingItem(req, res) {
         const userId = req.user.id;
 
         const listing = getListingById(id);
-        if(!listing) return res.status(404).jsong({ message: "Listing not found!" });
+        if(!listing) return res.status(404).json({ message: "Listing not found!" });
 
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
 
