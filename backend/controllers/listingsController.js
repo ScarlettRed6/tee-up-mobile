@@ -17,8 +17,16 @@ export async function createListing(req, res) {
 
 export async function getAllListingItems(req, res) {
     try{
-        const result = await getAllListings();
-        res.status(200).json({ message: "Fetched Listings successfully!", result });
+        const { category, user_id, sort, status } = req.query;
+
+        const filters = {};
+        if (category) filters.category = category;
+        if (user_id) filters.user_id = user_id;
+        if (status) filters.status = status;
+
+        const result = await getAllListings(filters, sort);
+        res.status(200).json({ message: "Fetch listings successfully!", result });
+
     }catch(err){
         res.status(500).json({ error: err.message });
     }
@@ -40,7 +48,7 @@ export async function updateListingItem(req, res) {
         const userId = req.user.id;
         const { title, description, category, brand, condition, price, status, photos } = req.body;
 
-        const listing = getListingById(id);
+        const listing = await getListingById(id);
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
         
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
@@ -58,7 +66,7 @@ export async function deleteListingItem(req, res) {
         const { id } = req.params;
         const userId = req.user.id;
 
-        const listing = getListingById(id);
+        const listing = await getListingById(id);
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
 
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
@@ -70,3 +78,11 @@ export async function deleteListingItem(req, res) {
         res.status(500).json({ error: err.message });
     }
 }
+
+
+//Implement later features
+/* 
+    Flagging of a listing
+        - 
+*/
+

@@ -11,9 +11,43 @@ export async function insertListing(user_id, title, description, category, brand
 }
 
 //GETS
-export async function getAllListings(){
-    const allListings = await pool.query(`SELECT * FROM listings`);
-    return allListings.rows;
+export async function getAllListings(filters = {}, sort = "newest"){
+    let query = `SELECT * FROM listings`;
+    const values = [];
+    const whereClauses = [];
+
+    if(filters.category){
+        values.push(filters.category);
+        whereClauses.push(`category = $${values.length}`);
+    }
+
+    if(filters.user_id){
+        values.push(filters.user_id);
+        whereClauses.push(`user_id = $${values.length}`);
+    }
+
+    if(filters.status){
+        values.push(filters.status);
+        whereClauses.push(`status = $${values.length}`);
+    }
+
+    if(whereClauses.length > 0){
+        query += ` WHERE ${whereClauses.join(" AND ")}`;
+    }
+
+    if(sort === "newest"){
+        query += ` ORDER BY created_at DESC`;
+    }else if (sort === "oldest"){
+        query += ` ORDER BY created_at ASC`;
+    }else if(sort === "price_low_high"){
+        query += ` ORDER BY price ASC`;
+    }else if(sort === "price_high_low"){
+        query += ` ORDER BY price DESC`;
+    }
+
+    const result = await pool.query(query, values);
+    return result.rows;
+
 }
 
 export async function getListingById(id) {
