@@ -35,13 +35,17 @@ export async function login(req, res){
         if(!user) return res.status(400).json({message: "User is not founding"});
 
         const validPass = await bcrypt.compare(password, user.password);
-        if(!validPass) return res.status(400).json({message: "Invalid password!"});
+        if(!validPass) {
+            console.log("Invalid Password");
+            return res.status(400).json({message: "Invalid password!"});
+        }
 
         const accessToken = jwt.sign({id: user.id}, process.env.JWT_SECRET, { expiresIn: "1h" });
         const refreshToken = jwt.sign({id: user.id}, process.env.REFRESH_SECRET, { expiresIn: "7d" });
 
         await storeRefreshToken(refreshToken, user.id);
 
+        console.log(`Token: ${accessToken}\nRefresh Token: ${refreshToken}`);
         res.json({message: "Login successful", token: accessToken, refreshToken: refreshToken });
     }catch(err){
         res.status(500).json({ error: err.message });

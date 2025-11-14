@@ -6,7 +6,7 @@ import AuthStack from './AuthStack';
 import { View, Text } from 'react-native';
 
 export default function AppNavigator() {
-  const { token, loading } = useContext(authContext);
+  const { accessToken, loading } = useContext(authContext);
 
   if (loading) {
     return (
@@ -18,7 +18,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      {token ? <AppStack /> : <AuthStack />}
+      {accessToken ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
