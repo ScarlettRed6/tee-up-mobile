@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { findUserByEmail, createUser } from "../models/userModel.js";
+import { findUserByEmail, createUser, storeRefreshToken } from "../models/userModel.js";
 /* import dotenv from "dotenv";
 
 dotenv.config(); */
@@ -37,8 +37,12 @@ export async function login(req, res){
         const validPass = await bcrypt.compare(password, user.password);
         if(!validPass) return res.status(400).json({message: "Invalid password!"});
 
-        const token = jwt.sign({id: user.id}, process.env.JWT_SECRET, { expiresIn: "1h"});
-        res.json({message: "Login successful", token});
+        const accessToken = jwt.sign({id: user.id}, process.env.JWT_SECRET, { expiresIn: "1h"});
+        const refreshToken = jwt.sign({id: user.id}, process.env.REFRESH_SECRET, { expiresIn: "7d" });
+
+        await storeRefreshToken(refreshToken, user.id);
+
+        res.json({message: "Login successful", accessToken});
         console.log(`Login Successful| token:${token}`);
     }catch(err){
         res.status(500).json({ error: err.message });
