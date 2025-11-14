@@ -1,11 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
+import { authContext } from '../context/authContext';
+import { getUserProfile } from '../api/userApi';
 
 export default function ProfileScreen({ navigation, route }) {
+  const { accessToken } = useContext(authContext);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if(!accessToken) return;
+
+    const fetchProfile = async () => {
+      try{
+        const data = await getUserProfile();
+        setUser(data);
+      }catch(err){
+        console.log("Profile error:", err);
+      }finally{
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [accessToken]);
+
   // Get filters from route params if navigating from filter screen
   const initialFilters = route?.params?.filters || {};
   
@@ -354,6 +376,9 @@ export default function ProfileScreen({ navigation, route }) {
     { value: 'cheapest', label: 'Cheapest' },
   ];
 
+  if(loading) return <ActivityIndicator />;
+  if(!user) return <Text>No Profile found!</Text>;
+
   return (
     <View style={styles.container}>
         {/* Header Icons - Top Right */}
@@ -388,7 +413,7 @@ export default function ProfileScreen({ navigation, route }) {
             </View>
           </View>
           
-          <Text style={styles.username}>hockeyops</Text>
+          <Text style={styles.username}>{user.name}</Text>
           
           <View style={styles.statsContainer}>
             <Text style={styles.statText}>Active Listings: 10</Text>
