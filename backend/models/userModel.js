@@ -9,6 +9,15 @@ export async function storeRefreshToken(refreshToken, userId) {
     return result.rows[0];
 }
 
+//Get matching refresh token
+export async function getRefreshToken(refreshToken){
+    const result = await pool.query(
+        `SELECT * FROM users WHERE refresh_token = $1`,
+        [refreshToken]
+    );
+    return result.rows[0];
+}
+
 //FINDER FUNCTIONS
 export async function findUserByEmail(email){
     const result = await pool.query(
