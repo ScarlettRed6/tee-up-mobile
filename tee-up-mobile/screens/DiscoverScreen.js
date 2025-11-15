@@ -1,14 +1,25 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator  } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/DiscoverScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
+import { ListingsContext } from '../context/listingsContext';
 
 export default function DiscoverScreen({ navigation }) {
+  const { listings, loading } = useContext(ListingsContext);
+
   // Helper function to navigate to product detail
   const navigateToProductDetail = (productData) => {
     navigation.navigate('ProductDetail', { product: productData });
   };
+
+  if(loading){
+    return (
+       <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -64,7 +75,25 @@ export default function DiscoverScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Newly Added Listings</Text>
           <View style={styles.productRow}>
-            <TouchableOpacity 
+            {/* HERE STARTS WHAT CARL DID */}
+            {listings.slice(0, 3).map(item => (
+              <TouchableOpacity
+                key={item.listing_id}
+                onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                style={{
+                  backgroundColor:'#fff',
+                  padding:12,
+                  marginBottom:10,
+                  borderRadius:8,
+                  elevation:2
+                }}
+              >
+                <Text style={{ fontWeight:'bold', fontSize:16 }}>{item.title}</Text>
+                <Text>₱{item.price}</Text>
+                <Text>{item.category}</Text>
+              </TouchableOpacity>
+            ))}
+            {/* <TouchableOpacity 
               style={[styles.productCard, { marginRight: 12 }]}
               onPress={() => navigateToProductDetail({
                 id: 1,
@@ -103,9 +132,9 @@ export default function DiscoverScreen({ navigation }) {
                 </View>
                 <Text style={styles.sellerName}>hockeyops</Text>
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
-            <TouchableOpacity 
+            {/* <TouchableOpacity 
               style={[styles.productCard, { marginRight: 12 }]}
               onPress={() => navigateToProductDetail({
                 id: 2,
@@ -144,7 +173,7 @@ export default function DiscoverScreen({ navigation }) {
                 </View>
                 <Text style={styles.sellerName}>issa123</Text>
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <TouchableOpacity 
               style={styles.viewMoreArrow}

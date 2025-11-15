@@ -36,9 +36,9 @@ export async function getAllListings(filters = {}, sort = "newest"){
     }
 
     if(sort === "newest"){
-        query += ` ORDER BY created_at DESC`;
+        query += ` ORDER BY date_posted DESC`;
     }else if (sort === "oldest"){
-        query += ` ORDER BY created_at ASC`;
+        query += ` ORDER BY date_posted ASC`;
     }else if(sort === "price_low_high"){
         query += ` ORDER BY price ASC`;
     }else if(sort === "price_high_low"){

@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
 import { useFonts, Exo_400Regular, Exo_500Medium, Exo_600SemiBold, Exo_700Bold, Exo_400Regular_Italic } from '@expo-google-fonts/exo';
 import { AuthProvider } from './context/authContext';
+import { ListingsProvider } from './context/listingsContext';
 
 
 export default function App() {
@@ -21,10 +22,12 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <View style={{ flex: 1 }}>
-        <StatusBar style="dark" />
-        <AppNavigator />
-      </View>
+      <ListingsProvider>
+        <View style={{ flex: 1 }}>
+          <StatusBar style="dark" />
+          <AppNavigator />
+        </View>
+      </ListingsProvider>
     </AuthProvider>
   );
 }
