@@ -1,60 +1,130 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
+import { fetchListingById } from '../api/listingsApi';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ navigation, route }) {
-  // Get product data from route params or use default
-  const product = route?.params?.product || {
-    id: 1,
-    title: 'Callaway Epic Flash Driver',
-    price: '7,500',
-    location: 'Quezon City',
-    postedDate: 'October 23, 2025',
-    description: 'Used lightly. Excellent condition. Perfect for new players.',
-    category: 'Driver',
-    condition: 'Used',
-    seller: {
-      name: 'hockeyops',
-      avatar: null, // Will use placeholder
-      rating: 4.9,
-      reviewCount: 120,
-    },
-    images: [
-      // Placeholder images - in real app these would be actual image URIs
-      { id: 1, uri: null },
-      { id: 2, uri: null },
-      { id: 3, uri: null },
-      { id: 4, uri: null },
-      { id: 5, uri: null },
-    ],
-    reviews: [
-      {
-        id: 1,
-        heading: 'Loved It!',
-        text: 'The seller is very trustworthy and...',
-        reviewer: {
-          name: 'hockeyops',
-          avatar: null,
-        },
-      },
-    ],
-  };
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const routeProduct = route?.params?.product;
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      // If product data is passed from route, use it
+      if (routeProduct) {
+        // Transform backend data to display format
+        const transformedProduct = {
+          id: routeProduct.listing_id || routeProduct.id,
+          title: routeProduct.title,
+          price: routeProduct.price,
+          location: routeProduct.location || 'Location not specified',
+          postedDate: routeProduct.date_posted 
+            ? new Date(routeProduct.date_posted).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })
+            : 'Date not available',
+          description: routeProduct.description || 'No description provided.',
+          category: routeProduct.category,
+          condition: routeProduct.condition,
+          brand: routeProduct.brand,
+          status: routeProduct.status,
+          seller: {
+            name: routeProduct.seller_name || 'Unknown',
+            avatar: null,
+            rating: 4.9, // TODO: Get from user profile
+            reviewCount: 120, // TODO: Get from user profile
+          },
+          images: routeProduct.photos && Array.isArray(routeProduct.photos) && routeProduct.photos.length > 0
+            ? routeProduct.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
+            : [{ id: 1, uri: null }], // Default placeholder
+          reviews: [], // TODO: Fetch reviews from API
+        };
+        setProduct(transformedProduct);
+        setLoading(false);
+      } else if (route?.params?.listingId) {
+        // If only ID is passed, fetch from API
+        try {
+          const listingData = await fetchListingById(route.params.listingId);
+          const transformedProduct = {
+            id: listingData.listing_id,
+            title: listingData.title,
+            price: listingData.price,
+            location: listingData.location || 'Location not specified',
+            postedDate: listingData.date_posted 
+              ? new Date(listingData.date_posted).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })
+              : 'Date not available',
+            description: listingData.description || 'No description provided.',
+            category: listingData.category,
+            condition: listingData.condition,
+            brand: listingData.brand,
+            status: listingData.status,
+            seller: {
+              name: listingData.seller_name || 'Unknown',
+              avatar: null,
+              rating: 4.9,
+              reviewCount: 120,
+            },
+            images: listingData.photos && Array.isArray(listingData.photos) && listingData.photos.length > 0
+              ? listingData.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
+              : [{ id: 1, uri: null }],
+            reviews: [],
+          };
+          setProduct(transformedProduct);
+        } catch (error) {
+          console.error('Error fetching listing:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Fallback to default
+        setProduct({
+          id: 1,
+          title: 'Callaway Epic Flash Driver',
+          price: '7,500',
+          location: 'Quezon City',
+          postedDate: 'October 23, 2025',
+          description: 'Used lightly. Excellent condition. Perfect for new players.',
+          category: 'Driver',
+          condition: 'Used',
+          seller: {
+            name: 'hockeyops',
+            avatar: null,
+            rating: 4.9,
+            reviewCount: 120,
+          },
+          images: [{ id: 1, uri: null }],
+          reviews: [],
+        });
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [routeProduct, route?.params?.listingId]);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
 
   const handlePreviousImage = () => {
+    if (!product) return;
     setCurrentImageIndex((prev) => 
       prev === 0 ? product.images.length - 1 : prev - 1
     );
   };
 
   const handleNextImage = () => {
+    if (!product) return;
     setCurrentImageIndex((prev) => 
       prev === product.images.length - 1 ? 0 : prev + 1
     );
@@ -63,6 +133,25 @@ export default function ProductDetailScreen({ navigation, route }) {
   const toggleFavorite = () => {
     setIsFavorited(!isFavorited);
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#FF6B35" />
+      </View>
+    );
+  }
+
+  if (!product) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>Product not found</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={{ color: '#FF6B35', marginTop: 10 }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -159,7 +248,9 @@ export default function ProductDetailScreen({ navigation, route }) {
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.productPrice}>₱ {product.price}</Text>
+          <Text style={styles.productPrice}>
+            ₱{typeof product.price === 'number' ? product.price.toLocaleString() : product.price}
+          </Text>
           
           <Text style={styles.locationDate}>
             {product.location} | Posted on {product.postedDate}
@@ -177,6 +268,12 @@ export default function ProductDetailScreen({ navigation, route }) {
           <Text style={styles.sectionTitle}>Details</Text>
           <Text style={styles.detailLine}>Category: {product.category}</Text>
           <Text style={styles.detailLine}>Condition: {product.condition}</Text>
+          {product.brand && (
+            <Text style={styles.detailLine}>Brand: {product.brand}</Text>
+          )}
+          {product.status && (
+            <Text style={styles.detailLine}>Status: {product.status}</Text>
+          )}
         </View>
 
         {/* Seller Information Section */}
@@ -227,18 +324,22 @@ export default function ProductDetailScreen({ navigation, route }) {
         {/* Product Reviews Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Product Reviews</Text>
-          {product.reviews.map((review) => (
-            <View key={review.id} style={styles.reviewCard}>
-              <Text style={styles.reviewHeading}>{review.heading}</Text>
-              <Text style={styles.reviewText}>{review.text}</Text>
-              <View style={styles.reviewerInfo}>
-                <View style={styles.reviewerAvatar}>
-                  <Ionicons name="person" size={16} color="#FF6B35" />
+          {product.reviews && product.reviews.length > 0 ? (
+            product.reviews.map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <Text style={styles.reviewHeading}>{review.heading}</Text>
+                <Text style={styles.reviewText}>{review.text}</Text>
+                <View style={styles.reviewerInfo}>
+                  <View style={styles.reviewerAvatar}>
+                    <Ionicons name="person" size={16} color="#FF6B35" />
+                  </View>
+                  <Text style={styles.reviewerName}>{review.reviewer.name}</Text>
                 </View>
-                <Text style={styles.reviewerName}>{review.reviewer.name}</Text>
               </View>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={styles.emptyReviewsText}>No reviews yet. Be the first to review!</Text>
+          )}
         </View>
 
         {/* Bottom Spacer for Navigation */}

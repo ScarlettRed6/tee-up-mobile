@@ -11,7 +11,12 @@ export async function fetchListings(filters = {}) {
     return response.data.result;
 }
 
+export async function fetchListingById(id) {
+    const response = await api.get(`/listings/${id}`);
+    return response.data.result;
+}
+
 export async function fetchUserListings(userId){
-    const response = await api.get(`/listings?user_d=${userId}`);
+    const response = await api.get(`/listings?user_id=${userId}`);
     return response.data.result;
 }

@@ -7,11 +7,8 @@ export function ListingsProvider({ children }){
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchListings();
-    }, []);
-
     const fetchListings = async () => {
+        setLoading(true);
         try{
             const res = await api.get("/listings");
             console.log(res.data);
@@ -23,8 +20,12 @@ export function ListingsProvider({ children }){
         }
     };
 
+    useEffect(() => {
+        fetchListings();
+    }, []);
+
     return (
-        <ListingsContext.Provider value={{ listings, loading }}>
+        <ListingsContext.Provider value={{ listings, loading, refreshListings: fetchListings }}>
             {children}
         </ListingsContext.Provider>
     );

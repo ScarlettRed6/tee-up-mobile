@@ -11,7 +11,7 @@ export const setRefreshToken = (token) => {
 
 export const getRefreshToken = () => refreshTokenMemory;
 
-const API_BASE_URL = 'http://192.168.254.119:5000/api';
+const API_BASE_URL = 'http://192.168.1.20:5000/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,

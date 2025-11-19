@@ -75,24 +75,36 @@ export default function DiscoverScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Newly Added Listings</Text>
           <View style={styles.productRow}>
-            {/* HERE STARTS WHAT CARL DID */}
-            {listings.slice(0, 3).map(item => (
-              <TouchableOpacity
-                key={item.listing_id}
-                onPress={() => navigation.navigate("ProductDetail", { product: item })}
-                style={{
-                  backgroundColor:'#fff',
-                  padding:12,
-                  marginBottom:10,
-                  borderRadius:8,
-                  elevation:2
-                }}
-              >
-                <Text style={{ fontWeight:'bold', fontSize:16 }}>{item.title}</Text>
-                <Text>₱{item.price}</Text>
-                <Text>{item.category}</Text>
-              </TouchableOpacity>
-            ))}
+            {listings.length > 0 ? (
+              listings.slice(0, 3).map(item => (
+                <TouchableOpacity
+                  key={item.listing_id}
+                  onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                  style={[styles.productCard, { marginRight: 12 }]}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.productImagePlaceholder}>
+                    <Text style={styles.imagePlaceholderText}>
+                      {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+                    </Text>
+                  </View>
+                  <Text style={styles.productName} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
+                  <View style={styles.sellerInfo}>
+                    <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                      <Ionicons name="person" size={12} color="#FF6B35" />
+                    </View>
+                    <Text style={styles.sellerName}>{item.category}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No listings available</Text>
+              </View>
+            )}
             {/* <TouchableOpacity 
               style={[styles.productCard, { marginRight: 12 }]}
               onPress={() => navigateToProductDetail({
@@ -219,95 +231,45 @@ export default function DiscoverScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recommended For You</Text>
           <View style={styles.productRow}>
-            <TouchableOpacity 
-              style={[styles.productCard, { marginRight: 12 }]}
-              onPress={() => navigateToProductDetail({
-                id: 3,
-                title: 'Titleist AP2 Forged 5-PW',
-                price: '9,000',
-                location: 'Makati',
-                postedDate: 'October 15, 2025',
-                description: 'Professional grade forged irons. Well maintained and ready to play.',
-                category: 'Iron',
-                condition: 'Well Used',
-                seller: {
-                  name: 'hockeyops',
-                  rating: 4.9,
-                  reviewCount: 120,
-                },
-                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
-                reviews: [
-                  {
-                    id: 1,
-                    heading: 'Excellent!',
-                    text: 'The seller is very trustworthy and the clubs exceeded expectations.',
-                    reviewer: { name: 'hockeyops' },
-                  },
-                ],
-              })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.productImagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Titleist AP2</Text>
+            {listings.length > 3 ? (
+              listings.slice(3, 5).map(item => (
+                <TouchableOpacity
+                  key={item.listing_id}
+                  onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                  style={[styles.productCard, { marginRight: 12 }]}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.productImagePlaceholder}>
+                    <Text style={styles.imagePlaceholderText}>
+                      {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+                    </Text>
+                  </View>
+                  <Text style={styles.productName} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
+                  <View style={styles.sellerInfo}>
+                    <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                      <Ionicons name="person" size={12} color="#FF6B35" />
+                    </View>
+                    <Text style={styles.sellerName}>{item.category}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>More listings coming soon</Text>
               </View>
-              <Text style={styles.productName}>Titleist AP2 Forged 5-PW</Text>
-              <Text style={styles.productPrice}>₱9,000</Text>
-              <View style={styles.sellerInfo}>
-                <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                  <Ionicons name="person" size={12} color="#FF0000" />
-                </View>
-                <Text style={styles.sellerName}>hockeyops</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.productCard, { marginRight: 12 }]}
-              onPress={() => navigateToProductDetail({
-                id: 4,
-                title: 'Titleist TSR3 9.10 BNEW',
-                price: '26,500',
-                location: 'Quezon City',
-                postedDate: 'October 10, 2025',
-                description: 'Brand new in box. Never used. Still has original packaging.',
-                category: 'Driver',
-                condition: 'New',
-                seller: {
-                  name: 'hockeyops',
-                  rating: 4.9,
-                  reviewCount: 120,
-                },
-                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
-                reviews: [
-                  {
-                    id: 1,
-                    heading: 'Perfect!',
-                    text: 'The seller is very trustworthy and delivered exactly as described.',
-                    reviewer: { name: 'hockeyops' },
-                  },
-                ],
-              })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.productImagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Titleist TSR3</Text>
-              </View>
-              <Text style={styles.productName}>Titleist TSR3 9.10 BNEW</Text>
-              <Text style={styles.productPrice}>₱26,500</Text>
-              <View style={styles.sellerInfo}>
-                <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                  <Ionicons name="person" size={12} color="#FF0000" />
-                </View>
-                <Text style={styles.sellerName}>hockeyops</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.viewMoreArrow}
-              onPress={() => navigation.navigate('RecommendedForYou')}
-            >
-              <Text style={styles.arrowSymbol}>→</Text>
-              <Text style={styles.viewMoreText}>Click to view more</Text>
-            </TouchableOpacity>
+            )}
+            {listings.length > 5 && (
+              <TouchableOpacity 
+                style={styles.viewMoreArrow}
+                onPress={() => navigation.navigate('RecommendedForYou')}
+              >
+                <Text style={styles.arrowSymbol}>→</Text>
+                <Text style={styles.viewMoreText}>Click to view more</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>

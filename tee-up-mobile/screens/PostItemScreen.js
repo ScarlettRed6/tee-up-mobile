@@ -1,18 +1,25 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import React, { useState, useRef, useContext, useEffect } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/PostItemScreen.styles';
+import { createListing } from '../api/listingsApi';
+import { ListingsContext } from '../context/listingsContext';
+import { authContext } from '../context/authContext';
 
 export default function PostItemScreen({ navigation }) {
+  const { refreshListings } = useContext(ListingsContext);
+  const { accessToken } = useContext(authContext);
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState(null);
+  const [brand, setBrand] = useState('');
   const [flex, setFlex] = useState(null);
   const [hand, setHand] = useState(null); // Right Hand, Left Hand
   const [condition, setCondition] = useState(null);
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [photos, setPhotos] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const scrollViewRef = useRef(null);
   const descriptionSectionRef = useRef(null);
@@ -33,25 +40,101 @@ export default function PostItemScreen({ navigation }) {
     (!showFlexSection || flex !== null) &&
     (!showHandSection || hand !== null) &&
     condition !== null &&
-    description.trim().length > 0 &&
-    location.trim().length > 0;
+    description.trim().length > 0;
 
-  const handlePostItem = () => {
-    if (isFormValid) {
-      // Handle post item logic here
-      console.log('Posting item:', {
-        title,
-        price,
-        category,
-        flex,
-        hand,
-        condition,
-        description,
-        location,
-        photos,
-      });
-      // Navigate back or show success message
-      navigation.goBack();
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!accessToken) {
+      Alert.alert(
+        'Authentication Required',
+        'You must be logged in to post a listing.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack()
+          }
+        ]
+      );
+    }
+  }, [accessToken, navigation]);
+
+  const handlePostItem = async () => {
+    if (!isFormValid || isSubmitting) return;
+
+    // Verify user is authenticated before posting
+    if (!accessToken) {
+      Alert.alert(
+        'Authentication Required',
+        'You must be logged in to post a listing. Please log in and try again.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Prepare listing data according to backend expectations
+      // Note: user_id is automatically extracted from JWT token by backend
+      const listingData = {
+        title: title.trim(),
+        description: description.trim(),
+        category: category,
+        brand: brand.trim() || null, // Optional field
+        condition: condition,
+        price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
+        status: 'Available', // Default status
+        photos: photos.length > 0 ? photos : [] // Array of photo URLs or empty array
+      };
+
+      console.log('Posting listing with data:', listingData);
+      console.log('User authenticated:', !!accessToken);
+
+      const newListing = await createListing(listingData);
+      
+      console.log('Listing created successfully:', newListing);
+      console.log('Listing user_id:', newListing.user_id);
+      
+      // Refresh listings to show the new one
+      if (refreshListings) {
+        await refreshListings();
+      }
+
+      Alert.alert(
+        'Success!',
+        'Your listing has been posted successfully.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack()
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error posting listing:', error);
+      console.error('Error response:', error.response?.data);
+      
+      // Handle authentication errors specifically
+      if (error.response?.status === 401) {
+        Alert.alert(
+          'Authentication Error',
+          'Your session has expired. Please log in again.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to post listing. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -146,6 +229,18 @@ export default function PostItemScreen({ navigation }) {
               keyboardType="numeric"
             />
           </View>
+        </View>
+
+        {/* Brand Section (Optional) */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Brand (Optional)</Text>
+          <TextInput
+            value={brand}
+            onChangeText={setBrand}
+            style={styles.input}
+            placeholder="Enter brand name"
+            placeholderTextColor="#999"
+          />
         </View>
 
         {/* Category Section */}
@@ -278,16 +373,16 @@ export default function PostItemScreen({ navigation }) {
           <Text style={styles.charCount}>{description.length}/300</Text>
         </View>
 
-        {/* Location Section */}
+        {/* Location Section (Optional - for future use) */}
         <View ref={locationSectionRef} style={styles.section}>
-          <Text style={styles.label}>Location</Text>
+          <Text style={styles.label}>Location (Optional)</Text>
           <View style={styles.locationInputContainer}>
             <Ionicons name="location-outline" size={20} color="#666" style={styles.locationIcon} />
             <TextInput
               value={location}
               onChangeText={setLocation}
               style={styles.locationInput}
-              placeholder="Enter location"
+              placeholder="Enter location (optional)"
               placeholderTextColor="#999"
               onFocus={handleLocationFocus}
               returnKeyType="done"
@@ -305,21 +400,25 @@ export default function PostItemScreen({ navigation }) {
         <TouchableOpacity
           style={[
             styles.postButton,
-            !isFormValid && styles.postButtonDisabled
+            (!isFormValid || isSubmitting) && styles.postButtonDisabled
           ]}
           onPress={handlePostItem}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isSubmitting}
         >
-          <Text style={[
-            styles.postButtonText,
-            !isFormValid && styles.postButtonTextDisabled
-          ]}>
-            Post Item
-          </Text>
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <Text style={[
+              styles.postButtonText,
+              (!isFormValid || isSubmitting) && styles.postButtonTextDisabled
+            ]}>
+              Post Item
+            </Text>
+          )}
         </TouchableOpacity>
-        {!isFormValid && (
+        {!isFormValid && !isSubmitting && (
           <Text style={styles.disabledHint}>
-            Disabled until fields aren't done
+            Please fill in all required fields
           </Text>
         )}
       </View>

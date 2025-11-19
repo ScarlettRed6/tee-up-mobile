@@ -305,5 +305,13 @@ export default StyleSheet.create({
   bottomSpacer: {
     height: 20,
   },
+  emptyReviewsText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
 });
 

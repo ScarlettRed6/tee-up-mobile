@@ -3,14 +3,28 @@ from "../models/listingsModel.js";
 
 
 export async function createListing(req, res) {
+    // Extract user_id from JWT token (set by verifyToken middleware)
     const user_id = req.user.id;
+    
+    // Verify user_id is present
+    if (!user_id) {
+        return res.status(401).json({ error: "User ID not found in token. Please log in again." });
+    }
+
     const { title, description, category, brand, condition, price, status, photos }
     = req.body;
+    
     try{
+        console.log("Creating listing for user_id:", user_id);
+        console.log("Listing data:", { title, category, condition, price });
+        
         const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photos);
+        
+        console.log("Listing created successfully with ID:", newListing.listing_id, "for user_id:", newListing.user_id);
         
         res.status(201).json({ message: "New listing added successfully!", listing: newListing });
     }catch(err){
+        console.error("Error creating listing:", err);
         res.status(500).json({ error: err.message });
     }
 }

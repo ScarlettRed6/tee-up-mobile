@@ -204,5 +204,15 @@ export default StyleSheet.create({
     color: '#000',
     marginTop: 4,
   },
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#999',
+  },
 });
 
