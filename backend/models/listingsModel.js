@@ -12,23 +12,28 @@ export async function insertListing(user_id, title, description, category, brand
 
 //GETS
 export async function getAllListings(filters = {}, sort = "newest"){
-    let query = `SELECT * FROM listings`;
+    let query = `SELECT 
+        l.*,
+        u.name as seller_name,
+        u.email as seller_email
+    FROM listings l
+    LEFT JOIN users u ON l.user_id = u.id`;
     const values = [];
     const whereClauses = [];
 
     if(filters.category){
         values.push(filters.category);
-        whereClauses.push(`category = $${values.length}`);
+        whereClauses.push(`l.category = $${values.length}`);
     }
 
     if(filters.user_id){
         values.push(filters.user_id);
-        whereClauses.push(`user_id = $${values.length}`);
+        whereClauses.push(`l.user_id = $${values.length}`);
     }
 
     if(filters.status){
         values.push(filters.status);
-        whereClauses.push(`status = $${values.length}`);
+        whereClauses.push(`l.status = $${values.length}`);
     }
 
     if(whereClauses.length > 0){
@@ -36,13 +41,13 @@ export async function getAllListings(filters = {}, sort = "newest"){
     }
 
     if(sort === "newest"){
-        query += ` ORDER BY date_posted DESC`;
+        query += ` ORDER BY l.date_posted DESC`;
     }else if (sort === "oldest"){
-        query += ` ORDER BY date_posted ASC`;
+        query += ` ORDER BY l.date_posted ASC`;
     }else if(sort === "price_low_high"){
-        query += ` ORDER BY price ASC`;
+        query += ` ORDER BY l.price ASC`;
     }else if(sort === "price_high_low"){
-        query += ` ORDER BY price DESC`;
+        query += ` ORDER BY l.price DESC`;
     }
 
     const result = await pool.query(query, values);
@@ -51,8 +56,16 @@ export async function getAllListings(filters = {}, sort = "newest"){
 }
 
 export async function getListingById(id) {
+    // Join with users table to get seller information
     const result = await pool.query(
-        `SELECT * FROM listings WHERE listing_id = $1`, [id]
+        `SELECT 
+            l.*,
+            u.name as seller_name,
+            u.email as seller_email
+        FROM listings l
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE l.listing_id = $1`, 
+        [id]
     );
     return result.rows[0];
 }

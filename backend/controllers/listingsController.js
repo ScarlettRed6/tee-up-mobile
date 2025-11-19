@@ -3,7 +3,7 @@ from "../models/listingsModel.js";
 
 
 export async function createListing(req, res) {
-    // Extract user_id from JWT token (set by verifyToken middleware)
+
     const user_id = req.user.id;
     
     // Verify user_id is present

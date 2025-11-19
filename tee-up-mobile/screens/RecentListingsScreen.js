@@ -31,7 +31,7 @@ export default function RecentListingsScreen({ navigation }) {
           <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
             <Ionicons name="person" size={12} color="#FF6B35" />
           </View>
-          <Text style={styles.sellerName}>{item.category}</Text>
+          <Text style={styles.sellerName}>{item.seller_name || 'Unknown'}</Text>
         </View>
       </TouchableOpacity>
     );
