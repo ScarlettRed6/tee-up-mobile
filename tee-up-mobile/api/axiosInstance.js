@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import  { API_BASE_URL } from '@env';
 
 let refreshTokenMemory = null;
 let isRefreshing = false;
@@ -10,8 +11,6 @@ export const setRefreshToken = (token) => {
 };
 
 export const getRefreshToken = () => refreshTokenMemory;
-
-const API_BASE_URL = 'http://192.168.1.20:5000/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
