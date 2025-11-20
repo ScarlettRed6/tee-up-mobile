@@ -22,3 +22,8 @@ export async function fetchUserListings(userId){
     console.log('fetchUserListings response:', response.data);
     return response.data.result || [];
 }
+
+export const updateListing = async (listingId, listingData) => {
+    const res = await api.put(`/listings/${listingId}`, listingData);
+    return res.data.listing;
+};

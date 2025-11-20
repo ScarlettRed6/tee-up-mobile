@@ -2,13 +2,18 @@ import React, { useState, useRef, useContext, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/PostItemScreen.styles';
-import { createListing } from '../api/listingsApi';
+import { createListing, updateListing } from '../api/listingsApi';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
 
-export default function PostItemScreen({ navigation }) {
+export default function PostItemScreen({ navigation, route }) {
   const { refreshListings } = useContext(ListingsContext);
   const { accessToken } = useContext(authContext);
+  
+  // Check if we're in edit mode
+  const isEditMode = route?.params?.editMode || false;
+  const listingData = route?.params?.listingData || null;
+  
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState(null);
@@ -20,6 +25,21 @@ export default function PostItemScreen({ navigation }) {
   const [location, setLocation] = useState('');
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Populate form with existing data if in edit mode
+  useEffect(() => {
+    if (isEditMode && listingData) {
+      setTitle(listingData.title || '');
+      setPrice(listingData.price?.toString() || '');
+      setCategory(listingData.category || null);
+      setBrand(listingData.brand || '');
+      setFlex(listingData.flex || null);
+      setHand(listingData.hand || null);
+      setCondition(listingData.condition || null);
+      setDescription(listingData.description || '');
+      setPhotos(listingData.photos || []);
+    }
+  }, [isEditMode, listingData]);
   
   const scrollViewRef = useRef(null);
   const descriptionSectionRef = useRef(null);
@@ -76,33 +96,42 @@ export default function PostItemScreen({ navigation }) {
     try {
       // Prepare listing data according to backend expectations
       // Note: user_id is automatically extracted from JWT token by backend
-      const listingData = {
+      const listingDataToSubmit = {
         title: title.trim(),
         description: description.trim(),
         category: category,
         brand: brand.trim() || null, // Optional field
         condition: condition,
         price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
-        status: 'Available', // Default status
+        status: isEditMode ? (listingData?.status || 'Available') : 'Available', // Keep existing status in edit mode
         photos: photos.length > 0 ? photos : [] // Array of photo URLs or empty array
       };
 
-      console.log('Posting listing with data:', listingData);
+      console.log(isEditMode ? 'Updating listing with data:' : 'Posting listing with data:', listingDataToSubmit);
       console.log('User authenticated:', !!accessToken);
 
-      const newListing = await createListing(listingData);
+      let result;
+      if (isEditMode && listingData?.listing_id) {
+        // Update existing listing
+        result = await updateListing(listingData.listing_id, listingDataToSubmit);
+        console.log('Listing updated successfully:', result);
+      } else {
+        // Create new listing
+        result = await createListing(listingDataToSubmit);
+        console.log('Listing created successfully:', result);
+        console.log('Listing user_id:', result.user_id);
+      }
       
-      console.log('Listing created successfully:', newListing);
-      console.log('Listing user_id:', newListing.user_id);
-      
-      // Refresh listings to show the new one
+      // Refresh listings to show the updated/new one
       if (refreshListings) {
         await refreshListings();
       }
 
       Alert.alert(
         'Success!',
-        'Your listing has been posted successfully.',
+        isEditMode 
+          ? 'Your listing has been updated successfully.'
+          : 'Your listing has been posted successfully.',
         [
           {
             text: 'OK',
@@ -111,7 +140,7 @@ export default function PostItemScreen({ navigation }) {
         ]
       );
     } catch (error) {
-      console.error('Error posting listing:', error);
+      console.error(`Error ${isEditMode ? 'updating' : 'posting'} listing:`, error);
       console.error('Error response:', error.response?.data);
       
       // Handle authentication errors specifically
@@ -129,7 +158,7 @@ export default function PostItemScreen({ navigation }) {
       } else {
         Alert.alert(
           'Error',
-          error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to post listing. Please try again.',
+          error.response?.data?.error || error.response?.data?.message || error.message || `Failed to ${isEditMode ? 'update' : 'post'} listing. Please try again.`,
           [{ text: 'OK' }]
         );
       }
@@ -181,7 +210,7 @@ export default function PostItemScreen({ navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color="#222" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Post an Item</Text>
+        <Text style={styles.headerTitle}>{isEditMode ? 'Edit Listing' : 'Post an Item'}</Text>
         <View style={styles.backButton} />
       </View>
 
@@ -412,7 +441,7 @@ export default function PostItemScreen({ navigation }) {
               styles.postButtonText,
               (!isFormValid || isSubmitting) && styles.postButtonTextDisabled
             ]}>
-              Post Item
+              {isEditMode ? 'Update Listing' : 'Post Item'}
             </Text>
           )}
         </TouchableOpacity>

@@ -54,7 +54,7 @@ export default function ProductDetailScreen({ navigation, route }) {
           status: routeProduct.status,
           seller: {
             name: routeProduct.seller_name || 'Unknown',
-            id: routeProduct.user_id, // Include user_id in seller object
+            id: routeProduct.user_id, 
             avatar: null,
             rating: 4.9, // TODO: Get from user profile
             reviewCount: 120, // TODO: Get from user profile
@@ -74,7 +74,7 @@ export default function ProductDetailScreen({ navigation, route }) {
           const transformedProduct = {
             id: listingData.listing_id,
             listing_id: listingData.listing_id,
-            user_id: listingData.user_id, // Include user_id from API response
+            user_id: listingData.user_id, 
             title: listingData.title,
             price: listingData.price,
             location: listingData.location || 'Location not specified',
@@ -175,6 +175,13 @@ export default function ProductDetailScreen({ navigation, route }) {
       </View>
     );
   }
+
+  // Check if this is the current user's own listing
+  const currentUserId = getCurrentUserId();
+  const productUserId = product.user_id || product.seller?.id;
+  const isOwnListing = currentUserId && productUserId 
+    ? currentUserId.toString() === productUserId.toString()
+    : false;
 
   return (
     <View style={styles.container}>
@@ -398,13 +405,15 @@ export default function ProductDetailScreen({ navigation, route }) {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      {/* Floating Chat Icon */}
-      <TouchableOpacity 
-        style={styles.chatButton}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="chatbubbles" size={24} color="#FFF" />
-      </TouchableOpacity>
+      {/* Floating Chat Icon - Only show for other users' listings */}
+      {!isOwnListing && (
+        <TouchableOpacity 
+          style={styles.chatButton}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="chatbubbles" size={24} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>

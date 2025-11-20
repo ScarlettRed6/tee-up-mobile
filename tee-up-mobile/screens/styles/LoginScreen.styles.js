@@ -120,5 +120,26 @@ export default StyleSheet.create({
     color: '#000',
     fontSize: 13,
   },
+  inputError: {
+    color: '#FF6B35',
+  },
+  underlineError: {
+    backgroundColor: '#FF6B35',
+    opacity: 1,
+  },
+  errorText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#FF6B35',
+    marginTop: 4,
+  },
+  errorContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+  },
 });
 

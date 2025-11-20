@@ -295,6 +295,31 @@ export default function ProfileScreen({ navigation, route }) {
     // TODO: Navigate to analytics screen when implemented
   };
 
+  const handleEditListing = (item) => {
+    // Navigate to PostItemScreen with listing data for editing
+    setOpenDropdownId(null); // Close dropdown
+    
+    // Prepare listing data for editing
+    const listingData = item.listingData || {
+      listing_id: item.id,
+      title: item.name,
+      description: item.listingData?.description || '',
+      category: item.category,
+      brand: item.listingData?.brand || '',
+      condition: item.condition,
+      price: item.priceValue || parseFloat(item.price.replace('₱', '').replace(/,/g, '')) || 0,
+      status: item.status,
+      photos: item.listingData?.photos || [],
+      flex: item.flex,
+      hand: item.hand,
+    };
+    
+    navigation.navigate('PostItem', { 
+      editMode: true,
+      listingData: listingData 
+    });
+  };
+
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
     const isDropdownOpen = openDropdownId === item.id;
@@ -359,6 +384,14 @@ export default function ProfileScreen({ navigation, route }) {
         {/* Dropdown menu */}
         {isDropdownOpen && (
           <View style={styles.dropdownMenu}>
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => handleEditListing(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="create-outline" size={18} color="#000" style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Edit Listing</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => handleViewAnalytics(item.id)}

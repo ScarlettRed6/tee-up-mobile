@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, KeyboardAvoidingView, Platform, Keyboard, Alert } from 'react-native';
 import styles from './styles/LoginScreen.styles';
 import { authContext } from '../context/authContext';
 
@@ -7,19 +7,88 @@ export default function LoginScreen({ navigation }) {
   const { login } = useContext(authContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Email validation helper
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Email validation
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!isValidEmail(email.trim())) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const isFormValid = email.trim().length > 0 && password.trim().length > 0;
 
   const handleLogin = async () => {
-    if (!isFormValid) return;
-
-    try{
-      await login(email, password);
-      console.log("Logged in!");
-    }catch(err){
-      console.log("Login failed:", err.message);
+    // Clear previous errors
+    setErrors({});
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
     }
 
+    if (!isFormValid) {
+      setErrors({
+        general: 'Please fill in all fields'
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try{
+      await login(email.trim(), password);
+      console.log("Logged in!");
+    }catch(err){
+      console.log("Login failed:", err);
+      
+      // Handle different error types
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      // Set specific field errors if available
+      if (errorMessage.toLowerCase().includes('user') || errorMessage.toLowerCase().includes('not found')) {
+        setErrors({ email: 'User not found. Please check your email.' });
+      } else if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('invalid')) {
+        setErrors({ password: 'Invalid password. Please try again.' });
+      } else {
+        setErrors({ general: errorMessage });
+      }
+
+      Alert.alert(
+        'Login Failed',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,30 +111,56 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Email/Username</Text>
             <TextInput
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                // Clear error when user starts typing
+                if (errors.email) {
+                  setErrors(prev => ({ ...prev, email: null }));
+                }
+              }}
               placeholder=""
-              style={styles.input}
+              style={[styles.input, errors.email && styles.inputError]}
               placeholderTextColor="#666"
+              keyboardType="email-address"
+              autoCapitalize="none"
               returnKeyType="next"
               blurOnSubmit={false}
             />
-            <View style={styles.underline} />
+            <View style={[styles.underline, errors.email && styles.underlineError]} />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
           </View>
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Password</Text>
             <TextInput
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                // Clear error when user starts typing
+                if (errors.password) {
+                  setErrors(prev => ({ ...prev, password: null }));
+                }
+              }}
               placeholder=""
               secureTextEntry
-              style={styles.input}
+              style={[styles.input, errors.password && styles.inputError]}
               placeholderTextColor="#666"
               returnKeyType="done"
-              onSubmitEditing={() => Keyboard.dismiss()}
+              onSubmitEditing={handleLogin}
             />
-            <View style={styles.underline} />
+            <View style={[styles.underline, errors.password && styles.underlineError]} />
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
           </View>
+
+          {errors.general && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errors.general}</Text>
+            </View>
+          )}
 
           <View style={styles.rowBetween}>
             <View style={styles.rowLeft}>
@@ -79,11 +174,13 @@ export default function LoginScreen({ navigation }) {
 
           <TouchableOpacity 
             activeOpacity={0.8} 
-            style={[styles.primaryButton, !isFormValid && styles.primaryButtonDisabled]}
+            style={[styles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
             onPress={handleLogin}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
           >
-            <Text style={[styles.primaryButtonText, !isFormValid && styles.primaryButtonTextDisabled]}>Log in</Text>
+            <Text style={[styles.primaryButtonText, (!isFormValid || isSubmitting) && styles.primaryButtonTextDisabled]}>
+              {isSubmitting ? 'Logging in...' : 'Log in'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -32,7 +32,7 @@ export async function login(req, res){
     const { email, password } = req.body;
     try{
         const user = await findUserByEmail(email);
-        if(!user) return res.status(400).json({message: "User is not founding"});
+        if(!user) return res.status(400).json({message: "User not found"});
 
         const validPass = await bcrypt.compare(password, user.password);
         if(!validPass) {
