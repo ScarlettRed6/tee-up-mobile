@@ -1,17 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { fetchListingById } from '../api/listingsApi';
+import { authContext } from '../context/authContext';
+import jwtDecode from 'jwt-decode';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ navigation, route }) {
+  const { accessToken } = useContext(authContext);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const routeProduct = route?.params?.product;
+  
+  // Get current user ID from token
+  const getCurrentUserId = () => {
+    if (!accessToken) return null;
+    try {
+      const decoded = jwtDecode(accessToken);
+      return decoded.id;
+    } catch (err) {
+      console.error('Error decoding token:', err);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -20,6 +35,8 @@ export default function ProductDetailScreen({ navigation, route }) {
         // Transform backend data to display format
         const transformedProduct = {
           id: routeProduct.listing_id || routeProduct.id,
+          listing_id: routeProduct.listing_id || routeProduct.id,
+          user_id: routeProduct.user_id, // Store user_id for navigation
           title: routeProduct.title,
           price: routeProduct.price,
           location: routeProduct.location || 'Location not specified',
@@ -37,10 +54,12 @@ export default function ProductDetailScreen({ navigation, route }) {
           status: routeProduct.status,
           seller: {
             name: routeProduct.seller_name || 'Unknown',
+            id: routeProduct.user_id, // Include user_id in seller object
             avatar: null,
             rating: 4.9, // TODO: Get from user profile
             reviewCount: 120, // TODO: Get from user profile
           },
+          seller_name: routeProduct.seller_name,
           images: routeProduct.photos && Array.isArray(routeProduct.photos) && routeProduct.photos.length > 0
             ? routeProduct.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
             : [{ id: 1, uri: null }], // Default placeholder
@@ -54,6 +73,8 @@ export default function ProductDetailScreen({ navigation, route }) {
           const listingData = await fetchListingById(route.params.listingId);
           const transformedProduct = {
             id: listingData.listing_id,
+            listing_id: listingData.listing_id,
+            user_id: listingData.user_id, // Include user_id from API response
             title: listingData.title,
             price: listingData.price,
             location: listingData.location || 'Location not specified',
@@ -71,10 +92,12 @@ export default function ProductDetailScreen({ navigation, route }) {
             status: listingData.status,
             seller: {
               name: listingData.seller_name || 'Unknown',
+              id: listingData.user_id, // Include user_id in seller object
               avatar: null,
               rating: 4.9,
               reviewCount: 120,
             },
+            seller_name: listingData.seller_name,
             images: listingData.photos && Array.isArray(listingData.photos) && listingData.photos.length > 0
               ? listingData.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
               : [{ id: 1, uri: null }],
@@ -282,25 +305,54 @@ export default function ProductDetailScreen({ navigation, route }) {
           <TouchableOpacity
             style={styles.sellerInfoContainer}
             onPress={() => {
-              // Check if the seller is the current logged-in user
-              if (isCurrentUser(product.seller.name)) {
+              const currentUserId = getCurrentUserId();
+              const productUserId = product.user_id || product.seller?.id;
+              
+              // Check if the seller is the current logged-in user by comparing user IDs
+              // Also check by username as fallback for backward compatibility
+              const isOwnListing = currentUserId && productUserId 
+                ? currentUserId.toString() === productUserId.toString()
+                : isCurrentUser(product.seller.name);
+              
+              if (isOwnListing) {
                 // Navigate to own profile page
                 navigateToBottomNav(navigation, 'Profile');
               } else {
                 // Navigate to other user's profile page
-                navigation.navigate('UserProfile', {
-                  user: {
-                    username: product.seller.name,
-                    rating: product.seller.rating,
-                    reviewCount: product.seller.reviewCount,
-                    avatarColor: '#FF6B35', // Default color, can be passed from product
-                    activeListings: 8, // This would come from API
-                    followers: '3.2K',
-                    itemsSold: '2.1K',
-                    reputation: product.seller.rating,
-                    bio: 'Golf enthusiast and club collector. Always looking for the perfect set!',
-                  }
-                });
+                // Pass userId if available, otherwise fall back to user object
+                if (product.user_id || product.seller?.id) {
+                  navigation.navigate('UserProfile', {
+                    userId: product.user_id || product.seller?.id,
+                    // Also pass user object for backward compatibility and immediate display
+                    user: {
+                      id: product.user_id || product.seller?.id,
+                      username: product.seller.name,
+                      rating: product.seller.rating,
+                      reviewCount: product.seller.reviewCount,
+                      avatarColor: '#FF6B35',
+                      activeListings: 0, // Will be fetched from API
+                      followers: '0',
+                      itemsSold: '0',
+                      reputation: product.seller.rating,
+                      bio: 'Golf enthusiast and club collector.',
+                    }
+                  });
+                } else {
+                  // Fallback: navigate with user object only (backward compatibility)
+                  navigation.navigate('UserProfile', {
+                    user: {
+                      username: product.seller.name,
+                      rating: product.seller.rating,
+                      reviewCount: product.seller.reviewCount,
+                      avatarColor: '#FF6B35',
+                      activeListings: 0,
+                      followers: '0',
+                      itemsSold: '0',
+                      reputation: product.seller.rating,
+                      bio: 'Golf enthusiast and club collector.',
+                    }
+                  });
+                }
               }
             }}
             activeOpacity={0.7}

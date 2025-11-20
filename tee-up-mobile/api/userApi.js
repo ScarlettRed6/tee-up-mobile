@@ -4,3 +4,8 @@ export const getUserProfile = async () => {
     const res = await api.get("/user/profile");
     return res.data;
 };
+
+export const getUserById = async (userId) => {
+    const res = await api.get(`/user/${userId}`);
+    return res.data;
+};

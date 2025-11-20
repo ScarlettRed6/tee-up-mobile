@@ -17,6 +17,8 @@ export async function fetchListingById(id) {
 }
 
 export async function fetchUserListings(userId){
+    console.log('fetchUserListings called with userId:', userId);
     const response = await api.get(`/listings?user_id=${userId}`);
-    return response.data.result;
+    console.log('fetchUserListings response:', response.data);
+    return response.data.result || [];
 }

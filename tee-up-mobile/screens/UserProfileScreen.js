@@ -1,26 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
+import { getUserById } from '../api/userApi';
+import { fetchUserListings } from '../api/listingsApi';
 
 export default function UserProfileScreen({ navigation, route }) {
-  // Get user data from route params
-  const user = route?.params?.user || {
-    username: 'issa123',
-    rating: 4.9,
-    reviewCount: 120,
-    avatarColor: '#333',
-    activeListings: 8,
-    followers: '3.2K',
-    itemsSold: '2.1K',
-    reputation: 4.8,
-    bio: 'Golf enthusiast and club collector. Always looking for the perfect set!',
-  };
+  // Get user ID or user object from route params
+  const userIdFromParams = route?.params?.userId;
+  const userFromParams = route?.params?.user;
 
   // Get filters from route params if navigating from filter screen
   const initialFilters = route?.params?.filters || {};
+  
+  const [user, setUser] = useState(userFromParams || null);
+  const [userListings, setUserListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery || '');
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
@@ -30,114 +28,234 @@ export default function UserProfileScreen({ navigation, route }) {
   const [sortBy, setSortBy] = useState('recentlyListed');
   const [showSortModal, setShowSortModal] = useState(false);
 
-  // Sample products data for this user - in real app, this would come from API
-  const allProducts = [
-    { 
-      id: 1,
-      name: 'PING G30 9.5 Slightly Used', 
-      price: '₱7,500', 
-      priceValue: 7500,
-      seller: user.username, 
-      sellerColor: user.avatarColor,
-      category: 'Driver',
-      condition: 'Slightly Used',
-      flex: 'Stiff',
-      hand: 'Right Hand',
-      listedDate: new Date('2025-10-18'),
-    },
-    { 
-      id: 2,
-      name: 'Titleist AP2 Forged 5-PW', 
-      price: '₱9,000', 
-      priceValue: 9000,
-      seller: user.username, 
-      sellerColor: user.avatarColor,
-      category: 'Iron',
-      condition: 'Well Used',
-      flex: 'Regular',
-      hand: 'Left Hand',
-      listedDate: new Date('2025-10-15'),
-    },
-    { 
-      id: 3,
-      name: 'TaylorMade SIM Max 5 Wood',
-      price: '₱12,000',
-      priceValue: 12000,
-      seller: user.username,
-      sellerColor: user.avatarColor,
-      category: 'Woods',
-      condition: 'Slightly Used',
-      flex: 'Stiff',
-      hand: 'Right Hand',
-      listedDate: new Date('2025-10-12'),
-    },
-    {
-      id: 4,
-      name: 'Callaway Epic Flash Driver',
-      price: '₱15,000',
-      priceValue: 15000,
-      seller: user.username,
-      sellerColor: user.avatarColor,
-      category: 'Driver',
-      condition: 'New',
-      flex: 'Regular',
-      hand: 'Left Hand',
-      listedDate: new Date('2025-10-10'),
-    },
-  ];
+  // Fetch user data and listings
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        let userData = userFromParams;
+        let targetUserId = userIdFromParams;
+
+        console.log('UserProfileScreen - Route params:', { userIdFromParams, userFromParams });
+
+        // Priority: userIdFromParams > userFromParams.id > userFromParams (fallback)
+        // If userId is provided, fetch user data from API
+        if (userIdFromParams) {
+          console.log('Fetching user by ID:', userIdFromParams);
+          const fetchedUser = await getUserById(userIdFromParams);
+          console.log('Fetched user:', fetchedUser);
+          userData = {
+            id: fetchedUser.id,
+            username: fetchedUser.name || fetchedUser.email?.split('@')[0] || 'User',
+            name: fetchedUser.name,
+            email: fetchedUser.email,
+            avatarColor: '#FF6B35', // Default color, can be enhanced later
+            rating: 4.5, // Default, can be fetched from reviews later
+            reviewCount: 0, // Default, can be fetched from reviews later
+            activeListings: 0, // Will be updated after fetching listings
+            followers: '0', // Default, can be fetched later
+            itemsSold: '0', // Default, can be fetched later
+            reputation: 4.5, // Default, can be calculated from reviews later
+            bio: 'Golf enthusiast and club collector.', // Default, can be added to user model later
+          };
+          targetUserId = fetchedUser.id;
+        } else if (userFromParams?.id) {
+          // Use ID from user object if provided
+          console.log('Using user ID from user object:', userFromParams.id);
+          targetUserId = userFromParams.id;
+          // If user object doesn't have all required fields, fetch from API
+          if (!userFromParams.username && !userFromParams.name) {
+            try {
+              const fetchedUser = await getUserById(userFromParams.id);
+              userData = {
+                ...userFromParams,
+                id: fetchedUser.id,
+                username: fetchedUser.name || userFromParams.username || 'User',
+                name: fetchedUser.name,
+                email: fetchedUser.email,
+              };
+            } catch (err) {
+              console.warn('Could not fetch user details, using provided user object');
+            }
+          }
+        } else if (userFromParams) {
+          // If user object is passed but no ID, try to extract from username/name
+          // This is a fallback for backward compatibility
+          console.warn('UserProfileScreen: User object passed without ID, listings may not load correctly');
+          console.log('User object:', userFromParams);
+        }
+
+        // Set user data (use provided user object or fetched data)
+        if (userData) {
+          setUser(userData);
+        } else {
+          // Fallback to default user if nothing is provided
+          setUser({
+            username: 'Unknown User',
+            avatarColor: '#FF6B35',
+            activeListings: 0,
+            followers: '0',
+            itemsSold: '0',
+            reputation: 0,
+            bio: '',
+          });
+        }
+
+        // Fetch user listings if we have a user ID
+        if (targetUserId) {
+          console.log('Fetching listings for user ID:', targetUserId);
+          const listings = await fetchUserListings(targetUserId);
+          console.log('Fetched listings:', listings);
+          console.log('Number of listings:', listings?.length || 0);
+          
+          // Check if listings is an array
+          if (Array.isArray(listings)) {
+            // Transform listings to match expected format
+            const transformedListings = listings.map(listing => {
+              // Ensure price is a number for sorting
+              const priceNum = typeof listing.price === 'string' 
+                ? parseFloat(listing.price.replace(/[^0-9.]/g, '')) 
+                : parseFloat(listing.price) || 0;
+              
+              return {
+                id: listing.listing_id,
+                name: listing.title,
+                price: `₱${priceNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                priceValue: priceNum, // Ensure it's a number
+                seller: userData?.username || userData?.name || listing.seller_name || 'Unknown',
+                sellerColor: userData?.avatarColor || '#FF6B35',
+                category: listing.category,
+                condition: listing.condition,
+                flex: listing.flex || null,
+                hand: listing.hand || null,
+                listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
+                description: listing.description,
+                brand: listing.brand,
+                status: listing.status,
+              };
+            });
+
+            console.log('Transformed listings:', transformedListings);
+            setUserListings(transformedListings);
+            
+            // Update active listings count
+            if (userData) {
+              setUser(prev => ({
+                ...prev,
+                activeListings: transformedListings.filter(l => l.status === 'Available' || l.status === 'available').length,
+              }));
+            }
+          } else {
+            console.warn('Listings is not an array:', listings);
+            setUserListings([]);
+          }
+        } else {
+          console.warn('No targetUserId available, cannot fetch listings');
+          setUserListings([]);
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        console.error('Error details:', err.response?.data || err.message);
+        setError(err.message || 'Failed to load user profile');
+        // Don't show alert immediately, let user see the error state
+        // Alert.alert(
+        //   'Error',
+        //   err.response?.data?.message || err.message || 'Failed to load user profile',
+        //   [{ text: 'OK' }]
+        // );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userIdFromParams, userFromParams?.id]);
 
   // Filter and sort products
   const filteredAndSortedProducts = React.useMemo(() => {
-    let filtered = [...allProducts];
+    console.log('Filtering products - userListings length:', userListings.length);
+    console.log('Filtering products - userListings:', userListings);
+    console.log('Current filters:', { searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy });
+    
+    let filtered = [...userListings];
 
     // Search filter
     if (searchQuery.trim().length > 0) {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      console.log('After search filter:', filtered.length);
     }
 
     // Category filter
     if (selectedCategory && selectedCategory !== 'All') {
       filtered = filtered.filter(product => product.category === selectedCategory);
+      console.log('After category filter:', filtered.length, 'category:', selectedCategory);
     }
 
     // Condition filter
     if (selectedCondition) {
       filtered = filtered.filter(product => product.condition === selectedCondition);
+      console.log('After condition filter:', filtered.length);
     }
 
     // Flex filter
     if (selectedFlex) {
       filtered = filtered.filter(product => product.flex === selectedFlex);
+      console.log('After flex filter:', filtered.length);
     }
 
     // Hand filter
     if (selectedHand) {
       filtered = filtered.filter(product => product.hand === selectedHand);
+      console.log('After hand filter:', filtered.length);
     }
 
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
-        filtered.sort((a, b) => b.listedDate - a.listedDate);
+        filtered.sort((a, b) => {
+          const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
+          const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
+          return dateB - dateA;
+        });
         break;
       case 'oldestListing':
-        filtered.sort((a, b) => a.listedDate - b.listedDate);
+        filtered.sort((a, b) => {
+          const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
+          const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
+          return dateA - dateB;
+        });
         break;
       case 'mostExpensive':
-        filtered.sort((a, b) => b.priceValue - a.priceValue);
+        filtered.sort((a, b) => {
+          const priceA = typeof a.priceValue === 'number' ? a.priceValue : parseFloat(a.priceValue) || 0;
+          const priceB = typeof b.priceValue === 'number' ? b.priceValue : parseFloat(b.priceValue) || 0;
+          return priceB - priceA;
+        });
         break;
       case 'cheapest':
-        filtered.sort((a, b) => a.priceValue - b.priceValue);
+        filtered.sort((a, b) => {
+          const priceA = typeof a.priceValue === 'number' ? a.priceValue : parseFloat(a.priceValue) || 0;
+          const priceB = typeof b.priceValue === 'number' ? b.priceValue : parseFloat(b.priceValue) || 0;
+          return priceA - priceB;
+        });
         break;
       default:
-        filtered.sort((a, b) => b.listedDate - a.listedDate);
+        filtered.sort((a, b) => {
+          const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
+          const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
+          return dateB - dateA;
+        });
         break;
     }
 
+    console.log('Final filtered products:', filtered.length);
+    console.log('Final filtered products data:', filtered);
     return filtered;
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy]);
+  }, [userListings, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -147,38 +265,39 @@ export default function UserProfileScreen({ navigation, route }) {
         style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
         onPress={() => navigation.navigate('ProductDetail', {
           product: {
+            listing_id: item.id,
             id: item.id,
             title: item.name,
-            price: item.price.replace('₱', '').replace(',', ''),
-            location: 'Quezon City',
-            postedDate: 'October 20, 2025',
-            description: 'Excellent condition. Perfect for players looking to upgrade.',
+            price: item.priceValue || parseFloat(item.price.replace('₱', '').replace(/,/g, '')) || 0,
+            location: 'Quezon City', // Can be added to listing model later
+            postedDate: item.listedDate ? item.listedDate.toISOString() : new Date().toISOString(),
+            description: item.description || 'No description available',
             category: item.category,
             condition: item.condition,
+            brand: item.brand,
             seller: {
               name: item.seller,
-              rating: user.rating,
-              reviewCount: user.reviewCount,
+              rating: user?.rating || 4.5,
+              reviewCount: user?.reviewCount || 0,
             },
-            images: [{ id: 1 }, { id: 2 }, { id: 3 }],
+            seller_name: item.seller,
+            images: [{ id: 1 }, { id: 2 }, { id: 3 }], // Placeholder, can be enhanced with actual photos
             reviews: [],
+            status: item.status,
           }
         })}
         activeOpacity={0.8}
       >
         <View style={styles.productImagePlaceholder}>
           <Text style={styles.imagePlaceholderText}>
-            {item.name.includes('PING') ? 'PING G30' :
-             item.name.includes('AP2') ? 'Titleist AP2' : 
-             item.name.includes('TaylorMade') ? 'TaylorMade SIM' :
-             item.name.includes('Callaway') ? 'Callaway Epic' : 'Product'}
+            {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
           </Text>
         </View>
-        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.productPrice}>{item.price}</Text>
         <View style={styles.sellerInfo}>
           <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-            <Ionicons name="person" size={12} color={item.sellerColor} />
+            <Ionicons name="person" size={12} color={item.sellerColor || user?.avatarColor || '#FF6B35'} />
           </View>
           <Text style={styles.sellerName}>@{item.seller}</Text>
         </View>
@@ -247,6 +366,56 @@ export default function UserProfileScreen({ navigation, route }) {
     }
     return stars;
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+          <Text style={{ marginTop: 16, color: '#666' }}>Loading profile...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error || !user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Ionicons name="alert-circle-outline" size={48} color="#FF6B35" />
+          <Text style={{ marginTop: 16, color: '#666', textAlign: 'center' }}>
+            {error || 'User not found'}
+          </Text>
+          <TouchableOpacity
+            style={{ marginTop: 20, padding: 12, backgroundColor: '#FF6B35', borderRadius: 8 }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '600' }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -334,7 +503,15 @@ export default function UserProfileScreen({ navigation, route }) {
               filteredAndSortedProducts.map((product, index) => renderProductCard(product, index))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No products found</Text>
+                <Ionicons name="cube-outline" size={48} color="#999" style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyStateText}>
+                  {loading ? 'Loading listings...' : 
+                   searchQuery || selectedCategory !== 'All' || selectedCondition || selectedFlex || selectedHand
+                     ? 'No products match your filters' 
+                     : userListings.length === 0 
+                       ? 'This user has no listings yet' 
+                       : 'No products found'}
+                </Text>
               </View>
             )}
           </View>
@@ -423,4 +600,3 @@ export default function UserProfileScreen({ navigation, route }) {
     </View>
   );
 }
-
