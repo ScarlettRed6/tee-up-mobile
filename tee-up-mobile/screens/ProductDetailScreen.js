@@ -5,6 +5,7 @@ import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { fetchListingById } from '../api/listingsApi';
+import { findConversation } from '../api/chatApi';
 import { authContext } from '../context/authContext';
 import jwtDecode from 'jwt-decode';
 
@@ -410,6 +411,68 @@ export default function ProductDetailScreen({ navigation, route }) {
         <TouchableOpacity 
           style={styles.chatButton}
           activeOpacity={0.8}
+          onPress={async () => {
+            try {
+              const currentUserId = getCurrentUserId();
+              const sellerId = product.user_id || product.seller?.id;
+              const listingId = product.listing_id || product.id;
+
+              if (!currentUserId || !sellerId || !listingId) {
+                console.error('Missing required IDs for conversation check');
+                return;
+              }
+
+              // Check if conversation already exists for THIS SPECIFIC listing
+              console.log('Checking for conversation:', { currentUserId, sellerId, listingId });
+              const existingConversation = await findConversation(sellerId, listingId);
+              console.log('Existing conversation result:', existingConversation ? 'Found' : 'Not found');
+
+              if (existingConversation && existingConversation.listing_id === parseInt(listingId)) {
+                // Navigate directly to existing conversation for THIS listing
+                console.log('Navigating to existing conversation:', existingConversation.conversation_id);
+                navigation.navigate('ChatDetail', {
+                  conversationId: existingConversation.conversation_id,
+                  chat: {
+                    conversation_id: existingConversation.conversation_id,
+                    productName: product.title,
+                    username: product.seller_name || product.seller?.name,
+                    otherUserId: sellerId,
+                    listingId: listingId,
+                    product: {
+                      name: product.title,
+                      price: product.price,
+                    }
+                  }
+                });
+              } else {
+                // No conversation exists for this listing - create new one
+                console.log('No existing conversation for this listing, creating new one');
+                // Navigate to InboxScreen with listing info
+                // Conversation will be created when first message is sent
+                navigation.navigate('Inbox', {
+                  listingInfo: {
+                    listingId: listingId,
+                    sellerId: sellerId,
+                    listingTitle: product.title,
+                    listingPrice: product.price,
+                    sellerName: product.seller_name || product.seller?.name,
+                  }
+                });
+              }
+            } catch (error) {
+              console.error('Error checking for conversation:', error);
+              // Fallback: navigate to InboxScreen
+              navigation.navigate('Inbox', {
+                listingInfo: {
+                  listingId: product.listing_id || product.id,
+                  sellerId: product.user_id || product.seller?.id,
+                  listingTitle: product.title,
+                  listingPrice: product.price,
+                  sellerName: product.seller_name || product.seller?.name,
+                }
+              });
+            }
+          }}
         >
           <Ionicons name="chatbubbles" size={24} color="#FFF" />
         </TouchableOpacity>

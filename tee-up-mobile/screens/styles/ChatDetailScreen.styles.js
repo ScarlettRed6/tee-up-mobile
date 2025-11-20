@@ -79,20 +79,23 @@ export default StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 12,
-    paddingBottom: 100,
+    paddingBottom: 20, // Reduced padding, keyboard will handle spacing
   },
   messageWrapper: {
     flexDirection: 'row',
     marginBottom: 10,
     alignItems: 'flex-end',
+    width: '100%',
   },
   messageWrapperLeft: {
     justifyContent: 'flex-start',
+    alignSelf: 'flex-start',
   },
   messageWrapperRight: {
     justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
   },
   avatar: {
     width: 32,
@@ -101,12 +104,14 @@ export default StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: 6,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    flexShrink: 0, // Prevent avatar from shrinking
   },
   messageBubbleContainer: {
     maxWidth: '70%',
+    minWidth: 60,
   },
   messageBubbleContainerLeft: {
     alignItems: 'flex-start',
@@ -138,11 +143,11 @@ export default StyleSheet.create({
     elevation: 2,
   },
   messageBubbleOther: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#F9F0E5', // Colored box for responder (other user)
     borderTopLeftRadius: 4,
   },
   messageBubbleMe: {
-    backgroundColor: '#F9F0E5',
+    backgroundColor: '#FFF', // White box for POV user (logged-in user)
     borderTopRightRadius: 4,
   },
   messageText: {
