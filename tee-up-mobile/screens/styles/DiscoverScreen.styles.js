@@ -74,6 +74,13 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
+  horizontalScrollView: {
+    marginHorizontal: -20, // Offset the section padding
+  },
+  horizontalScrollContent: {
+    paddingHorizontal: 20, // Restore padding for content
+    paddingRight: 20,
+  },
   productCard: {
     backgroundColor: '#FFF',
     borderRadius: 16,
@@ -143,6 +150,43 @@ export default StyleSheet.create({
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
     color: '#999',
+    textAlign: 'center',
+  },
+  viewMoreCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 12,
+    width: 140,
+    minHeight: 200,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+    borderStyle: 'dashed',
+    marginRight: 20,
+  },
+  viewMoreContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  viewMoreTitle: {
+    fontFamily: 'Exo_700Bold',
+    fontSize: 14,
+    color: '#FF6B35',
+    marginTop: 12,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  viewMoreSubtitle: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 10,
+    color: '#666',
     textAlign: 'center',
   },
   categoriesRow: {

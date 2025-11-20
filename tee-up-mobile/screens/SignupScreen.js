@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import styles from './styles/SignupScreen.styles';
 import { authContext } from '../context/authContext';
 
@@ -32,8 +32,17 @@ export default function SignupScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 120 }} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text style={styles.title}>Create an account</Text>
 
         <View style={styles.fieldGroup}>
@@ -41,7 +50,9 @@ export default function SignupScreen({ navigation }) {
           <TextInput 
             value={name}
             onChangeText={setName}
-            style={styles.input} 
+            style={styles.input}
+            returnKeyType="next"
+            blurOnSubmit={false}
           />
           <View style={styles.underline} />
         </View>
@@ -51,7 +62,9 @@ export default function SignupScreen({ navigation }) {
           <TextInput 
             value={email}
             onChangeText={setEmail}
-            keyboardType="email-address" 
+            keyboardType="email-address"
+            returnKeyType="next"
+            blurOnSubmit={false}
             style={styles.input} 
           />
           <View style={styles.underline} />
@@ -62,7 +75,9 @@ export default function SignupScreen({ navigation }) {
           <TextInput 
             value={password}
             onChangeText={setPassword}
-            secureTextEntry 
+            secureTextEntry
+            returnKeyType="next"
+            blurOnSubmit={false}
             style={styles.input} 
           />
           <View style={styles.underline} />
@@ -73,7 +88,9 @@ export default function SignupScreen({ navigation }) {
           <TextInput 
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            secureTextEntry 
+            secureTextEntry
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
             style={styles.input} 
           />
           <View style={styles.underline} />
@@ -91,10 +108,13 @@ export default function SignupScreen({ navigation }) {
 
       <View style={styles.bottomRow}>
         <Text style={styles.bottomMuted}>Already have an account? </Text>
-        <Pressable onPress={() => navigation.navigate('Login')}>
+        <Pressable onPress={() => {
+          Keyboard.dismiss();
+          navigation.navigate('Login');
+        }}>
           <Text style={styles.bottomLink}>Login</Text>
         </Pressable>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

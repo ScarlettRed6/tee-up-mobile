@@ -7,6 +7,10 @@ export default StyleSheet.create({
     paddingTop: 64,
     paddingHorizontal: 24,
   },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 120,
+  },
   contentWrap: {
     flexGrow: 1,
   },
