@@ -18,7 +18,7 @@ export const loginUser = async (creds) => {
 
         return res.data;
     } catch (err) {
-        console.log("Login error:", err.response?.data || err.message);
+        console.log("Login error(AUTH API):", err.response?.data || err.message);
         throw err;
     }
 };
