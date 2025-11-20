@@ -1,4 +1,4 @@
-import { storeMessage } from "../models/chatModel";
+import { storeMessage } from "../models/chatModel.js";
 
 export async function saveSentMessage(conversation_id, senderId, message){
     try{

@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { saveSentMessage } from "../controllers/chatController";
+import { saveSentMessage } from "../controllers/chatController.js";
 
 
 export function initSocketHandlers(io){
