@@ -56,7 +56,6 @@ export async function getAllListings(filters = {}, sort = "newest"){
 }
 
 export async function getListingById(id) {
-    // Join with users table to get seller information
     const result = await pool.query(
         `SELECT 
             l.*,

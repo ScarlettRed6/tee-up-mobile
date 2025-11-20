@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProfileScreen.styles';
@@ -6,11 +7,14 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { authContext } from '../context/authContext';
 import { getUserProfile } from '../api/userApi';
+import { fetchUserListings } from '../api/listingsApi';
+import jwtDecode from 'jwt-decode';
 
 export default function ProfileScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [listingsLoading, setListingsLoading] = useState(true);
 
   useEffect(() => {
     if(!accessToken) return;
@@ -27,6 +31,58 @@ export default function ProfileScreen({ navigation, route }) {
     };
     fetchProfile();
   }, [accessToken]);
+
+  // Fetch user's own listings
+  const fetchUserOwnListings = useCallback(async () => {
+    if(!accessToken) return;
+
+    try {
+      setListingsLoading(true);
+      // Get user ID from JWT token
+      const decoded = jwtDecode(accessToken);
+      const userId = decoded.id;
+
+      if (userId) {
+        const userListings = await fetchUserListings(userId);
+        
+        // Transform backend listing data to match ProfileScreen format
+        const transformedListings = userListings.map(listing => ({
+          id: listing.listing_id,
+          name: listing.title,
+          price: `₱${typeof listing.price === 'number' ? listing.price.toLocaleString() : listing.price}`,
+          priceValue: typeof listing.price === 'number' ? listing.price : parseFloat(listing.price) || 0,
+          seller: listing.seller_name || user?.name || 'Unknown',
+          sellerColor: '#FF6B35',
+          category: listing.category,
+          condition: listing.condition,
+          flex: listing.flex || null,
+          hand: listing.hand || null,
+          listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
+          status: listing.status || 'Available',
+          listingData: listing, // Keep original data for updates
+        }));
+
+        setAllProducts(transformedListings);
+      }
+    } catch (err) {
+      console.log("Error fetching user listings:", err);
+    } finally {
+      setListingsLoading(false);
+    }
+  }, [accessToken, user]);
+
+  useEffect(() => {
+    fetchUserOwnListings();
+  }, [fetchUserOwnListings]);
+
+  // Refresh listings when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (accessToken && user) {
+        fetchUserOwnListings();
+      }
+    }, [accessToken, user, fetchUserOwnListings])
+  );
 
   // Get filters from route params if navigating from filter screen
   const initialFilters = route?.params?.filters || {};
@@ -247,25 +303,24 @@ export default function ProfileScreen({ navigation, route }) {
       <View key={item.id} style={[styles.productCardWrapper, isLeft ? styles.cardLeft : styles.cardRight]}>
         <TouchableOpacity
           style={styles.productCard}
-          onPress={() => navigation.navigate('ProductDetail', {
-            product: {
-              id: item.id,
+          onPress={() => {
+            // Use listingData if available (from API), otherwise construct from item
+            const productData = item.listingData || {
+              listing_id: item.id,
               title: item.name,
-              price: item.price.replace('₱', '').replace(',', ''),
-              location: 'Quezon City',
-              postedDate: 'October 20, 2025',
-              description: 'Excellent condition. Perfect for players looking to upgrade.',
+              price: item.priceValue || parseFloat(item.price.replace('₱', '').replace(/,/g, '')) || 0,
+              location: 'Location not specified',
+              date_posted: item.listedDate,
+              description: item.listingData?.description || 'No description provided.',
               category: item.category,
               condition: item.condition,
-              seller: {
-                name: item.seller,
-                rating: 4.9,
-                reviewCount: 120,
-              },
-              images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-              reviews: [],
-            }
-          })}
+              brand: item.listingData?.brand || null,
+              status: item.status,
+              seller_name: item.seller,
+              photos: item.listingData?.photos || [],
+            };
+            navigation.navigate('ProductDetail', { product: productData });
+          }}
           activeOpacity={0.8}
         >
           <View style={styles.productImagePlaceholder}>
@@ -376,7 +431,13 @@ export default function ProfileScreen({ navigation, route }) {
     { value: 'cheapest', label: 'Cheapest' },
   ];
 
-  if(loading) return <ActivityIndicator />;
+  if(loading || listingsLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#FF6B35" />
+      </View>
+    );
+  }
   if(!user) return <Text>No Profile found!</Text>;
 
   return (
@@ -416,9 +477,15 @@ export default function ProfileScreen({ navigation, route }) {
           <Text style={styles.username}>{user.name}</Text>
           
           <View style={styles.statsContainer}>
-            <Text style={styles.statText}>Active Listings: 10</Text>
-            <Text style={styles.statText}>5.5K followers</Text>
-            <Text style={styles.statText}>3.2K items sold</Text>
+            <Text style={styles.statText}>
+              Active Listings: {allProducts.filter(p => p.status === 'Available').length}
+            </Text>
+            <Text style={styles.statText}>
+              Total Listings: {allProducts.length}
+            </Text>
+            <Text style={styles.statText}>
+              Sold: {allProducts.filter(p => p.status === 'Sold').length}
+            </Text>
           </View>
           
           <View style={styles.reputationContainer}>
