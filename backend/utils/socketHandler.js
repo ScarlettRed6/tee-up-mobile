@@ -5,10 +5,17 @@ import { saveSentMessage } from "../controllers/chatController.js";
 export function initSocketHandlers(io){
     io.use((socket, next) => {
         const token = socket.handshake.auth.token;
+        console.log("Socket authentication attempt, token present:", !!token);
 
         try{
+            if (!token) {
+                console.error("No token provided in socket handshake");
+                return next(new Error("No token provided"));
+            }
+            
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             socket.userId = decoded.id;
+            console.log("Socket authenticated, userId set to:", socket.userId, "type:", typeof socket.userId);
             next();
         }catch(err){
             console.log("SOCKETHANDLER, ERROR: ", err);
@@ -25,7 +32,20 @@ export function initSocketHandlers(io){
 
         socket.on("send_message", async ({ conversationId, message }) => {
             try {
+                console.log("Socket send_message received:", {
+                    conversationId,
+                    socketUserId: socket.userId,
+                    message: message.substring(0, 50)
+                });
+                
+                if (!socket.userId) {
+                    console.error("ERROR: socket.userId is not set!");
+                    socket.emit("error_message", { message: "User not authenticated" });
+                    return;
+                }
+                
                 const result = await saveSentMessage(conversationId, socket.userId, message);
+                console.log("Message saved with sender_id:", result.sender_id);
                 io.to("room_" + conversationId).emit("new_message", result);
             } catch (err) {
                 console.error("Error sending message:", err.message);
