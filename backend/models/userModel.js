@@ -42,4 +42,11 @@ export async function createUser(name, email, hashedPassword){
     return result.rows[0];
 }
 
-
+export async function updateUser(userId, data){
+    const { name, email, profile_image } = data;
+    const result = await pool.query(
+        `UPDATE users SET name = $1, email = $2, profile_image = $3
+        WHERE id = $4 RETURNING *`, [name, email, profile_image, userId]
+    );
+    return result.rows[0];
+}

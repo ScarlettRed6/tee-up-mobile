@@ -1,4 +1,5 @@
-import { findUserById } from "../models/userModel.js";
+import { findUserById, updateUser } from "../models/userModel.js";
+import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export async function getUserProfile(req, res){
     try{
@@ -29,5 +30,35 @@ export async function getUserById(req, res){
     }
 }//End of getUserById function
 
+export async function updateUserProfile(req, res){
+    const userId = req.user.id;
+    const { name, email } = req.body;
 
+    try{
+        const user = await findUserById(userId);
+        if(!user) return res.status(404).json({ message: "User not found" });
 
+        if(user.provider === "google" && email && email !== user.email){
+            return res.status(403).json({ message: "Cannot change email for Google account" });
+        }
+
+        let profileUrl;
+        if(req.file){
+            const uploaded = await uploadToCloudinary(req.file.buffer, "users");
+            profileUrl = uploaded.secure_url;
+        }
+
+        const updatedData = {
+            name: name || user.name,
+            profileUrl: profileUrl || user.profile_image,
+            email: user.provider === "local" ? email : user.email,
+        };
+
+        const updatedUser = await updateUser(user.id, updatedData);
+        res.status(200).json({ message: "Profile updated successfully", user:updatedUser });
+    }catch(err){
+        console.log(`Error updating user: ${err}`)
+        res.status(500).json({ error: "Error updating user" });
+    }
+
+}
