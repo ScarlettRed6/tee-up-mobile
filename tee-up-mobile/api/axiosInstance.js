@@ -15,7 +15,11 @@ export const getRefreshToken = () => refreshTokenMemory;
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: { 'Content-Type': 'application/json' },
+    timeout: 10000, // 10 second timeout
 });
+
+// Log API_BASE_URL for debugging
+console.log('API_BASE_URL:', API_BASE_URL);
 
 async function getAccessToken(){
     return await AsyncStorage.getItem("accessToken");
@@ -32,7 +36,11 @@ const processQueue = (error, token = null) => {
 api.interceptors.request.use(async (config) => {
     const token = await getAccessToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
     return config;
+}, (error) => {
+    console.error('[API Request Error]', error);
+    return Promise.reject(error);
 });
 
 api.interceptors.response.use(
@@ -40,6 +48,24 @@ api.interceptors.response.use(
         return response;
     },
     async (error) => {
+        // Enhanced error logging
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
+            console.error('[API Network Error]', {
+                code: error.code,
+                message: error.message,
+                url: error.config?.url,
+                baseURL: error.config?.baseURL
+            });
+        } else if (error.response) {
+            console.error('[API Response Error]', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                url: error.config?.url,
+                data: error.response.data
+            });
+        } else {
+            console.error('[API Error]', error.message);
+        }
         const originalRequest = error.config;
 
         if(error.response?.status === 401 && !originalRequest._retry){
