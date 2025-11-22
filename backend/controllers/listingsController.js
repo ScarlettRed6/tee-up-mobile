@@ -1,3 +1,4 @@
+import { uploadToCloudinary } from "../config/cloudinary.js";
 import { insertListing, getAllListings, getListingById, updateListing, deleteListing } 
 from "../models/listingsModel.js";
 
@@ -11,14 +12,24 @@ export async function createListing(req, res) {
         return res.status(401).json({ error: "User ID not found in token. Please log in again." });
     }
 
-    const { title, description, category, brand, condition, price, status, photos }
+    const { title, description, category, brand, condition, price, status }
     = req.body;
     
     try{
+
+        let photosUrls = [];
+        if (req.files){
+            for (const file of req.files){
+                const uploaded = await uploadToCloudinary(file.buffer, "listings");
+                photosUrls.push(uploaded.secure_url);
+            }
+        }
+
+
         console.log("Creating listing for user_id:", user_id);
         console.log("Listing data:", { title, category, condition, price });
         
-        const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photos);
+        const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photosUrls);
         
         console.log("Listing created successfully with ID:", newListing.listing_id, "for user_id:", newListing.user_id);
         
@@ -60,14 +71,23 @@ export async function updateListingItem(req, res) {
     try{
         const { id } = req.params;
         const userId = req.user.id;
-        const { title, description, category, brand, condition, price, status, photos } = req.body;
+        const { title, description, category, brand, condition, price, status, existingPhotos  } = req.body;
 
         const listing = await getListingById(id);
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
         
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
 
-        const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photos);
+        let photosUrls = existingPhotos || listing.photos || [];
+
+        if(req.files && req.files.length > 0){
+            for(const file of req.files){
+                const uploaded = await uploadToCloudinary(file.buffer, "listings");
+                photosUrls.push(uploaded.secure_url);
+            }
+        }
+
+        const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photosUrls);
 
         res.status(200).json({ message: "Listing updated successfully!",  listing: updatedListing});
     }catch(err){
