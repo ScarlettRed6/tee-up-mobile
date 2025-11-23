@@ -51,7 +51,11 @@ export async function getAllListings(filters = {}, sort = "newest"){
     }
 
     const result = await pool.query(query, values);
-    return result.rows;
+    // Ensure photos are parsed as arrays if they're JSON/JSONB
+    return result.rows.map(row => ({
+        ...row,
+        photos: row.photos ? (Array.isArray(row.photos) ? row.photos : JSON.parse(row.photos || '[]')) : []
+    }));
 
 }
 
@@ -66,7 +70,19 @@ export async function getListingById(id) {
         WHERE l.listing_id = $1`, 
         [id]
     );
-    return result.rows[0];
+    if (!result.rows[0]) return null;
+    
+    // Ensure photos are parsed as arrays if they're JSON/JSONB
+    const listing = result.rows[0];
+    if (listing.photos) {
+        listing.photos = Array.isArray(listing.photos) 
+            ? listing.photos 
+            : (typeof listing.photos === 'string' ? JSON.parse(listing.photos || '[]') : []);
+    } else {
+        listing.photos = [];
+    }
+    
+    return listing;
 }
 
 //UPDATES

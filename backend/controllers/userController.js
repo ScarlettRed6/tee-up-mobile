@@ -42,15 +42,15 @@ export async function updateUserProfile(req, res){
             return res.status(403).json({ message: "Cannot change email for Google account" });
         }
 
-        let profileUrl;
+        let profile_image;
         if(req.file){
             const uploaded = await uploadToCloudinary(req.file.buffer, "users");
-            profileUrl = uploaded.secure_url;
+            profile_image = uploaded.secure_url;
         }
 
         const updatedData = {
             name: name || user.name,
-            profileUrl: profileUrl || user.profile_image,
+            profile_image: profile_image || user.profile_image,
             email: user.provider === "local" ? email : user.email,
         };
 

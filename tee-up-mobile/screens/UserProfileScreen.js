@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
@@ -51,6 +51,7 @@ export default function UserProfileScreen({ navigation, route }) {
             username: fetchedUser.name || fetchedUser.email?.split('@')[0] || 'User',
             name: fetchedUser.name,
             email: fetchedUser.email,
+            profile_image: fetchedUser.profile_image || null,
             avatarColor: '#FF6B35', // Default color, can be enhanced later
             rating: 4.5, // Default, can be fetched from reviews later
             reviewCount: 0, // Default, can be fetched from reviews later
@@ -134,6 +135,7 @@ export default function UserProfileScreen({ navigation, route }) {
                 description: listing.description,
                 brand: listing.brand,
                 status: listing.status,
+                listingData: listing, // Keep original listing data including photos
               };
             });
 
@@ -259,6 +261,13 @@ export default function UserProfileScreen({ navigation, route }) {
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
+    
+    // Get first photo from listing data
+    const listingPhotos = item.listingData?.photos || [];
+    const firstPhoto = Array.isArray(listingPhotos) && listingPhotos.length > 0 
+      ? listingPhotos[0] 
+      : null;
+    
     return (
       <TouchableOpacity
         key={item.id}
@@ -281,18 +290,34 @@ export default function UserProfileScreen({ navigation, route }) {
               reviewCount: user?.reviewCount || 0,
             },
             seller_name: item.seller,
-            images: [{ id: 1 }, { id: 2 }, { id: 3 }], // Placeholder, can be enhanced with actual photos
+            photos: listingPhotos,
+            images: listingPhotos && listingPhotos.length > 0
+              ? listingPhotos.map((photo, idx) => ({ id: idx + 1, uri: photo }))
+              : [],
             reviews: [],
             status: item.status,
           }
         })}
         activeOpacity={0.8}
       >
-        <View style={styles.productImagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>
-            {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
-          </Text>
-        </View>
+        {firstPhoto ? (
+          <Image 
+            source={{ uri: firstPhoto }}
+            style={styles.productImage}
+            resizeMode="cover"
+            onError={(error) => {
+              console.error('Image load error for listing:', item.id, error.nativeEvent.error);
+              console.error('Failed URL:', firstPhoto);
+            }}
+          />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Ionicons name="image-outline" size={24} color="#999" />
+            <Text style={styles.imagePlaceholderText}>
+              {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
+            </Text>
+          </View>
+        )}
         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.productPrice}>{item.price}</Text>
         <View style={styles.sellerInfo}>
@@ -438,12 +463,24 @@ export default function UserProfileScreen({ navigation, route }) {
         {/* Profile Summary Card */}
         <View style={styles.profileSection}>
           <View style={styles.profilePhotoContainer}>
-            <View style={[styles.profilePhoto, { borderColor: user.avatarColor }]}>
-              <Ionicons name="person" size={50} color={user.avatarColor} />
-            </View>
+            {user.profile_image ? (
+              <Image 
+                source={{ uri: user.profile_image }}
+                style={[styles.profilePhoto, { borderColor: user.avatarColor || '#E0E0E0' }]}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error('Profile image load error:', error.nativeEvent.error);
+                  console.error('Failed URL:', user.profile_image);
+                }}
+              />
+            ) : (
+              <View style={[styles.profilePhoto, { borderColor: user.avatarColor || '#E0E0E0' }]}>
+                <Ionicons name="person" size={50} color={user.avatarColor || '#FF6B35'} />
+              </View>
+            )}
           </View>
           
-          <Text style={styles.username}>{user.username}</Text>
+          <Text style={styles.username}>{user.username || user.name}</Text>
           
           <View style={styles.statsContainer}>
             <Text style={styles.statText}>Active Listings: {user.activeListings}</Text>

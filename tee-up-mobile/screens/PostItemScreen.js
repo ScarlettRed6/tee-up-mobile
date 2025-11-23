@@ -1,6 +1,7 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import styles from './styles/PostItemScreen.styles';
 import { createListing, updateListing } from '../api/listingsApi';
 import { ListingsContext } from '../context/listingsContext';
@@ -26,6 +27,18 @@ export default function PostItemScreen({ navigation, route }) {
   const [photos, setPhotos] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Request camera/photo library permissions
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to upload photos!');
+        }
+      }
+    })();
+  }, []);
+
   // Populate form with existing data if in edit mode
   useEffect(() => {
     if (isEditMode && listingData) {
@@ -37,7 +50,13 @@ export default function PostItemScreen({ navigation, route }) {
       setHand(listingData.hand || null);
       setCondition(listingData.condition || null);
       setDescription(listingData.description || '');
-      setPhotos(listingData.photos || []);
+      // Convert existing photo URLs to objects with uri property
+      const existingPhotos = (listingData.photos || []).map((photoUrl, index) => ({
+        uri: typeof photoUrl === 'string' ? photoUrl : photoUrl.uri || photoUrl,
+        isExisting: true,
+        id: `existing_${index}_${Date.now()}`, // Unique ID for existing photos
+      }));
+      setPhotos(existingPhotos);
     }
   }, [isEditMode, listingData]);
   
@@ -104,20 +123,22 @@ export default function PostItemScreen({ navigation, route }) {
         condition: condition,
         price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
         status: isEditMode ? (listingData?.status || 'Available') : 'Available', // Keep existing status in edit mode
-        photos: photos.length > 0 ? photos : [] // Array of photo URLs or empty array
       };
 
       console.log(isEditMode ? 'Updating listing with data:' : 'Posting listing with data:', listingDataToSubmit);
+      console.log('Photos to upload:', photos);
       console.log('User authenticated:', !!accessToken);
 
       let result;
       if (isEditMode && listingData?.listing_id) {
-        // Update existing listing
-        result = await updateListing(listingData.listing_id, listingDataToSubmit);
+        // Update existing listing - pass photos separately
+        result = await updateListing(listingData.listing_id, listingDataToSubmit, photos);
         console.log('Listing updated successfully:', result);
       } else {
-        // Create new listing
-        result = await createListing(listingDataToSubmit);
+        // Create new listing - pass photos separately
+        // Filter out existing photos (URLs) for new listings, only send new files
+        const newPhotos = photos.filter(photo => !photo.isExisting);
+        result = await createListing(listingDataToSubmit, newPhotos);
         console.log('Listing created successfully:', result);
         console.log('Listing user_id:', result.user_id);
       }
@@ -196,6 +217,45 @@ export default function PostItemScreen({ navigation, route }) {
     scrollToInput(locationSectionRef);
   };
 
+  // Image picker functions
+  const pickImage = async () => {
+    if (photos.length >= 5) {
+      Alert.alert('Limit reached', 'You can only upload up to 5 photos.');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const remainingSlots = 5 - photos.length;
+        const imagesToAdd = result.assets.slice(0, remainingSlots);
+        
+        const newPhotos = imagesToAdd.map((asset, index) => ({
+          uri: asset.uri,
+          type: 'image/jpeg',
+          name: `photo_${Date.now()}_${index}.jpg`,
+          isExisting: false,
+          id: Date.now() + index,
+        }));
+        
+        setPhotos([...photos, ...newPhotos]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+
+  const removePhoto = (photoId) => {
+    setPhotos(photos.filter(photo => photo.id !== photoId));
+  };
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -226,10 +286,46 @@ export default function PostItemScreen({ navigation, route }) {
         {/* Upload Photos Section */}
         <View style={styles.section}>
           <Text style={styles.label}>Upload Photos (max 5)</Text>
-          <Pressable style={styles.uploadButton}>
-            <Ionicons name="add" size={24} color="#222" />
-            <Text style={styles.uploadButtonText}>Add</Text>
-          </Pressable>
+          
+          {/* Photo Preview Grid */}
+          {photos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {photos.map((photo, index) => (
+                <View key={photo.id || `photo_${index}`} style={styles.photoContainer}>
+                  <Image 
+                    source={{ uri: photo.uri || photo }} 
+                    style={styles.photoPreview}
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    style={styles.removePhotoButton}
+                    onPress={() => removePhoto(photo.id)}
+                  >
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+          
+          {/* Add Photo Button */}
+          {photos.length < 5 && (
+            <Pressable 
+              style={styles.uploadButton}
+              onPress={pickImage}
+            >
+              <Ionicons name="add" size={24} color="#222" />
+              <Text style={styles.uploadButtonText}>
+                {photos.length === 0 ? 'Add Photos' : `Add Photo (${5 - photos.length} remaining)`}
+              </Text>
+            </Pressable>
+          )}
+          
+          {photos.length >= 5 && (
+            <Text style={styles.photoLimitText}>
+              Maximum 5 photos reached
+            </Text>
+          )}
         </View>
 
         {/* Title Section */}

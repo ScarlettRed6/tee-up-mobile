@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/InboxScreen.styles';
@@ -32,32 +32,51 @@ export default function InboxScreen({ navigation, route }) {
       const data = await getConversations();
       
       // Transform API data to match UI format
-      const transformedConversations = data.map(conv => ({
-        conversation_id: conv.conversation_id,
-        id: conv.conversation_id,
-        productName: conv.listing_title || 'Product',
-        username: conv.other_user_name || 'Unknown',
-        otherUserId: conv.other_user_id,
-        timestamp: conv.last_message_time 
-          ? new Date(conv.last_message_time).toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            })
-          : new Date(conv.created_at).toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            }),
-        product: {
-          name: conv.listing_title || 'Product',
-          price: `₱${conv.listing_price?.toLocaleString() || conv.listing_price || '0'}`,
-          image: conv.listing_photos?.[0] || null,
-        },
-        listingId: conv.listing_id,
-        lastMessage: conv.last_message || null,
-        hasMessages: !!conv.last_message,
-      }));
+      const transformedConversations = data.map(conv => {
+        // Parse listing_photos if it's a string (PostgreSQL array/JSON might be returned as string)
+        let listingPhotos = [];
+        if (conv.listing_photos) {
+          if (typeof conv.listing_photos === 'string') {
+            try {
+              listingPhotos = JSON.parse(conv.listing_photos);
+            } catch (e) {
+              // If parsing fails, try to use it as a single photo URL
+              listingPhotos = [conv.listing_photos];
+            }
+          } else if (Array.isArray(conv.listing_photos)) {
+            listingPhotos = conv.listing_photos;
+          } else {
+            listingPhotos = [];
+          }
+        }
+        
+        return {
+          conversation_id: conv.conversation_id,
+          id: conv.conversation_id,
+          productName: conv.listing_title || 'Product',
+          username: conv.other_user_name || 'Unknown',
+          otherUserId: conv.other_user_id,
+          timestamp: conv.last_message_time 
+            ? new Date(conv.last_message_time).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              })
+            : new Date(conv.created_at).toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              }),
+          product: {
+            name: conv.listing_title || 'Product',
+            price: `₱${conv.listing_price?.toLocaleString() || conv.listing_price || '0'}`,
+            image: listingPhotos && listingPhotos.length > 0 ? listingPhotos[0] : null,
+          },
+          listingId: conv.listing_id,
+          lastMessage: conv.last_message || null,
+          hasMessages: !!conv.last_message,
+        };
+      });
 
       setConversations(transformedConversations);
     } catch (err) {
@@ -174,7 +193,21 @@ export default function InboxScreen({ navigation, route }) {
             >
               {/* Product Image Thumbnail */}
               <View style={styles.productThumbnail}>
-                <Ionicons name="golf" size={24} color="#666" />
+                {chat.product?.image ? (
+                  <Image 
+                    source={{ uri: chat.product.image }} 
+                    style={styles.productImage}
+                    resizeMode="cover"
+                    onError={(e) => {
+                      console.error('Image load error (Inbox):', e.nativeEvent.error, chat.product.image);
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully (Inbox):', chat.product.image);
+                    }}
+                  />
+                ) : (
+                  <Ionicons name="golf" size={24} color="#666" />
+                )}
               </View>
 
               {/* Chat Info */}

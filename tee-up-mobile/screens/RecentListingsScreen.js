@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/RecentListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
@@ -10,6 +10,10 @@ export default function RecentListingsScreen({ navigation }) {
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
+    const firstPhoto = item.photos && Array.isArray(item.photos) && item.photos.length > 0 
+      ? item.photos[0] 
+      : null;
+    
     return (
       <TouchableOpacity
         key={item.listing_id}
@@ -17,11 +21,24 @@ export default function RecentListingsScreen({ navigation }) {
         onPress={() => navigation.navigate('ProductDetail', { product: item })}
         activeOpacity={0.8}
       >
-        <View style={styles.productImagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>
-            {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
-          </Text>
-        </View>
+        {firstPhoto ? (
+          <Image 
+            source={{ uri: firstPhoto }}
+            style={styles.productImage}
+            resizeMode="cover"
+            onError={(error) => {
+              console.error('Image load error for listing:', item.listing_id, error.nativeEvent.error);
+              console.error('Failed URL:', firstPhoto);
+            }}
+          />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Ionicons name="image-outline" size={24} color="#999" />
+            <Text style={styles.imagePlaceholderText}>
+              {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+            </Text>
+          </View>
+        )}
         <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         <Text style={styles.productCondition}>{item.condition}</Text>
         <Text style={styles.productPrice}>

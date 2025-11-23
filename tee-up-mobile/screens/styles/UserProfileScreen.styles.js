@@ -55,6 +55,7 @@ export default StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    overflow: 'hidden',
   },
   username: {
     fontFamily: 'Exo_700Bold',
@@ -173,6 +174,13 @@ export default StyleSheet.create({
   cardRight: {
     marginLeft: '2%',
   },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
+  },
   productImagePlaceholder: {
     width: '100%',
     height: 120,
@@ -187,6 +195,7 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',

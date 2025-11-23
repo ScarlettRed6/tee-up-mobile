@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
@@ -324,6 +324,12 @@ export default function ProfileScreen({ navigation, route }) {
     const isLeft = index % 2 === 0;
     const isDropdownOpen = openDropdownId === item.id;
     
+    // Get first photo from listing data
+    const listingPhotos = item.listingData?.photos || [];
+    const firstPhoto = Array.isArray(listingPhotos) && listingPhotos.length > 0 
+      ? listingPhotos[0] 
+      : null;
+    
     return (
       <View key={item.id} style={[styles.productCardWrapper, isLeft ? styles.cardLeft : styles.cardRight]}>
         <TouchableOpacity
@@ -342,20 +348,31 @@ export default function ProfileScreen({ navigation, route }) {
               brand: item.listingData?.brand || null,
               status: item.status,
               seller_name: item.seller,
-              photos: item.listingData?.photos || [],
+              photos: listingPhotos,
             };
             navigation.navigate('ProductDetail', { product: productData });
           }}
           activeOpacity={0.8}
         >
-          <View style={styles.productImagePlaceholder}>
-            <Text style={styles.imagePlaceholderText}>
-              {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
-               item.name.includes('PING') ? 'PING G30' :
-               item.name.includes('AP2') ? 'Titleist AP2' : 
-               item.name.includes('TSR3') ? 'Titleist TSR3' :
-               item.name.includes('Callaway') ? 'Callaway Epic' : 'TaylorMade SIM'}
-            </Text>
+          <View style={styles.productImageContainer}>
+            {firstPhoto ? (
+              <Image 
+                source={{ uri: firstPhoto }}
+                style={styles.productImage}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error('Image load error for listing:', item.id, error.nativeEvent.error);
+                  console.error('Failed URL:', firstPhoto);
+                }}
+              />
+            ) : (
+              <View style={styles.productImagePlaceholder}>
+                <Ionicons name="image-outline" size={24} color="#999" />
+                <Text style={styles.imagePlaceholderText}>
+                  {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
+                </Text>
+              </View>
+            )}
             {item.status === 'Sold' && (
               <View style={styles.soldBadge}>
                 <Text style={styles.soldBadgeText}>SOLD</Text>
@@ -502,9 +519,21 @@ export default function ProfileScreen({ navigation, route }) {
         {/* Profile Summary Card */}
         <View style={styles.profileSection}>
           <View style={styles.profilePhotoContainer}>
-            <View style={styles.profilePhoto}>
-              <Ionicons name="person" size={50} color="#FF6B35" />
-            </View>
+            {user.profile_image ? (
+              <Image 
+                source={{ uri: user.profile_image }}
+                style={styles.profilePhoto}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error('Profile image load error:', error.nativeEvent.error);
+                  console.error('Failed URL:', user.profile_image);
+                }}
+              />
+            ) : (
+              <View style={styles.profilePhoto}>
+                <Ionicons name="person" size={50} color="#FF6B35" />
+              </View>
+            )}
           </View>
           
           <Text style={styles.username}>{user.name}</Text>

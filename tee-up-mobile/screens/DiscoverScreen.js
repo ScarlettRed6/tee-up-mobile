@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/DiscoverScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
@@ -83,30 +83,49 @@ export default function DiscoverScreen({ navigation }) {
               contentContainerStyle={styles.horizontalScrollContent}
               style={styles.horizontalScrollView}
             >
-              {listings.slice(0, 6).map(item => (
-                <TouchableOpacity
-                  key={item.listing_id}
-                  onPress={() => navigation.navigate("ProductDetail", { product: item })}
-                  style={[styles.productCard, { marginRight: 12 }]}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.productImagePlaceholder}>
-                    <Text style={styles.imagePlaceholderText}>
-                      {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+              {listings.slice(0, 6).map(item => {
+                const firstPhoto = item.photos && Array.isArray(item.photos) && item.photos.length > 0 
+                  ? item.photos[0] 
+                  : null;
+                
+                return (
+                  <TouchableOpacity
+                    key={item.listing_id}
+                    onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                    style={[styles.productCard, { marginRight: 12 }]}
+                    activeOpacity={0.8}
+                  >
+                    {firstPhoto ? (
+                      <Image 
+                        source={{ uri: firstPhoto }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                        onError={(error) => {
+                          console.error('Image load error for listing:', item.listing_id, error.nativeEvent.error);
+                          console.error('Failed URL:', firstPhoto);
+                        }}
+                      />
+                    ) : (
+                      <View style={styles.productImagePlaceholder}>
+                        <Ionicons name="image-outline" size={24} color="#999" />
+                        <Text style={styles.imagePlaceholderText}>
+                          {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={styles.productName} numberOfLines={2}>
+                      {item.title}
                     </Text>
-                  </View>
-                  <Text style={styles.productName} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
-                  <View style={styles.sellerInfo}>
-                    <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                      <Ionicons name="person" size={12} color="#FF6B35" />
+                    <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
+                    <View style={styles.sellerInfo}>
+                      <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                        <Ionicons name="person" size={12} color="#FF6B35" />
+                      </View>
+                      <Text style={styles.sellerName} numberOfLines={1}>{item.seller_name || 'Unknown'}</Text>
                     </View>
-                    <Text style={styles.sellerName} numberOfLines={1}>{item.seller_name || 'Unknown'}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
               
               {/* View More Button at the end */}
               <TouchableOpacity

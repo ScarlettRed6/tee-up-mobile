@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useContext, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator, Modal, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
@@ -139,20 +139,44 @@ export default function ProductDetailScreen({ navigation, route }) {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [fullscreenIndex, setFullscreenIndex] = useState(0);
+  const scrollViewRef = useRef(null);
+  const fullscreenScrollViewRef = useRef(null);
 
-  const handlePreviousImage = () => {
-    if (!product) return;
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? product.images.length - 1 : prev - 1
-    );
+  const handleScroll = (event) => {
+    const slideSize = SCREEN_WIDTH;
+    const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+    setCurrentImageIndex(index);
   };
 
-  const handleNextImage = () => {
-    if (!product) return;
-    setCurrentImageIndex((prev) => 
-      prev === product.images.length - 1 ? 0 : prev + 1
-    );
+  const openFullscreen = (index = currentImageIndex) => {
+    setFullscreenIndex(index);
+    setFullscreenVisible(true);
   };
+
+  const closeFullscreen = () => {
+    setFullscreenVisible(false);
+  };
+
+  const handleFullscreenScroll = (event) => {
+    const slideSize = SCREEN_WIDTH;
+    const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+    setFullscreenIndex(index);
+  };
+
+  // Effect to scroll to correct position when fullscreen opens
+  useEffect(() => {
+    if (fullscreenVisible && fullscreenScrollViewRef.current) {
+      // Small delay to ensure ScrollView is rendered
+      setTimeout(() => {
+        fullscreenScrollViewRef.current?.scrollTo({
+          x: fullscreenIndex * SCREEN_WIDTH,
+          animated: false,
+        });
+      }, 100);
+    }
+  }, [fullscreenVisible, fullscreenIndex]);
 
   const toggleFavorite = () => {
     setIsFavorited(!isFavorited);
@@ -216,36 +240,57 @@ export default function ProductDetailScreen({ navigation, route }) {
         {/* Image Carousel */}
         <View style={styles.imageCarouselContainer}>
           <View style={styles.imageWrapper}>
-            {/* Placeholder for product image - in real app use Image component with actual URI */}
-            <View style={styles.productImagePlaceholder}>
-              <Text style={styles.imagePlaceholderText}>
-                {product.title}
-              </Text>
-            </View>
-            
-            {/* Navigation Arrows */}
-            {product.images.length > 1 && (
-              <>
-                <TouchableOpacity 
-                  style={[styles.carouselArrow, styles.arrowLeft]}
-                  onPress={handlePreviousImage}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="chevron-back" size={24} color="#000" />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.carouselArrow, styles.arrowRight]}
-                  onPress={handleNextImage}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="chevron-forward" size={24} color="#000" />
-                </TouchableOpacity>
-              </>
-            )}
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+              style={styles.imageScrollView}
+            >
+              {product.images && product.images.length > 0 ? (
+                product.images.map((image, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    activeOpacity={0.9}
+                    onPress={() => image.uri && openFullscreen(index)}
+                    style={styles.imageSlide}
+                  >
+                    {image.uri ? (
+                      <Image 
+                        source={{ uri: image.uri }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                        onError={(error) => {
+                          console.error('Image load error:', error.nativeEvent.error);
+                          console.error('Failed to load image URL:', image.uri);
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', image.uri);
+                        }}
+                      />
+                    ) : (
+                      <View style={styles.productImagePlaceholder}>
+                        <Ionicons name="image-outline" size={48} color="#999" />
+                        <Text style={styles.imagePlaceholderText}>No Image</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.imageSlide}>
+                  <View style={styles.productImagePlaceholder}>
+                    <Ionicons name="image-outline" size={48} color="#999" />
+                    <Text style={styles.imagePlaceholderText}>No Image</Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
           </View>
 
           {/* Pagination Dots */}
-          {product.images.length > 1 && (
+          {product.images && product.images.length > 1 && (
             <View style={styles.paginationDots}>
               {product.images.map((_, index) => (
                 <View
@@ -477,6 +522,71 @@ export default function ProductDetailScreen({ navigation, route }) {
           <Ionicons name="chatbubbles" size={24} color="#FFF" />
         </TouchableOpacity>
       )}
+
+      {/* Fullscreen Image Viewer Modal */}
+      <Modal
+        visible={fullscreenVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeFullscreen}
+      >
+        <StatusBar hidden />
+        <View style={styles.fullscreenContainer}>
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles.fullscreenBackButton}
+            onPress={closeFullscreen}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={32} color="#FFF" />
+          </TouchableOpacity>
+
+          {/* Fullscreen Image ScrollView */}
+          <ScrollView
+            ref={fullscreenScrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleFullscreenScroll}
+            scrollEventThrottle={16}
+            style={styles.fullscreenScrollView}
+          >
+            {product.images && product.images.length > 0 ? (
+              product.images.map((image, index) => (
+                <View key={index} style={styles.fullscreenImageSlide}>
+                  {image.uri ? (
+                    <Image 
+                      source={{ uri: image.uri }}
+                      style={styles.fullscreenImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={styles.fullscreenPlaceholder}>
+                      <Ionicons name="image-outline" size={64} color="#FFF" />
+                      <Text style={styles.fullscreenPlaceholderText}>No Image</Text>
+                    </View>
+                  )}
+                </View>
+              ))
+            ) : null}
+          </ScrollView>
+
+          {/* Fullscreen Pagination Dots */}
+          {product.images && product.images.length > 1 && (
+            <View style={styles.fullscreenPaginationDots}>
+              {product.images.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.fullscreenDot,
+                    index === fullscreenIndex && styles.fullscreenDotActive
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </Modal>
 
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomNav}>

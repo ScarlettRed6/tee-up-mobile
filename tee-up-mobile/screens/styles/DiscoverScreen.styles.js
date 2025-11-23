@@ -92,6 +92,13 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  productImage: {
+    width: '100%',
+    height: 100,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
+  },
   productImagePlaceholder: {
     width: '100%',
     height: 100,
@@ -106,6 +113,7 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',

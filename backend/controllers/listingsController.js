@@ -28,10 +28,22 @@ export async function createListing(req, res) {
 
         console.log("Creating listing for user_id:", user_id);
         console.log("Listing data:", { title, category, condition, price });
+        console.log("Photos URLs to save:", photosUrls);
         
         const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photosUrls);
         
+        // Ensure photos are parsed correctly
+        if (newListing.photos && typeof newListing.photos === 'string') {
+            try {
+                newListing.photos = JSON.parse(newListing.photos);
+            } catch (e) {
+                console.error("Error parsing photos:", e);
+                newListing.photos = [];
+            }
+        }
+        
         console.log("Listing created successfully with ID:", newListing.listing_id, "for user_id:", newListing.user_id);
+        console.log("Returned photos:", newListing.photos);
         
         res.status(201).json({ message: "New listing added successfully!", listing: newListing });
     }catch(err){
@@ -71,14 +83,29 @@ export async function updateListingItem(req, res) {
     try{
         const { id } = req.params;
         const userId = req.user.id;
-        const { title, description, category, brand, condition, price, status, existingPhotos  } = req.body;
+        let { title, description, category, brand, condition, price, status, existingPhotos  } = req.body;
 
         const listing = await getListingById(id);
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
         
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
 
+        // Parse existingPhotos if it's a JSON string (from FormData)
+        if (typeof existingPhotos === 'string') {
+            try {
+                existingPhotos = JSON.parse(existingPhotos);
+            } catch (e) {
+                // If parsing fails, treat as single value or empty
+                existingPhotos = existingPhotos ? [existingPhotos] : [];
+            }
+        }
+        
         let photosUrls = existingPhotos || listing.photos || [];
+        
+        // Ensure photosUrls is an array
+        if (!Array.isArray(photosUrls)) {
+            photosUrls = photosUrls ? [photosUrls] : [];
+        }
 
         if(req.files && req.files.length > 0){
             for(const file of req.files){
@@ -88,6 +115,16 @@ export async function updateListingItem(req, res) {
         }
 
         const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photosUrls);
+        
+        // Ensure photos are parsed correctly
+        if (updatedListing.photos && typeof updatedListing.photos === 'string') {
+            try {
+                updatedListing.photos = JSON.parse(updatedListing.photos);
+            } catch (e) {
+                console.error("Error parsing photos:", e);
+                updatedListing.photos = [];
+            }
+        }
 
         res.status(200).json({ message: "Listing updated successfully!",  listing: updatedListing});
     }catch(err){
