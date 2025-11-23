@@ -56,6 +56,7 @@ export default function InboxScreen({ navigation, route }) {
           productName: conv.listing_title || 'Product',
           username: conv.other_user_name || 'Unknown',
           otherUserId: conv.other_user_id,
+          otherUserProfileImage: conv.other_user_profile_image || null,
           timestamp: conv.last_message_time 
             ? new Date(conv.last_message_time).toLocaleTimeString('en-US', { 
                 hour: 'numeric', 

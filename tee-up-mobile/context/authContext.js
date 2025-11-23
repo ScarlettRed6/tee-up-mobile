@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loginUser, registerUser } from '../api/authApi';
+import { loginUser, registerUser, googleSignIn } from '../api/authApi';
 import jwtDecode from 'jwt-decode';
 import { setRefreshToken } from '../api/axiosInstance';
 
@@ -49,8 +49,19 @@ export const AuthProvider = ({ children }) => {
         setRefreshToken(data.refreshToken);
     };
 
+    const loginWithGoogle = async (idToken) => {
+        const data = await googleSignIn(idToken);
+        await AsyncStorage.setItem('accessToken', data.token);
+        if (data.refreshToken) {
+            await AsyncStorage.setItem("refreshToken", data.refreshToken);
+            setRefreshToken(data.refreshToken);
+        }
+        setAccessToken(data.token);
+    };
+
     const logout = async () => {
         await AsyncStorage.removeItem('accessToken');
+        await AsyncStorage.removeItem('refreshToken');
         setAccessToken(null);
         setRefreshToken(null);
     };
@@ -62,7 +73,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <authContext.Provider value={{ accessToken, login, logout, register, loading }}>
+        <authContext.Provider value={{ accessToken, login, loginWithGoogle, logout, register, loading }}>
             {children}
         </authContext.Provider>
     );

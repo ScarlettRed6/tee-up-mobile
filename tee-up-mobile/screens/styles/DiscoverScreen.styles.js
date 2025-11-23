@@ -37,6 +37,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
   pageTitle: {
     fontFamily: 'Exo_700Bold',
@@ -138,6 +139,7 @@ export default StyleSheet.create({
     backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   sellerName: {
     fontFamily: 'Exo_400Regular',

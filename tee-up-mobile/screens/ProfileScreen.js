@@ -16,21 +16,31 @@ export default function ProfileScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchProfile = useCallback(async () => {
     if(!accessToken) return;
 
-    const fetchProfile = async () => {
-      try{
-        const data = await getUserProfile();
-        setUser(data);
-      }catch(err){
-        console.log("Profile error:", err);
-      }finally{
-        setLoading(false);
-      }
-    };
-    fetchProfile();
+    try{
+      const data = await getUserProfile();
+      setUser(data);
+    }catch(err){
+      console.log("Profile error:", err);
+    }finally{
+      setLoading(false);
+    }
   }, [accessToken]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Refresh profile when screen comes into focus (e.g., returning from EditProfile)
+  useFocusEffect(
+    useCallback(() => {
+      if (accessToken) {
+        fetchProfile();
+      }
+    }, [accessToken, fetchProfile])
+  );
 
   // Fetch user's own listings
   const fetchUserOwnListings = useCallback(async () => {

@@ -69,6 +69,10 @@ export async function getConversationsForUser(userId){
                 WHEN c.buyer_id = $1 THEN seller.id
                 ELSE buyer.id
             END as other_user_id,
+            CASE 
+                WHEN c.buyer_id = $1 THEN seller.profile_image
+                ELSE buyer.profile_image
+            END as other_user_profile_image,
             (SELECT message FROM messages 
              WHERE conversation_id = c.conversation_id 
              ORDER BY created_at DESC LIMIT 1) as last_message,
@@ -96,7 +100,8 @@ export async function getMessagesForConversation(conversationId){
     const result = await pool.query(
         `SELECT 
             m.*,
-            u.name as sender_name
+            u.name as sender_name,
+            u.profile_image as sender_profile_image
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
         WHERE m.conversation_id = $1
@@ -115,7 +120,9 @@ export async function getConversationById(conversationId){
             l.price as listing_price,
             l.photos as listing_photos,
             buyer.name as buyer_name,
-            seller.name as seller_name
+            buyer.profile_image as buyer_profile_image,
+            seller.name as seller_name,
+            seller.profile_image as seller_profile_image
         FROM conversations c
         LEFT JOIN listings l ON c.listing_id = l.listing_id
         LEFT JOIN users buyer ON c.buyer_id = buyer.id

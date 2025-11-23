@@ -1,14 +1,69 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, KeyboardAvoidingView, Platform, Keyboard, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
+// Import Google OAuth credentials from environment
+import { GOOGLE_WEB_CLIENT_ID as ENV_WEB_ID, GOOGLE_ANDROID_CLIENT_ID as ENV_ANDROID_ID, GOOGLE_IOS_CLIENT_ID as ENV_IOS_ID } from '@env';
+
+// Fallback to your actual client ID if env vars aren't loaded
+const DEFAULT_CLIENT_ID = '317986566188-37pn9f8odem0fuftirqcel4bhe2jt8o9.apps.googleusercontent.com';
+
+const GOOGLE_WEB_CLIENT_ID = ENV_WEB_ID || DEFAULT_CLIENT_ID;
+const GOOGLE_ANDROID_CLIENT_ID = ENV_ANDROID_ID || DEFAULT_CLIENT_ID;
+const GOOGLE_IOS_CLIENT_ID = ENV_IOS_ID || DEFAULT_CLIENT_ID;
 import styles from './styles/LoginScreen.styles';
 import { authContext } from '../context/authContext';
 
+// Complete the OAuth flow
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen({ navigation }) {
-  const { login } = useContext(authContext);
+  const { login, loginWithGoogle } = useContext(authContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Get client IDs - they should always be defined now (with fallback)
+  const webClientId = GOOGLE_WEB_CLIENT_ID?.toString().trim() || DEFAULT_CLIENT_ID;
+  const iosClientId = GOOGLE_IOS_CLIENT_ID?.toString().trim() || DEFAULT_CLIENT_ID;
+  const androidClientId = GOOGLE_ANDROID_CLIENT_ID?.toString().trim() || DEFAULT_CLIENT_ID;
+
+  // Configure Google OAuth based on platform
+  // The hook REQUIRES the platform-specific client ID to be defined
+  const googleAuthConfig = Platform.OS === 'ios' ? {
+    iosClientId: iosClientId,
+    webClientId: webClientId,
+    redirectUri: makeRedirectUri({
+      scheme: 'com.dreadcarl.teeupmobile',
+      path: 'redirect',
+    }),
+    scopes: ['openid', 'profile', 'email'],
+  } : Platform.OS === 'android' ? {
+    androidClientId: androidClientId,
+    webClientId: webClientId,
+    redirectUri: makeRedirectUri({
+      scheme: 'com.dreadcarl.teeupmobile',
+      path: 'redirect',
+    }),
+    scopes: ['openid', 'profile', 'email'],
+  } : {
+    webClientId: webClientId,
+    redirectUri: makeRedirectUri({
+      scheme: 'com.dreadcarl.teeupmobile',
+      path: 'redirect',
+    }),
+    scopes: ['openid', 'profile', 'email'],
+  };
+
+  // Initialize the hook - client IDs are always defined now
+  const [request, response, promptAsync] = Google.useAuthRequest(googleAuthConfig);
+
+  // Google Sign-In is available (always enabled with fallback client ID)
+  const isGoogleSignInAvailable = true;
 
   // Email validation helper
   const isValidEmail = (email) => {
@@ -38,6 +93,89 @@ export default function LoginScreen({ navigation }) {
   };
 
   const isFormValid = email.trim().length > 0 && password.trim().length > 0;
+
+  // Handle Google OAuth response
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication, params } = response;
+      
+      // Try to get ID token from different possible locations
+      let idToken = authentication?.idToken || params?.id_token || response?.params?.id_token;
+      
+      if (idToken) {
+        handleGoogleSignIn(idToken);
+      } else {
+        // Log the response structure for debugging
+        console.log('Google OAuth response structure:', JSON.stringify(response, null, 2));
+        setIsGoogleLoading(false);
+        Alert.alert(
+          'Authentication Error',
+          'Unable to get ID token from Google. Please check your Google OAuth configuration.',
+          [{ text: 'OK' }]
+        );
+      }
+    } else if (response?.type === 'error') {
+      setIsGoogleLoading(false);
+      const errorMsg = response.error?.message || 'Unable to sign in with Google. Please try again.';
+      Alert.alert(
+        'Google Sign-In Failed',
+        errorMsg,
+        [{ text: 'OK' }]
+      );
+    } else if (response?.type === 'cancel') {
+      setIsGoogleLoading(false);
+    }
+  }, [response]);
+
+  const handleGoogleSignIn = async (idToken) => {
+    setIsGoogleLoading(true);
+    try {
+      await loginWithGoogle(idToken);
+      console.log("Google login successful!");
+    } catch (err) {
+      console.log("Google login failed:", err);
+      
+      let errorMessage = 'Google sign-in failed. Please try again.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      Alert.alert(
+        'Google Sign-In Failed',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGooglePress = async () => {
+    if (!isGoogleSignInAvailable || !request || !promptAsync) {
+      Alert.alert(
+        'Configuration Error',
+        'Google Sign-In is not configured for this platform. Please add the required Google OAuth client ID to your environment variables.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    setIsGoogleLoading(true);
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.log("Error prompting Google sign-in:", error);
+      setIsGoogleLoading(false);
+      Alert.alert(
+        'Error',
+        'Unable to start Google sign-in. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
 
   const handleLogin = async () => {
     // Clear previous errors
@@ -182,6 +320,35 @@ export default function LoginScreen({ navigation }) {
               {isSubmitting ? 'Logging in...' : 'Log in'}
             </Text>
           </TouchableOpacity>
+
+          {/* Google Sign-In Section - Only show if configured */}
+          {isGoogleSignInAvailable && (
+            <>
+              {/* Divider */}
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Sign-In Button */}
+              <TouchableOpacity 
+                activeOpacity={0.8} 
+                style={[styles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
+                onPress={handleGooglePress}
+                disabled={isGoogleLoading}
+              >
+                {isGoogleLoading ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={20} color="#000" style={styles.googleIcon} />
+                    <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
 

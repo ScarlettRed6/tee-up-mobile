@@ -1,11 +1,13 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Keyboard, Alert, ActivityIndicator, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import styles from './styles/PostItemScreen.styles';
 import { createListing, updateListing } from '../api/listingsApi';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function PostItemScreen({ navigation, route }) {
   const { refreshListings } = useContext(ListingsContext);
@@ -63,6 +65,28 @@ export default function PostItemScreen({ navigation, route }) {
   const scrollViewRef = useRef(null);
   const descriptionSectionRef = useRef(null);
   const locationSectionRef = useRef(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Listen for keyboard show/hide events
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const categories = ['Driver', 'Woods', 'Iron', 'Putters', 'Apparel', 'Accessories', 'Others'];
   const flexOptions = ['Ladies', 'Senior', 'Medium', 'Regular', 'Stiff', 'Extra Stiff'];
@@ -191,21 +215,30 @@ export default function PostItemScreen({ navigation, route }) {
   const scrollToInput = (ref) => {
     // Scroll to input field when focused
     if (ref.current && scrollViewRef.current) {
+      // Use a longer timeout to ensure keyboard is fully shown
       setTimeout(() => {
         ref.current.measureLayout(
           scrollViewRef.current,
           (x, y, width, height) => {
+            // Calculate scroll position to center input above keyboard
+            // Account for header, button container, and keyboard
+            const headerHeight = 106; // Approximate header height
+            const buttonContainerHeight = 100; // Approximate button container height
+            const offset = Platform.OS === 'ios' ? 100 : 120;
+            
             scrollViewRef.current?.scrollTo({
-              y: Math.max(0, y - 80),
+              y: Math.max(0, y - offset),
               animated: true,
             });
           },
           () => {
             // Fallback: scroll to end if measurement fails
-            scrollViewRef.current?.scrollToEnd({ animated: true });
+            setTimeout(() => {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
           }
         );
-      }, 300);
+      }, Platform.OS === 'ios' ? 250 : 100);
     }
   };
 
@@ -259,8 +292,9 @@ export default function PostItemScreen({ navigation, route }) {
   return (
     <KeyboardAvoidingView 
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      enabled
     >
       {/* Header */}
       <View style={styles.header}>
@@ -277,11 +311,24 @@ export default function PostItemScreen({ navigation, route }) {
       <ScrollView 
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 120 : 200 }
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        keyboardDismissMode="interactive"
         nestedScrollEnabled={true}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        onContentSizeChange={() => {
+          // Auto-scroll when content size changes (useful for multiline inputs)
+          if (keyboardHeight > 0) {
+            setTimeout(() => {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }
+        }}
       >
         {/* Upload Photos Section */}
         <View style={styles.section}>
@@ -337,6 +384,13 @@ export default function PostItemScreen({ navigation, route }) {
             style={styles.input}
             placeholder="Enter item title"
             placeholderTextColor="#999"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onFocus={() => {
+              setTimeout(() => {
+                scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+              }, 300);
+            }}
           />
         </View>
 
@@ -352,6 +406,13 @@ export default function PostItemScreen({ navigation, route }) {
               placeholder="0"
               placeholderTextColor="#999"
               keyboardType="numeric"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+                }, 300);
+              }}
             />
           </View>
         </View>
@@ -365,6 +426,13 @@ export default function PostItemScreen({ navigation, route }) {
             style={styles.input}
             placeholder="Enter brand name"
             placeholderTextColor="#999"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onFocus={() => {
+              setTimeout(() => {
+                scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+              }, 300);
+            }}
           />
         </View>
 
@@ -492,8 +560,15 @@ export default function PostItemScreen({ navigation, route }) {
             multiline
             numberOfLines={6}
             textAlignVertical="top"
-            onFocus={handleDescriptionFocus}
+            onFocus={() => {
+              handleDescriptionFocus();
+              // Additional scroll after a delay to ensure keyboard is up
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 400);
+            }}
             blurOnSubmit={false}
+            returnKeyType="default"
           />
           <Text style={styles.charCount}>{description.length}/300</Text>
         </View>
@@ -509,26 +584,40 @@ export default function PostItemScreen({ navigation, route }) {
               style={styles.locationInput}
               placeholder="Enter location (optional)"
               placeholderTextColor="#999"
-              onFocus={handleLocationFocus}
+              onFocus={() => {
+                handleLocationFocus();
+                // Additional scroll after a delay to ensure keyboard is up
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 400);
+              }}
               returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
             />
           </View>
         </View>
-
-        {/* Spacer for bottom button - increased for keyboard */}
-        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* Post Item Button */}
-      <View style={styles.buttonContainer}>
+      <View 
+        style={[
+          styles.buttonContainer,
+          Platform.OS === 'android' && keyboardHeight > 0 && {
+            paddingBottom: keyboardHeight > 0 ? 16 : 24,
+          }
+        ]}
+      >
         <TouchableOpacity
           style={[
             styles.postButton,
             (!isFormValid || isSubmitting) && styles.postButtonDisabled
           ]}
-          onPress={handlePostItem}
+          onPress={() => {
+            Keyboard.dismiss();
+            handlePostItem();
+          }}
           disabled={!isFormValid || isSubmitting}
+          activeOpacity={0.8}
         >
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#FFF" />

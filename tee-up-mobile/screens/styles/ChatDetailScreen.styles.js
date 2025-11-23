@@ -108,6 +108,12 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     flexShrink: 0, // Prevent avatar from shrinking
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   messageBubbleContainer: {
     maxWidth: '70%',

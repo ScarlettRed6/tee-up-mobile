@@ -1,19 +1,46 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/DiscoverScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
+import { authContext } from '../context/authContext';
+import { getUserProfile } from '../api/userApi';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function DiscoverScreen({ navigation }) {
   const { listings, loading } = useContext(ListingsContext);
+  const { accessToken } = useContext(authContext);
+  const [userProfileImage, setUserProfileImage] = useState(null);
 
   // Helper function to navigate to product detail
   const navigateToProductDetail = (productData) => {
     navigation.navigate('ProductDetail', { product: productData });
   };
+
+  // Fetch current user's profile image
+  const fetchUserProfile = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const userData = await getUserProfile();
+      setUserProfileImage(userData.profile_image || null);
+    } catch (err) {
+      console.log('Error fetching user profile in DiscoverScreen:', err);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  // Refresh profile image when screen comes into focus (e.g., after updating profile)
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+    }, [fetchUserProfile])
+  );
 
   if(loading){
     return (
@@ -56,9 +83,16 @@ export default function DiscoverScreen({ navigation }) {
             activeOpacity={0.7}
             onPress={() => navigateToBottomNav(navigation, 'Profile')}
           >
-            <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={18} color="#FF6B35" />
-            </View>
+            {userProfileImage ? (
+              <Image 
+                source={{ uri: userProfileImage }}
+                style={styles.profileAvatar}
+              />
+            ) : (
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={18} color="#FF6B35" />
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -118,9 +152,16 @@ export default function DiscoverScreen({ navigation }) {
                     </Text>
                     <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
                     <View style={styles.sellerInfo}>
-                      <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                        <Ionicons name="person" size={12} color="#FF6B35" />
-                      </View>
+                      {item.seller_profile_image ? (
+                        <Image 
+                          source={{ uri: item.seller_profile_image }}
+                          style={[styles.sellerAvatar, { marginRight: 6 }]}
+                        />
+                      ) : (
+                        <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                          <Ionicons name="person" size={12} color="#FF6B35" />
+                        </View>
+                      )}
                       <Text style={styles.sellerName} numberOfLines={1}>{item.seller_name || 'Unknown'}</Text>
                     </View>
                   </TouchableOpacity>
@@ -199,9 +240,16 @@ export default function DiscoverScreen({ navigation }) {
                   </Text>
                   <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
                   <View style={styles.sellerInfo}>
-                    <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                      <Ionicons name="person" size={12} color="#FF6B35" />
-                    </View>
+                    {item.seller_profile_image ? (
+                      <Image 
+                        source={{ uri: item.seller_profile_image }}
+                        style={[styles.sellerAvatar, { marginRight: 6 }]}
+                      />
+                    ) : (
+                      <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                        <Ionicons name="person" size={12} color="#FF6B35" />
+                      </View>
+                    )}
                     <Text style={styles.sellerName}>{item.seller_name || 'Unknown'}</Text>
                   </View>
                 </TouchableOpacity>

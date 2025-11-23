@@ -141,5 +141,50 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FF6B35',
   },
+  dividerContainer: {
+    marginTop: 28,
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  dividerText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#666',
+    marginHorizontal: 12,
+  },
+  googleButton: {
+    marginTop: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  googleButtonDisabled: {
+    opacity: 0.6,
+  },
+  googleIcon: {
+    marginRight: 12,
+  },
+  googleButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    color: '#000',
+    fontSize: 16,
+  },
 });
 

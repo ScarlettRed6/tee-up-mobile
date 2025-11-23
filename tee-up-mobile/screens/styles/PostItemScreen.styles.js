@@ -31,9 +31,9 @@ export default StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 200,
     paddingTop: 8,
     flexGrow: 1,
+    // paddingBottom is now set dynamically based on keyboard height
   },
   section: {
     paddingHorizontal: 20,
@@ -249,6 +249,12 @@ export default StyleSheet.create({
     paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
+    // Shadow/elevation for better visibility
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 5,
   },
   postButton: {
     backgroundColor: '#FFF',

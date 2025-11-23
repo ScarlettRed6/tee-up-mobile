@@ -180,6 +180,7 @@ export default StyleSheet.create({
     marginRight: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
   sellerDetails: {
     flex: 1,

@@ -126,6 +126,7 @@ export default StyleSheet.create({
     backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   sellerName: {
     fontFamily: 'Exo_400Regular',

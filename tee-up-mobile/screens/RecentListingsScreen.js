@@ -45,9 +45,16 @@ export default function RecentListingsScreen({ navigation }) {
           ₱{typeof item.price === 'number' ? item.price.toLocaleString() : item.price}
         </Text>
         <View style={styles.sellerInfo}>
-          <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-            <Ionicons name="person" size={12} color="#FF6B35" />
-          </View>
+          {item.seller_profile_image ? (
+            <Image 
+              source={{ uri: item.seller_profile_image }}
+              style={[styles.sellerAvatar, { marginRight: 6 }]}
+            />
+          ) : (
+            <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+              <Ionicons name="person" size={12} color="#FF6B35" />
+            </View>
+          )}
           <Text style={styles.sellerName}>{item.seller_name || 'Unknown'}</Text>
         </View>
       </TouchableOpacity>

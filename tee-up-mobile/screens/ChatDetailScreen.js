@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ChatDetailScreen.styles';
 import { getMessages, findOrCreateConversation } from '../api/chatApi';
 import { getSocket, disconnectSocket } from '../utils/socketClient';
 import { authContext } from '../context/authContext';
+import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
 
 export default function ChatDetailScreen({ navigation, route }) {
@@ -14,6 +15,8 @@ export default function ChatDetailScreen({ navigation, route }) {
   const [conversation, setConversation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [currentUserProfileImage, setCurrentUserProfileImage] = useState(null);
+  const [otherUserProfileImage, setOtherUserProfileImage] = useState(null);
   const scrollViewRef = useRef(null);
   const socketRef = useRef(null);
   const currentUserIdRef = useRef(null); // Store current user ID for consistent comparison
@@ -86,10 +89,47 @@ export default function ChatDetailScreen({ navigation, route }) {
         // If we have an existing conversationId, fetch messages
         if (conversationId) {
           const data = await getMessages(conversationId);
+          const currentUserId = getCurrentUserId();
+          
+          // Determine other user's name and profile image from conversation
+          if (data.conversation) {
+            const currentUserIdStr = String(currentUserId || '');
+            const buyerIdStr = String(data.conversation.buyer_id || '');
+            const sellerIdStr = String(data.conversation.seller_id || '');
+            
+            let otherUserName = null;
+            let otherUserProfileImg = null;
+            
+            if (currentUserIdStr === buyerIdStr) {
+              // Current user is buyer, other user is seller
+              otherUserName = data.conversation.seller_name || null;
+              otherUserProfileImg = data.conversation.seller_profile_image || null;
+            } else if (currentUserIdStr === sellerIdStr) {
+              // Current user is seller, other user is buyer
+              otherUserName = data.conversation.buyer_name || null;
+              otherUserProfileImg = data.conversation.buyer_profile_image || null;
+            }
+            
+            // Add other_user_name and other_user_id to conversation object
+            data.conversation.other_user_name = otherUserName;
+            data.conversation.other_user_id = currentUserIdStr === buyerIdStr 
+              ? data.conversation.seller_id 
+              : data.conversation.buyer_id;
+            
+            setOtherUserProfileImage(otherUserProfileImg);
+          }
+          
           setConversation(data.conversation);
           
+          // Get current user's profile image
+          try {
+            const currentUserProfile = await getUserProfile();
+            setCurrentUserProfileImage(currentUserProfile.profile_image || null);
+          } catch (err) {
+            console.log('Could not fetch current user profile:', err);
+          }
+          
           // Transform messages to match UI format
-          const currentUserId = getCurrentUserId();
           console.log('=== Loading Messages ===');
           console.log('Current User ID (from token):', currentUserId);
           console.log('Current User ID type:', typeof currentUserId);
@@ -126,6 +166,7 @@ export default function ChatDetailScreen({ navigation, route }) {
                   })
                 : 'Now',
               sender_name: msg.sender_name,
+              sender_profile_image: msg.sender_profile_image || null,
             };
           });
           
@@ -178,6 +219,8 @@ export default function ChatDetailScreen({ navigation, route }) {
                         hour12: true 
                       })
                     : 'Now',
+                  sender_name: newMessage.sender_name || null,
+                  sender_profile_image: newMessage.sender_profile_image || null,
                 };
                 
                 return [...filtered, transformedMessage];
@@ -196,17 +239,132 @@ export default function ChatDetailScreen({ navigation, route }) {
             console.error('Socket connection error:', socketError);
             // Continue without Socket.IO - messages will still work via API
           }
-        } else if (existingChat) {
-          // Use existing chat data if provided
+        } else if (existingChat && existingChat.conversation_id) {
+          // Use existing chat data if provided, but still fetch messages to ensure we have latest
+          const existingConvId = existingChat.conversation_id || existingChat.id;
+          const data = await getMessages(existingConvId);
+          
+          // Use existingChat for conversation display, but use fetched data for messages
           setConversation({
-            conversation_id: existingChat.conversation_id || existingChat.id,
-            listing_title: existingChat.productName,
-            listing_price: existingChat.product?.price,
-            other_user_name: existingChat.username,
-            other_user_id: existingChat.otherUserId,
-            listing_id: existingChat.listingId,
+            conversation_id: existingConvId,
+            listing_title: existingChat.productName || data.conversation?.listing_title,
+            listing_price: existingChat.product?.price || data.conversation?.listing_price,
+            other_user_name: existingChat.username || data.conversation?.other_user_name || 'User',
+            other_user_id: existingChat.otherUserId || data.conversation?.other_user_id,
+            listing_id: existingChat.listingId || data.conversation?.listing_id,
           });
-          setMessages(existingChat.messages || []);
+          
+          // Get current user's profile image
+          try {
+            const currentUserProfile = await getUserProfile();
+            setCurrentUserProfileImage(currentUserProfile.profile_image || null);
+          } catch (err) {
+            console.log('Could not fetch current user profile:', err);
+          }
+          
+          // Extract other user's profile image from conversation
+          const currentUserId = getCurrentUserId();
+          if (data.conversation) {
+            const currentUserIdStr = String(currentUserId || '');
+            const buyerIdStr = String(data.conversation.buyer_id || '');
+            const sellerIdStr = String(data.conversation.seller_id || '');
+            
+            let otherUserName = null;
+            let otherUserProfileImg = null;
+            
+            if (currentUserIdStr === buyerIdStr) {
+              // Current user is buyer, other user is seller
+              otherUserName = data.conversation.seller_name || null;
+              otherUserProfileImg = data.conversation.seller_profile_image || null;
+            } else if (currentUserIdStr === sellerIdStr) {
+              // Current user is seller, other user is buyer
+              otherUserName = data.conversation.buyer_name || null;
+              otherUserProfileImg = data.conversation.buyer_profile_image || null;
+            }
+            
+            // Update conversation with correct other_user_name if not already set
+            if (otherUserName && !data.conversation.other_user_name) {
+              data.conversation.other_user_name = otherUserName;
+              setConversation(prev => ({
+                ...prev,
+                other_user_name: otherUserName || prev.other_user_name,
+              }));
+            }
+            
+            setOtherUserProfileImage(otherUserProfileImg || existingChat.otherUserProfileImage || null);
+          }
+          
+          // Transform messages to match UI format
+          const currentUserIdForMsgs = getCurrentUserId();
+          const transformedMessages = data.messages.map(msg => {
+            const msgSenderId = String(msg.sender_id || '');
+            const currentUserIdStr = String(currentUserIdForMsgs || '');
+            const isMyMessage = msgSenderId === currentUserIdStr;
+            
+            return {
+              id: msg.id,
+              text: msg.message,
+              sender: isMyMessage ? 'me' : 'other',
+              timestamp: msg.created_at 
+                ? new Date(msg.created_at).toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                  })
+                : 'Now',
+              sender_name: msg.sender_name,
+              sender_profile_image: msg.sender_profile_image || null,
+            };
+          });
+          
+          setMessages(transformedMessages);
+          
+          // Connect to Socket.IO and join conversation room
+          try {
+            const socket = await getSocket();
+            socketRef.current = socket;
+            
+            socket.emit('join_conversation', { conversationId: existingConvId });
+            
+            // Listen for new messages (same logic as above)
+            socket.on('new_message', (newMessage) => {
+              const currentUserId = getCurrentUserId();
+              const msgSenderId = String(newMessage.sender_id || '');
+              const currentUserIdStr = String(currentUserId || '');
+              const isMyMessage = msgSenderId === currentUserIdStr;
+              
+              setMessages(prev => {
+                const filtered = prev.filter(m => !String(m.id).startsWith('temp_') && m.id !== newMessage.id);
+                
+                const transformedMessage = {
+                  id: newMessage.id,
+                  text: newMessage.message,
+                  sender: isMyMessage ? 'me' : 'other',
+                  timestamp: newMessage.created_at 
+                    ? new Date(newMessage.created_at).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                      })
+                    : 'Now',
+                  sender_name: newMessage.sender_name || null,
+                  sender_profile_image: newMessage.sender_profile_image || null,
+                };
+                
+                return [...filtered, transformedMessage];
+              });
+              
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            });
+            
+            socket.on('error_message', (error) => {
+              Alert.alert('Error', error.message || 'Failed to send message');
+            });
+          } catch (socketError) {
+            console.error('Socket connection error:', socketError);
+          }
         }
 
         setLoading(false);
@@ -324,6 +482,8 @@ export default function ChatDetailScreen({ navigation, route }) {
                       hour12: true 
                     })
                   : 'Now',
+                sender_name: newMessage.sender_name || null,
+                sender_profile_image: newMessage.sender_profile_image || (isMyMessage ? currentUserProfileImage : otherUserProfileImage) || null,
               };
               
               return [...filtered, transformedMessage];
@@ -360,6 +520,7 @@ export default function ChatDetailScreen({ navigation, route }) {
             minute: '2-digit',
             hour12: true 
           }),
+          sender_profile_image: currentUserProfileImage || null,
         };
         
         setMessages(prev => [...prev, optimisticMessage]);
@@ -533,7 +694,14 @@ export default function ChatDetailScreen({ navigation, route }) {
                 {/* Left side: Other user's messages - Avatar first, then bubble */}
                 {!isMyMessage && (
                   <View style={styles.avatar}>
-                    <Ionicons name="person" size={16} color="#666" />
+                    {(msg.sender_profile_image || otherUserProfileImage) ? (
+                      <Image 
+                        source={{ uri: msg.sender_profile_image || otherUserProfileImage }}
+                        style={styles.avatarImage}
+                      />
+                    ) : (
+                      <Ionicons name="person" size={16} color="#666" />
+                    )}
                   </View>
                 )}
                 
@@ -559,7 +727,14 @@ export default function ChatDetailScreen({ navigation, route }) {
                 {/* Right side: My messages - Bubble first, then avatar */}
                 {isMyMessage && (
                   <View style={styles.avatar}>
-                    <Ionicons name="person" size={16} color="#666" />
+                    {(msg.sender_profile_image || currentUserProfileImage) ? (
+                      <Image 
+                        source={{ uri: msg.sender_profile_image || currentUserProfileImage }}
+                        style={styles.avatarImage}
+                      />
+                    ) : (
+                      <Ionicons name="person" size={16} color="#666" />
+                    )}
                   </View>
                 )}
               </View>

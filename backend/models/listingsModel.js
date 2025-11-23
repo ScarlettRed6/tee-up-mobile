@@ -15,7 +15,8 @@ export async function getAllListings(filters = {}, sort = "newest"){
     let query = `SELECT 
         l.*,
         u.name as seller_name,
-        u.email as seller_email
+        u.email as seller_email,
+        u.profile_image as seller_profile_image
     FROM listings l
     LEFT JOIN users u ON l.user_id = u.id`;
     const values = [];
@@ -64,7 +65,8 @@ export async function getListingById(id) {
         `SELECT 
             l.*,
             u.name as seller_name,
-            u.email as seller_email
+            u.email as seller_email,
+            u.profile_image as seller_profile_image
         FROM listings l
         LEFT JOIN users u ON l.user_id = u.id
         WHERE l.listing_id = $1`, 

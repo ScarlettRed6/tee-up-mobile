@@ -17,8 +17,7 @@ export default function SettingsScreen({ navigation }) {
       label: 'Edit User Information',
       icon: 'create-outline',
       onPress: () => {
-        // Handle edit user information
-        console.log('Edit User Information');
+        navigation.navigate('EditProfile');
       },
     },
     {

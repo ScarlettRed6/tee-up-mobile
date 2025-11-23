@@ -23,3 +23,20 @@ export const loginUser = async (creds) => {
     }
 };
 
+export const googleSignIn = async (idToken) => {
+    try {
+        const res = await api.post("/auth/google", { idToken });
+        
+        await AsyncStorage.setItem("accessToken", res.data.token);
+        if (res.data.refreshToken) {
+            await AsyncStorage.setItem("refreshToken", res.data.refreshToken);
+            setRefreshToken(res.data.refreshToken);
+        }
+        
+        return res.data;
+    } catch (err) {
+        console.log("Google sign-in error:", err.response?.data || err.message);
+        throw err;
+    }
+};
+

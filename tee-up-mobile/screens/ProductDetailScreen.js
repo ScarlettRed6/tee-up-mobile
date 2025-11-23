@@ -56,7 +56,8 @@ export default function ProductDetailScreen({ navigation, route }) {
           seller: {
             name: routeProduct.seller_name || 'Unknown',
             id: routeProduct.user_id, 
-            avatar: null,
+            avatar: routeProduct.seller_profile_image || null,
+            profile_image: routeProduct.seller_profile_image || null,
             rating: 4.9, // TODO: Get from user profile
             reviewCount: 120, // TODO: Get from user profile
           },
@@ -94,7 +95,8 @@ export default function ProductDetailScreen({ navigation, route }) {
             seller: {
               name: listingData.seller_name || 'Unknown',
               id: listingData.user_id, // Include user_id in seller object
-              avatar: null,
+              avatar: listingData.seller_profile_image || null,
+              profile_image: listingData.seller_profile_image || null,
               rating: 4.9,
               reviewCount: 120,
             },
@@ -410,9 +412,16 @@ export default function ProductDetailScreen({ navigation, route }) {
             }}
             activeOpacity={0.7}
           >
-            <View style={styles.sellerAvatar}>
-              <Ionicons name="person" size={30} color="#FF6B35" />
-            </View>
+            {product.seller.profile_image || product.seller.avatar ? (
+              <Image 
+                source={{ uri: product.seller.profile_image || product.seller.avatar }}
+                style={styles.sellerAvatar}
+              />
+            ) : (
+              <View style={styles.sellerAvatar}>
+                <Ionicons name="person" size={30} color="#FF6B35" />
+              </View>
+            )}
             <View style={styles.sellerDetails}>
               <Text style={styles.sellerName}>{product.seller.name}</Text>
               <View style={styles.ratingContainer}>
