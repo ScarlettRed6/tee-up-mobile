@@ -50,3 +50,21 @@ export async function updateUser(userId, data){
     );
     return result.rows[0];
 }
+
+//Google oAuth related queries
+export async function findUserByGoogleId(googleId) {
+    const result = await pool.query(
+        `SELECT * FROM users WHERE google_id = $1`,
+        [googleId]
+    );
+    return result.rows[0];
+}
+
+export async function createGoogleUser(name, email, googleId, profileImage){
+    const result = await pool.query(
+        `INSERT INTO users (name, email, provider, google_id, profile_image)
+        VALUES ($1, $2, 'google', $3, $4) RETURNING *`,
+        [name, email, googleId, profileImage]
+    );
+    return result.rows[0];
+}
