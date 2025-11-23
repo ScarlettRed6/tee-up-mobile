@@ -484,6 +484,11 @@ export default function ProductDetailScreen({ navigation, route }) {
               if (existingConversation && existingConversation.listing_id === parseInt(listingId)) {
                 // Navigate directly to existing conversation for THIS listing
                 console.log('Navigating to existing conversation:', existingConversation.conversation_id);
+                // Get first image from product
+                const firstImage = product.images && product.images.length > 0 && product.images[0]?.uri
+                  ? product.images[0].uri
+                  : null;
+                
                 navigation.navigate('ChatDetail', {
                   conversationId: existingConversation.conversation_id,
                   chat: {
@@ -495,6 +500,7 @@ export default function ProductDetailScreen({ navigation, route }) {
                     product: {
                       name: product.title,
                       price: product.price,
+                      image: firstImage,
                     }
                   }
                 });
@@ -503,12 +509,18 @@ export default function ProductDetailScreen({ navigation, route }) {
                 console.log('No existing conversation for this listing, creating new one');
                 // Navigate to InboxScreen with listing info
                 // Conversation will be created when first message is sent
+                // Get first image from product
+                const firstImage = product.images && product.images.length > 0 && product.images[0]?.uri
+                  ? product.images[0].uri
+                  : null;
+                
                 navigation.navigate('Inbox', {
                   listingInfo: {
                     listingId: listingId,
                     sellerId: sellerId,
                     listingTitle: product.title,
                     listingPrice: product.price,
+                    listingImage: firstImage,
                     sellerName: product.seller_name || product.seller?.name,
                   }
                 });
@@ -516,12 +528,18 @@ export default function ProductDetailScreen({ navigation, route }) {
             } catch (error) {
               console.error('Error checking for conversation:', error);
               // Fallback: navigate to InboxScreen
+              // Get first image from product
+              const firstImage = product.images && product.images.length > 0 && product.images[0]?.uri
+                ? product.images[0].uri
+                : null;
+              
               navigation.navigate('Inbox', {
                 listingInfo: {
                   listingId: product.listing_id || product.id,
                   sellerId: product.user_id || product.seller?.id,
                   listingTitle: product.title,
                   listingPrice: product.price,
+                  listingImage: firstImage,
                   sellerName: product.seller_name || product.seller?.name,
                 }
               });

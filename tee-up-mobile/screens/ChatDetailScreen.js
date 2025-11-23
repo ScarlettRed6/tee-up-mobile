@@ -77,6 +77,7 @@ export default function ChatDetailScreen({ navigation, route }) {
             conversation_id: null, // Will be created on first message
             listing_title: listingInfo.listingTitle,
             listing_price: listingInfo.listingPrice,
+            listing_image: listingInfo.listingImage || null, // Add listing image if provided
             other_user_name: listingInfo.sellerName,
             other_user_id: listingInfo.sellerId,
             listing_id: listingInfo.listingId,
@@ -115,6 +116,31 @@ export default function ChatDetailScreen({ navigation, route }) {
             data.conversation.other_user_id = currentUserIdStr === buyerIdStr 
               ? data.conversation.seller_id 
               : data.conversation.buyer_id;
+            
+            // Parse listing_photos to get first image
+            let listingPhoto = null;
+            if (data.conversation.listing_photos) {
+              try {
+                let photos = data.conversation.listing_photos;
+                // Handle different formats: array, JSON string, or single value
+                if (typeof photos === 'string') {
+                  try {
+                    photos = JSON.parse(photos);
+                  } catch (e) {
+                    // If parsing fails, treat as single URL
+                    photos = [photos];
+                  }
+                }
+                if (Array.isArray(photos) && photos.length > 0) {
+                  listingPhoto = photos[0];
+                } else if (photos && typeof photos === 'string') {
+                  listingPhoto = photos;
+                }
+              } catch (e) {
+                console.error('Error parsing listing_photos:', e);
+              }
+            }
+            data.conversation.listing_image = listingPhoto;
             
             setOtherUserProfileImage(otherUserProfileImg);
           }
@@ -244,11 +270,34 @@ export default function ChatDetailScreen({ navigation, route }) {
           const existingConvId = existingChat.conversation_id || existingChat.id;
           const data = await getMessages(existingConvId);
           
+          // Parse listing_photos from fetched conversation data
+          let listingPhotoFromData = null;
+          if (data.conversation?.listing_photos) {
+            try {
+              let photos = data.conversation.listing_photos;
+              if (typeof photos === 'string') {
+                try {
+                  photos = JSON.parse(photos);
+                } catch (e) {
+                  photos = [photos];
+                }
+              }
+              if (Array.isArray(photos) && photos.length > 0) {
+                listingPhotoFromData = photos[0];
+              } else if (photos && typeof photos === 'string') {
+                listingPhotoFromData = photos;
+              }
+            } catch (e) {
+              console.error('Error parsing listing_photos:', e);
+            }
+          }
+          
           // Use existingChat for conversation display, but use fetched data for messages
           setConversation({
             conversation_id: existingConvId,
             listing_title: existingChat.productName || data.conversation?.listing_title,
             listing_price: existingChat.product?.price || data.conversation?.listing_price,
+            listing_image: existingChat.product?.image || listingPhotoFromData || null,
             other_user_name: existingChat.username || data.conversation?.other_user_name || 'User',
             other_user_id: existingChat.otherUserId || data.conversation?.other_user_id,
             listing_id: existingChat.listingId || data.conversation?.listing_id,
@@ -291,7 +340,36 @@ export default function ChatDetailScreen({ navigation, route }) {
               }));
             }
             
+            // Parse listing_photos to get first image if not already set
+            let listingPhoto = existingChat.product?.image || null;
+            if (!listingPhoto && data.conversation.listing_photos) {
+              try {
+                let photos = data.conversation.listing_photos;
+                if (typeof photos === 'string') {
+                  try {
+                    photos = JSON.parse(photos);
+                  } catch (e) {
+                    photos = [photos];
+                  }
+                }
+                if (Array.isArray(photos) && photos.length > 0) {
+                  listingPhoto = photos[0];
+                } else if (photos && typeof photos === 'string') {
+                  listingPhoto = photos;
+                }
+              } catch (e) {
+                console.error('Error parsing listing_photos:', e);
+              }
+            }
+            data.conversation.listing_image = listingPhoto;
+            
             setOtherUserProfileImage(otherUserProfileImg || existingChat.otherUserProfileImage || null);
+            
+            // Update conversation with listing image
+            setConversation(prev => ({
+              ...prev,
+              listing_image: listingPhoto || prev.listing_image,
+            }));
           }
           
           // Transform messages to match UI format
@@ -623,15 +701,28 @@ export default function ChatDetailScreen({ navigation, route }) {
             {conversation.other_user_name || 'User'}
           </Text>
           <View style={styles.productInfoTop}>
-            <View style={styles.productThumbnailTop}>
-              <Ionicons name="golf" size={20} color="#666" />
-            </View>
+            {conversation.listing_image ? (
+              <Image 
+                source={{ uri: conversation.listing_image }}
+                style={styles.productThumbnailTop}
+                resizeMode="cover"
+                onError={(e) => {
+                  console.error('Listing image load error:', e.nativeEvent.error, conversation.listing_image);
+                }}
+              />
+            ) : (
+              <View style={styles.productThumbnailTop}>
+                <Ionicons name="golf" size={20} color="#666" />
+              </View>
+            )}
             <View style={styles.productTextContainer}>
               <Text style={styles.productNameTop} numberOfLines={1}>
                 {conversation.listing_title || 'Product'}
               </Text>
               <Text style={styles.productPriceTop}>
-                {conversation.listing_price || '₱0'}
+                {typeof conversation.listing_price === 'number' 
+                  ? `₱${conversation.listing_price.toLocaleString()}` 
+                  : conversation.listing_price || '₱0'}
               </Text>
             </View>
           </View>
