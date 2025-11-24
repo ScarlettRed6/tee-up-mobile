@@ -52,6 +52,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
+    overflow: 'hidden',
   },
   productTextContainer: {
     flex: 1,
