@@ -10,7 +10,8 @@ import {
     createGoogleUser,
     updateUserPassword, 
     findUserById,
-    storeResetPassOtp} from "../models/userModel.js";
+    storeResetPassOtp,
+    clearOtpFields } from "../models/userModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
 /* import dotenv from "dotenv";
 
@@ -155,6 +156,8 @@ export async function changePassword(req, res) {
         const hashed = await bcrypt.hash(newPassword, 10);
         await updateUserPassword(userId, hashed);
 
+        console.log("PASSWORD CHANGED SUCCESSFULLY!");
+        res.json({ message: "Password changed successfully" });
     }catch(err){
         console.log("Change password error: ", err);
         res.status(500).json({ message: "Change password error" });
@@ -224,4 +227,36 @@ export async function verifyResetOtp(req, res){
     }
 
 }//End of verifyResetOtp function
+
+//Reset password function for forget password feature, different from change  because of OTP
+export async function resetPassword(req, res){
+    const { resetToken, newPassword, confirmNewPassword } = req.body;
+
+    if(newPassword !== confirmNewPassword){
+        console.log("NewPass and ConfirmPass does not match");
+        return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    try{
+        const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+        const user = await findUserById(decoded.id);
+        
+        //Begin hashing of new password
+        const hashed = await bcrypt.hash(newPassword, 10);
+
+        //update the user password from db
+        await updateUserPassword(user.id, hashed);
+
+        //clear the otp columns
+        await clearOtpFields(user.id);
+
+        console.log("PASSWORD RESET SUCCESSFUL");
+        res.json({ message: "Password reset successful!" });
+    }catch(err){
+        console.log("resetPassword error: ", err);
+        res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+}
+
 

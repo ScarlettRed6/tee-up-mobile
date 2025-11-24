@@ -72,7 +72,7 @@ export async function createGoogleUser(name, email, googleId, profileImage){
 //For change password
 export async function updateUserPassword(id, hashedPassword) {
     const result = await pool.query(
-        `UPDATE users SET password = $1 WHERE id = $2 RETURNIN *`,
+        `UPDATE users SET password = $1 WHERE id = $2 RETURNING *`,
         [hashedPassword, id]
     );
     return result.rows[0];
@@ -83,6 +83,15 @@ export async function storeResetPassOtp(otp, expiresAt, id){
     const result = await pool.query(
         `UPDATE users SET reset_otp = $1, reset_otp_expires = $2 WHERE id = $3`,
         [otp, expiresAt, id]
+    );
+    return result.rows[0];
+}
+
+//Clearing of otp columns data
+export async function clearOtpFields(id){
+    const result = await pool.query(
+        `UPDATE users SET reset_otp = NULL, reset_otp_expires = NULL WHERE id = $1`,
+        [id]
     );
     return result.rows[0];
 }
