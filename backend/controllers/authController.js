@@ -9,7 +9,9 @@ import {
     findUserByGoogleId, 
     createGoogleUser,
     updateUserPassword, 
-    findUserById} from "../models/userModel.js";
+    findUserById,
+    storeResetPassOtp} from "../models/userModel.js";
+import { sendEmail } from "../utils/sendEmail.js";
 /* import dotenv from "dotenv";
 
 dotenv.config(); */
@@ -157,4 +159,40 @@ export async function changePassword(req, res) {
         console.log("Change password error: ", err);
         return res.status(500).json({ message: "Change password error" });
     }
-}
+}//End of changePassword function
+
+//Forgot password implementation with OTP sending and verifying and receiving
+export async function sendResetOtp(req, res) {
+    const { email } = req.body;
+
+    try{
+        //Always check if user exists
+        const user = await findUserByEmail(email);
+        if(!user) return res.status(404).json({ message: "Email not found" });
+
+        //Check if user is logged in using teeup db
+        if(user.provider !== "local"){
+            return res.status(403).json({ message: "Logged in using Google account users cannot reset password" });
+        }
+
+        //Generate the 6 digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+        await storeResetPassOtp(otp, expiresAt, user.id);
+
+        //Send email
+        await sendEmail(
+            user.email,
+            "Your Password Reset Code",
+            `Your OTP code is: ${otp}`
+        );
+
+        console.log("OTP SENT TO EMAIL");
+        res.json({ message: "OTP sent to email" });
+    }catch(err){
+        console.log("sendResetOtp error:", err);
+        res.status(500).json({ message: "Error sending OTP" });
+    }
+}//End of sendResetOtp function
+

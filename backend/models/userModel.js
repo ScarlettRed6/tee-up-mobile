@@ -77,3 +77,12 @@ export async function updateUserPassword(id, hashedPassword) {
     );
     return result.rows[0];
 }
+
+//Storing otp
+export async function storeResetPassOtp(otp, expiresAt, id){
+    const result = await pool.query(
+        `UPDATE users SET reset_otp = $1, reset_otp_expires = $2 WHERE id = $3`,
+        [otp, expiresAt, id]
+    );
+    return result.rows[0];
+}
