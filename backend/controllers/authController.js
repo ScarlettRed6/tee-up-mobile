@@ -8,7 +8,8 @@ import {
     getRefreshToken, 
     findUserByGoogleId, 
     createGoogleUser,
-    updateUserPassword } from "../models/userModel.js";
+    updateUserPassword, 
+    findUserById} from "../models/userModel.js";
 /* import dotenv from "dotenv";
 
 dotenv.config(); */
@@ -64,7 +65,7 @@ export async function register(req, res){
 
         if(password !== confirmPassword){
             console.log("Passwords do not MATCH");
-           return res.status(400).json({message: "Passwords do not match"});
+            return res.status(400).json({message: "Passwords do not match"});
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -124,6 +125,36 @@ export async function refreshToken(req, res){
 }//End of refreshToken function
 
 //Change password and forgot password functions
-export async function name(params) {
-    
+export async function changePassword(req, res) {
+    const userId = req.user.id;
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    try{
+        const user = await findUserById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        //Check first if user logged in using google oauth
+        if (user.provider !== "local"){
+            return res.status(403).json({ message: "Google account users cannot change password" });
+        }
+
+        //Check if new password matches confirm new password
+        if (newPassword !== confirmNewPassword){
+            return res.status(400).json({message: "Passwords do not match"});
+        }
+
+        //Check compare original inputted password with user password
+        const valid = await bcrypt.compare(currentPassword, user.password);
+        if(!valid){
+            return res.status(400).json({ message: "Current password is incorrect" });
+        }
+
+        //If valid, then begin hashing the new password
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await updateUserPassword(userId, hashed);
+
+    }catch(err){
+        console.log("Change password error: ", err);
+        return res.status(500).json({ message: "Change password error" });
+    }
 }
