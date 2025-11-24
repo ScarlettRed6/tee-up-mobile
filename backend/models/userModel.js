@@ -68,3 +68,12 @@ export async function createGoogleUser(name, email, googleId, profileImage){
     );
     return result.rows[0];
 }
+
+//For change password
+export async function updateUserPassword(id, hashedPassword) {
+    const result = await pool.query(
+        `UPDATE users SET password = $1 WHERE id = $2 RETURNIN *`,
+        [hashedPassword, id]
+    );
+    return result.rows[0];
+}

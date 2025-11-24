@@ -1,7 +1,14 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import { findUserByEmail, createUser, storeRefreshToken, getRefreshToken, findUserByGoogleId, createGoogleUser } from "../models/userModel.js";
+import { 
+    findUserByEmail, 
+    createUser, 
+    storeRefreshToken, 
+    getRefreshToken, 
+    findUserByGoogleId, 
+    createGoogleUser,
+    updateUserPassword } from "../models/userModel.js";
 /* import dotenv from "dotenv";
 
 dotenv.config(); */
@@ -115,3 +122,8 @@ export async function refreshToken(req, res){
         res.status(500).json({ error: err.message });
     }
 }//End of refreshToken function
+
+//Change password and forgot password functions
+export async function name(params) {
+    
+}
