@@ -157,7 +157,7 @@ export async function changePassword(req, res) {
 
     }catch(err){
         console.log("Change password error: ", err);
-        return res.status(500).json({ message: "Change password error" });
+        res.status(500).json({ message: "Change password error" });
     }
 }//End of changePassword function
 
@@ -195,4 +195,33 @@ export async function sendResetOtp(req, res) {
         res.status(500).json({ message: "Error sending OTP" });
     }
 }//End of sendResetOtp function
+
+export async function verifyResetOtp(req, res){
+    const { email, otp } = req.body;
+
+    try{
+        const user = await findUserByEmail(email);
+        if(!user) return res.status(404).json({ message: "Email not found" });
+
+        //Check reset otp if matches with otp
+        if(user.reset_otp !== otp){
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+
+        //Chekc if otp is expired
+        if(new Date() > user.reset_otp_expires){
+            return res.status(400).json({ message: "OTP expired" });
+        }
+
+        //Mark OTP as verified by generating a short duration reset token
+        const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "10m" });
+
+        console.log("OTP VERIFIED");
+        res.json({ message: "OTP verified", resetToken });
+    }catch(err){
+        console.log("verifyResetOtp error: ", err);
+        res.status(500).json({ message: "OTP verification failed" });
+    }
+
+}//End of verifyResetOtp function
 
