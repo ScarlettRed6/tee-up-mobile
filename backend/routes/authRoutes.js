@@ -7,7 +7,9 @@ import {
         changePassword, 
         sendResetOtp, 
         verifyResetOtp, 
-        resetPassword } from "../controllers/authController.js";
+        resetPassword,
+        sendEmailVerification,
+        verifyEmailOtp } from "../controllers/authController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -21,5 +23,9 @@ router.put("/change-password", verifyToken, changePassword);
 router.post("/forget-password", sendResetOtp);
 router.post("/verify-otp", verifyResetOtp);
 router.post("/reset-password", resetPassword);
+
+//Email otp verification routes
+router.post("/send-email-verification", sendEmailVerification);
+router.post("/verify-email-otp", verifyEmailOtp);
 
 export default router;

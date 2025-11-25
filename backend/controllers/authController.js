@@ -11,7 +11,9 @@ import {
     updateUserPassword, 
     findUserById,
     storeResetPassOtp,
-    clearOtpFields } from "../models/userModel.js";
+    clearOtpFields, 
+    storeEmailVerificationOtp,
+    verifyUserEmail} from "../models/userModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
 /* import dotenv from "dotenv";
 
@@ -74,6 +76,15 @@ export async function register(req, res){
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await createUser(name, email, hashedPassword);
 
+        //Here sends the otp for verification
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        //Store the otp and its expiration
+        await storeEmailVerificationOtp(user.id, otp, expiresAt);
+        //Send the otp to the email for verification
+        await sendEmail(email, "Verify your Email", `Your TeeUp verification code is: ${otp}`);
+
         const token = jwt.sign({id: user.id}, process.env.JWT_SECRET, { expiresIn: "1h" });
 
         res.status(201).json({ message: "User registered successfully", token });
@@ -88,6 +99,10 @@ export async function login(req, res){
     try{
         const user = await findUserByEmail(email);
         if(!user) return res.status(400).json({message: "User not found"});
+
+        if(!user.is_verified){
+            return res.status(403).json({ message: "Email not verified. Please verify your Email" });
+        }
 
         const validPass = await bcrypt.compare(password, user.password);
         if(!validPass) {
@@ -257,6 +272,73 @@ export async function resetPassword(req, res){
         res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
-}
+}//End of resetPassword function
+
+//Functions to help with email verification with register
+//This send email verification usefull for when otp is expired and want to resend again
+export async function sendEmailVerification(){
+    const { email } = req.body;
+
+    try{
+        const user = await findUserByEmail(email);
+        if(!user) return res.status(404).json({ message: "Email not found" });
+
+        //Check if email is already verified
+        if(user.is_verified){
+            return res.status(400).json({ message: "Email is already verified!" });
+        }
+
+        //Generate the otp
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+        //Store the otp
+        await storeEmailVerificationOtp(user.id, otp, expiresAt);
+
+        //Then send the otp to the email
+        await sendEmail(email, "Verify your Email", `Your TeeUp verification code is: ${otp}`);
+
+        console.log("Otp sent successfully");
+        res.json({ message: "Verification OTP sent!" });
+    }catch(err){
+        console.log(`sendEmailVerification error: ${err}`);
+        res.status(500).json({ error: err.message });
+    }
+
+}//End of sendEmailVericfication function
+
+export async function verifyEmailOtp(req, res){
+    const { email, otp } = req.body;
+
+    try{
+        const user = await findUserByEmail(email);
+        if(!user) return res.status(404).json({ message: "Email not found" });
+
+        //Check if email is already verified
+        if(user.is_verified){
+            return res.status(400).json({ message: "Email already verified" });
+        }
+
+        //Check if otp matches in the db
+        if(user.email_verification_otp !== otp){
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+
+        //Then check also if OTP is expired
+        if(new Date() > user.email_verification_expires){
+            return res.status(400).json({ message: "OTP expired" });
+        }
+
+        //Verify the email
+        await verifyUserEmail(user.id);
+
+        console.log("Email successfully verified");
+        res.json({ message: "Email verified successfully!" });
+    }catch(err){
+        console.log(`verifyEmailOtp error: ${err}`);
+        res.status(500).json({ error: err.message });
+    }
+
+}//End of verifyEmailOtp
 
 
