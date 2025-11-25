@@ -6,8 +6,8 @@ export async function getUserProfile(req, res){
         const user = await findUserById(req.user.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const {id, name, email, profile_image, provider } = user;
-        res.json({ id, name, email, profile_image, provider });
+        const {id, name, email, profile_image, provider, bio } = user;
+        res.json({ id, name, email, profile_image, provider, bio });
     }catch(err){
         res.status(500).json({ error: err.message });
     }
@@ -32,7 +32,7 @@ export async function getUserById(req, res){
 
 export async function updateUserProfile(req, res){
     const userId = req.user.id;
-    const { name, email } = req.body;
+    const { name, email, bio } = req.body;
 
     try{
         const user = await findUserById(userId);
@@ -56,6 +56,7 @@ export async function updateUserProfile(req, res){
         const updatedData = {
             name: name || user.name,
             email: user.provider === "local" ? (email || user.email) : user.email,
+            bio: bio || user.bio,
             profile_image: profileImage,
         };
 
