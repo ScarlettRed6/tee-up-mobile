@@ -95,3 +95,18 @@ export async function clearOtpFields(id){
     );
     return result.rows[0];
 }
+
+//Here starts email verification 
+export async function storeEmailVerificationOtp(id, otp, expiresAt){
+    await pool.query(
+        `UPDATE users SET email_verification_otp = $1, email_verification_expires = $2
+        WHERE id = $3`, [otp, expiresAt, id]
+    );
+}
+
+export async function verifyUserEmail(id) {
+    const result = await pool.query(`
+        UPDATE users SET is_verified = true, email_verification_otp = NULL, email_verification_expires = NULL
+        WHERE id = $1 RETURNING *`, [id]);
+    return result.rows[0];
+}
