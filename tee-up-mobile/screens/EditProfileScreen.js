@@ -6,12 +6,15 @@ import styles from './styles/EditProfileScreen.styles';
 import { authContext } from '../context/authContext';
 import { getUserProfile, updateUserProfile } from '../api/userApi';
 
+const BIO_MAX_LENGTH = 200;
+
 export default function EditProfileScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageUri, setProfileImageUri] = useState(null);
   const [errors, setErrors] = useState({});
@@ -27,6 +30,7 @@ export default function EditProfileScreen({ navigation, route }) {
       const userData = await getUserProfile();
       setName(userData.name || '');
       setEmail(userData.email || '');
+      setBio(userData.bio || '');
       setIsGoogleAccount(userData.provider === 'google');
       if (userData.profile_image) {
         setProfileImageUri(userData.profile_image);
@@ -92,6 +96,10 @@ export default function EditProfileScreen({ navigation, route }) {
       }
     }
 
+    if (bio && bio.trim().length > BIO_MAX_LENGTH) {
+      newErrors.bio = `Bio cannot exceed ${BIO_MAX_LENGTH} characters`;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -106,6 +114,7 @@ export default function EditProfileScreen({ navigation, route }) {
       const profileData = {
         name: name.trim(),
         email: isGoogleAccount ? undefined : email.trim(), // Don't send email for Google accounts
+        bio: bio ? bio.trim() : '',
       };
 
       await updateUserProfile(profileData, profileImage);
@@ -131,9 +140,11 @@ export default function EditProfileScreen({ navigation, route }) {
       
       let errorMessage = 'Failed to update profile. Please try again.';
       if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+        errorMessage = error.response?.data?.message;
       } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+        errorMessage = error.response?.data?.error;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       Alert.alert('Error', errorMessage);
@@ -259,6 +270,39 @@ export default function EditProfileScreen({ navigation, route }) {
           {isGoogleAccount && (
             <Text style={styles.hintText}>Email cannot be changed for Google accounts</Text>
           )}
+        </View>
+
+        {/* Bio Field */}
+        <View style={styles.fieldGroup}>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Bio</Text>
+            <Text style={styles.labelHint}>Let buyers know more about you</Text>
+          </View>
+          <TextInput
+            value={bio}
+            onChangeText={(text) => {
+              if (text.length <= BIO_MAX_LENGTH) {
+                setBio(text);
+              }
+              if (errors.bio) {
+                setErrors(prev => ({ ...prev, bio: null }));
+              }
+            }}
+            style={[styles.input, styles.textArea, errors.bio && styles.inputError]}
+            placeholder="Share details like what you sell, shipping preferences, or meetup locations."
+            placeholderTextColor="#999"
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+          <View style={styles.fieldFooter}>
+            {errors.bio ? (
+              <Text style={styles.errorText}>{errors.bio}</Text>
+            ) : (
+              <View />
+            )}
+            <Text style={styles.characterCount}>{bio.length}/{BIO_MAX_LENGTH}</Text>
+          </View>
         </View>
 
         {/* Save Button */}

@@ -33,6 +33,12 @@ export default function ProfileScreen({ navigation, route }) {
     fetchProfile();
   }, [fetchProfile]);
 
+  const handleEditProfile = useCallback(() => {
+    navigation.navigate('EditProfile', {
+      onProfileUpdated: fetchProfile,
+    });
+  }, [navigation, fetchProfile]);
+
   // Refresh profile when screen comes into focus (e.g., returning from EditProfile)
   useFocusEffect(
     useCallback(() => {
@@ -574,9 +580,25 @@ export default function ProfileScreen({ navigation, route }) {
 
         {/* Bio Section */}
         <View style={styles.bioSection}>
-          <Text style={styles.bioText}>
-            I buy/sell/trade golf clubs! Feel free to offer on any of my listings!
+          <Text
+            style={[
+              styles.bioText,
+              !(user.bio && user.bio.trim().length) && styles.bioPlaceholderText
+            ]}
+          >
+            {user.bio && user.bio.trim().length
+              ? user.bio.trim()
+              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
           </Text>
+          {!(user.bio && user.bio.trim().length) && (
+            <TouchableOpacity
+              style={styles.editBioButton}
+              onPress={handleEditProfile}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.editBioButtonText}>Add bio</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Search and Filters */}

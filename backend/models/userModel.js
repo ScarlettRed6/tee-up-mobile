@@ -45,7 +45,7 @@ export async function createUser(name, email, hashedPassword){
 export async function updateUser(userId, data){
     const { name, email, bio, profile_image } = data;
     const result = await pool.query(
-        `UPDATE users SET name = $1, email = $2, bio = $3 profile_image = $4
+        `UPDATE users SET name = $1, email = $2, bio = $3, profile_image = $4
         WHERE id = $5 RETURNING *`, [name, email, bio, profile_image, userId]
     );
     return result.rows[0];

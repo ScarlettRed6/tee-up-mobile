@@ -20,6 +20,9 @@ export const updateUserProfile = async (profileData, profileImage = null) => {
     if (profileData.email) {
         formData.append('email', profileData.email);
     }
+    if (profileData.bio !== undefined) {
+        formData.append('bio', profileData.bio);
+    }
     
     // Add profile image if provided
     if (profileImage && profileImage.uri) {

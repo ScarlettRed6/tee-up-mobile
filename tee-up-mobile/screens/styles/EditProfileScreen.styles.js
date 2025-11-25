@@ -99,6 +99,12 @@ export default StyleSheet.create({
   fieldGroup: {
     marginBottom: 24,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   label: {
     fontFamily: 'Exo_600SemiBold',
     fontSize: 14,
@@ -124,6 +130,9 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  textArea: {
+    minHeight: 140,
+  },
   inputDisabled: {
     backgroundColor: '#F3F3F3',
     color: '#999',
@@ -143,6 +152,17 @@ export default StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 4,
+  },
+  fieldFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  characterCount: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#666',
   },
   saveButton: {
     backgroundColor: '#FF6B35',

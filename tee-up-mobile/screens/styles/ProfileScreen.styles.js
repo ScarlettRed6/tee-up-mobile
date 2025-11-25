@@ -100,6 +100,27 @@ export default StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
+  bioPlaceholderText: {
+    fontFamily: 'Exo_400Regular',
+    color: '#888',
+  },
+  editBioButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  editBioButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 13,
+    color: '#FF6B35',
+  },
   searchSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
