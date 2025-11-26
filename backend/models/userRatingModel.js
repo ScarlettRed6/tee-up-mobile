@@ -12,8 +12,13 @@ export async function addOrUpdateRating(rated_user_id, rater_user_id, rating, re
 
 export async function getUserRatings(rated_user_id) {
     const result = await pool.query(
-        `SELECT rating, review, created_at
-        FROM user_ratings WHERE rated_user_id = $1`,
+        `SELECT ur.rating, ur.review, ur.created_at,
+                u.name AS reviewer_name,
+                u.profile_image AS reviewer_profile_image
+         FROM user_ratings ur
+         LEFT JOIN users u ON ur.rater_user_id = u.id
+         WHERE ur.rated_user_id = $1
+         ORDER BY ur.created_at DESC`,
         [rated_user_id]
     );
     return result.rows;

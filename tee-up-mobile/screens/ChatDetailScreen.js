@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect, useContext, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ChatDetailScreen.styles';
@@ -7,6 +7,11 @@ import { getSocket, disconnectSocket } from '../utils/socketClient';
 import { authContext } from '../context/authContext';
 import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { rateUser } from '../api/ratingApi';
+
+const MIN_MESSAGES_FOR_RATING = 6;
+const buildRatedStorageKey = (identifier) => `rated_conversation:${identifier}`;
 
 export default function ChatDetailScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
@@ -20,12 +25,28 @@ export default function ChatDetailScreen({ navigation, route }) {
   const scrollViewRef = useRef(null);
   const socketRef = useRef(null);
   const currentUserIdRef = useRef(null); // Store current user ID for consistent comparison
+  const [showRatingPrompt, setShowRatingPrompt] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingReview, setRatingReview] = useState('');
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [hasRatedConversation, setHasRatedConversation] = useState(false);
 
   // Get route params
   const conversationId = route?.params?.conversationId;
   const existingChat = route?.params?.chat;
   const listingInfo = route?.params?.listingInfo;
   const isNewConversation = route?.params?.isNewConversation || false;
+
+  const ratingThreshold = MIN_MESSAGES_FOR_RATING;
+
+  const conversationIdentifier = useMemo(() => {
+    if (conversation?.conversation_id) return conversation.conversation_id;
+    if (conversationId) return conversationId;
+    if (conversation?.listing_id && conversation?.other_user_id) {
+      return `${conversation.other_user_id}-${conversation.listing_id}`;
+    }
+    return null;
+  }, [conversation?.conversation_id, conversation?.listing_id, conversation?.other_user_id, conversationId]);
 
   // Get current user ID and store it in ref for consistent comparison
   const getCurrentUserId = () => {
@@ -58,6 +79,22 @@ export default function ChatDetailScreen({ navigation, route }) {
       currentUserIdRef.current = null;
     }
   }, [accessToken]);
+
+  useEffect(() => {
+    const loadRatedStatus = async () => {
+      if (!conversationIdentifier) {
+        setHasRatedConversation(false);
+        return;
+      }
+      try {
+        const flag = await AsyncStorage.getItem(buildRatedStorageKey(conversationIdentifier));
+        setHasRatedConversation(Boolean(flag));
+      } catch (error) {
+        console.log('Error loading rating status', error);
+      }
+    };
+    loadRatedStatus();
+  }, [conversationIdentifier]);
 
   // Initialize conversation and messages
   useEffect(() => {
@@ -495,6 +532,49 @@ export default function ChatDetailScreen({ navigation, route }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!conversation?.other_user_id || !conversationIdentifier) {
+      setShowRatingPrompt(false);
+      return;
+    }
+    if (messages.length >= ratingThreshold && !hasRatedConversation) {
+      setShowRatingPrompt(true);
+    } else if (hasRatedConversation) {
+      setShowRatingPrompt(false);
+    }
+  }, [messages.length, conversation?.other_user_id, hasRatedConversation, conversationIdentifier, ratingThreshold]);
+
+  const handleSubmitRating = async () => {
+    if (!conversation?.other_user_id) return;
+    if (ratingValue < 1) {
+      Alert.alert('Select rating', 'Please choose a star rating before submitting.');
+      return;
+    }
+
+    setRatingSubmitting(true);
+    try {
+      await rateUser(conversation.other_user_id, {
+        rating: ratingValue,
+        review: ratingReview.trim() || undefined,
+      });
+
+      if (conversationIdentifier) {
+        await AsyncStorage.setItem(buildRatedStorageKey(conversationIdentifier), 'true');
+        setHasRatedConversation(true);
+      }
+
+      setShowRatingPrompt(false);
+      setRatingReview('');
+      setRatingValue(0);
+      Alert.alert('Thank you!', 'Your rating has been submitted.');
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to submit rating.';
+      Alert.alert('Error', message);
+    } finally {
+      setRatingSubmitting(false);
+    }
+  };
+
   const handleSend = async () => {
     if (message.trim().length === 0 || sending) return;
 
@@ -631,6 +711,54 @@ export default function ChatDetailScreen({ navigation, route }) {
         }
       });
     }
+  };
+
+  const renderRatingPrompt = () => {
+    if (!showRatingPrompt || !conversation?.other_user_id) return null;
+    const otherName = conversation?.other_user_name || 'this user';
+
+    return (
+      <View style={styles.ratingCard}>
+        <Text style={styles.ratingTitle}>Rate your meetup with {otherName}</Text>
+        <Text style={styles.ratingSubtitle}>Share how the transaction went so others know what to expect.</Text>
+        <View style={styles.ratingStars}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <TouchableOpacity
+              key={star}
+              style={styles.ratingStarButton}
+              onPress={() => setRatingValue(star)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={star <= ratingValue ? 'star' : 'star-outline'}
+                size={28}
+                color="#FFB703"
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TextInput
+          style={styles.ratingReviewInput}
+          placeholder="Add a short review (optional)"
+          placeholderTextColor="#9CA3AF"
+          multiline
+          value={ratingReview}
+          onChangeText={setRatingReview}
+          maxLength={250}
+        />
+        <TouchableOpacity
+          style={[styles.ratingSubmitButton, (ratingSubmitting || ratingValue < 1) && styles.ratingSubmitButtonDisabled]}
+          onPress={handleSubmitRating}
+          disabled={ratingSubmitting || ratingValue < 1}
+        >
+          {ratingSubmitting ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.ratingSubmitButtonText}>Submit rating</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   if (loading) {
@@ -841,6 +969,7 @@ export default function ChatDetailScreen({ navigation, route }) {
             </Text>
           </View>
         )}
+        {renderRatingPrompt()}
       </ScrollView>
 
       {/* Message Input Bar */}

@@ -78,13 +78,17 @@ export default StyleSheet.create({
     marginTop: 8,
   },
   reputationText: {
-    fontFamily: 'Exo_400Regular',
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 6,
+    fontFamily: 'Exo_700Bold',
+    fontSize: 28,
+    color: '#111',
   },
   starsContainer: {
     flexDirection: 'row',
+  },
+  reputationSubtext: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
   },
   bioSection: {
     paddingHorizontal: 20,
@@ -150,6 +154,77 @@ export default StyleSheet.create({
   },
   listingsSection: {
     paddingHorizontal: 20,
+  },
+  reviewsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewsTitle: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#111',
+  },
+  reviewsLink: {
+    fontFamily: 'Exo_500Medium',
+    color: '#FF6B35',
+    fontSize: 14,
+  },
+  reviewCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  reviewAuthor: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+    color: '#111',
+  },
+  reviewDate: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  reviewRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  reviewRatingText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 12,
+    marginLeft: 4,
+    color: '#92400E',
+  },
+  reviewText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 20,
+  },
+  reviewTextMuted: {
+    fontFamily: 'Exo_400Regular_Italic',
+    fontSize: 13,
+    color: '#9CA3AF',
   },
   productGrid: {
     flexDirection: 'row',

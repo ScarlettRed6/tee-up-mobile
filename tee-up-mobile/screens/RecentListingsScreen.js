@@ -1,11 +1,13 @@
 import React, { useContext } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/RecentListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
 
 export default function RecentListingsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { listings, loading } = useContext(ListingsContext);
 
   const renderProductCard = (item, index) => {
@@ -104,7 +106,7 @@ export default function RecentListingsScreen({ navigation }) {
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
 
@@ -121,7 +123,7 @@ export default function RecentListingsScreen({ navigation }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}

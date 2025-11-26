@@ -48,8 +48,8 @@ export default StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
     paddingTop: 8,
+    paddingBottom: 16,
   },
   subtitleSection: {
     paddingHorizontal: 20,

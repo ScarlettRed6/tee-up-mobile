@@ -15,6 +15,7 @@ import SearchResultsScreen from '../screens/SearchResultsScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import SellerReviewsScreen from '../screens/SellerReviewsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -78,6 +79,7 @@ export default function AppStack() {
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="SellerReviews" component={SellerReviewsScreen} />
     </Stack.Navigator>
   );
 }

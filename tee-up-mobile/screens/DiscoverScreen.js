@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/DiscoverScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
@@ -11,6 +12,7 @@ import { getUserProfile } from '../api/userApi';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function DiscoverScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const { listings, loading } = useContext(ListingsContext);
   const { accessToken } = useContext(authContext);
   const [userProfileImage, setUserProfileImage] = useState(null);
@@ -99,7 +101,7 @@ export default function DiscoverScreen({ navigation }) {
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Subtitle */}
@@ -273,7 +275,7 @@ export default function DiscoverScreen({ navigation }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {

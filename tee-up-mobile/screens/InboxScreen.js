@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, useRef } from 'rea
 import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/InboxScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { getConversations } from '../api/chatApi';
@@ -9,6 +10,7 @@ import { authContext } from '../context/authContext';
 import jwtDecode from 'jwt-decode';
 
 export default function InboxScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState([]);
@@ -174,7 +176,7 @@ export default function InboxScreen({ navigation, route }) {
       {/* Chat List */}
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {error ? (
@@ -241,7 +243,7 @@ export default function InboxScreen({ navigation, route }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
@@ -282,7 +284,7 @@ export default function InboxScreen({ navigation, route }) {
       </View>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}

@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { getUserById } from '../api/userApi';
 import { fetchUserListings } from '../api/listingsApi';
+import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
+
+const normalizeListingStatus = (statusValue = 'available') => {
+  const lower = (statusValue || '').toString().toLowerCase();
+  if (lower === 'sold') return 'Sold';
+  if (lower === 'pending') return 'Pending';
+  return 'Available';
+};
 
 export default function UserProfileScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   // Get user ID or user object from route params
   const userIdFromParams = route?.params?.userId;
   const userFromParams = route?.params?.user;
@@ -19,6 +29,9 @@ export default function UserProfileScreen({ navigation, route }) {
   const [userListings, setUserListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ratingSummary, setRatingSummary] = useState({ average_rating: '0.00', total_raters: 0 });
+  const [recentRatings, setRecentRatings] = useState([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery || '');
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
@@ -104,55 +117,8 @@ export default function UserProfileScreen({ navigation, route }) {
           });
         }
 
-        // Fetch user listings if we have a user ID
         if (targetUserId) {
-          console.log('Fetching listings for user ID:', targetUserId);
-          const listings = await fetchUserListings(targetUserId);
-          console.log('Fetched listings:', listings);
-          console.log('Number of listings:', listings?.length || 0);
-          
-          // Check if listings is an array
-          if (Array.isArray(listings)) {
-            // Transform listings to match expected format
-            const transformedListings = listings.map(listing => {
-              // Ensure price is a number for sorting
-              const priceNum = typeof listing.price === 'string' 
-                ? parseFloat(listing.price.replace(/[^0-9.]/g, '')) 
-                : parseFloat(listing.price) || 0;
-              
-              return {
-                id: listing.listing_id,
-                name: listing.title,
-                price: `₱${priceNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                priceValue: priceNum, // Ensure it's a number
-                seller: userData?.username || userData?.name || listing.seller_name || 'Unknown',
-                sellerColor: userData?.avatarColor || '#FF6B35',
-                category: listing.category,
-                condition: listing.condition,
-                flex: listing.flex || null,
-                hand: listing.hand || null,
-                listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
-                description: listing.description,
-                brand: listing.brand,
-                status: listing.status,
-                listingData: listing, // Keep original listing data including photos
-              };
-            });
-
-            console.log('Transformed listings:', transformedListings);
-            setUserListings(transformedListings);
-            
-            // Update active listings count
-            if (userData) {
-              setUser(prev => ({
-                ...prev,
-                activeListings: transformedListings.filter(l => l.status === 'Available' || l.status === 'available').length,
-              }));
-            }
-          } else {
-            console.warn('Listings is not an array:', listings);
-            setUserListings([]);
-          }
+          await fetchRatingsAndListings(targetUserId, userData);
         } else {
           console.warn('No targetUserId available, cannot fetch listings');
           setUserListings([]);
@@ -174,6 +140,63 @@ export default function UserProfileScreen({ navigation, route }) {
 
     fetchUserData();
   }, [userIdFromParams, userFromParams?.id]);
+
+  const fetchRatingsAndListings = async (targetUserId, userData) => {
+    try {
+      setRatingsLoading(true);
+      const [summaryRes, ratingsRes, listings] = await Promise.all([
+        fetchUserRatingSummary(targetUserId),
+        fetchUserRatings(targetUserId),
+        fetchUserListings(targetUserId)
+      ]);
+
+      setRatingSummary({
+        average_rating: summaryRes?.average_rating || '0.00',
+        total_raters: Number(summaryRes?.total_raters || 0)
+      });
+      setRecentRatings((ratingsRes?.ratings || []).slice(0, 3));
+
+      if (Array.isArray(listings)) {
+        const transformedListings = listings.map(listing => {
+          const priceNum = typeof listing.price === 'string' 
+            ? parseFloat(listing.price.replace(/[^0-9.]/g, '')) 
+            : parseFloat(listing.price) || 0;
+          const normalizedStatus = normalizeListingStatus(listing.status);
+          return {
+            id: listing.listing_id,
+            name: listing.title,
+            price: `₱${priceNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            priceValue: priceNum,
+            seller: userData?.username || userData?.name || listing.seller_name || 'Unknown',
+            sellerColor: userData?.avatarColor || '#FF6B35',
+            category: listing.category,
+            condition: listing.condition,
+            flex: listing.flex || null,
+            hand: listing.hand || null,
+            listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
+            description: listing.description,
+            brand: listing.brand,
+            status: normalizedStatus,
+            listingData: { ...listing, status: normalizedStatus },
+          };
+        });
+        setUserListings(transformedListings);
+        if (userData) {
+          setUser(prev => ({
+            ...prev,
+            activeListings: transformedListings.filter(l => l.status === 'Available' || l.status === 'available').length,
+          }));
+        }
+      } else {
+        setUserListings([]);
+      }
+    } catch (err) {
+      console.error('Error loading ratings/listings:', err);
+      Alert.alert('Error', 'Failed to load user ratings.');
+    } finally {
+      setRatingsLoading(false);
+    }
+  };
 
   // Filter and sort products
   const filteredAndSortedProducts = React.useMemo(() => {
@@ -368,30 +391,6 @@ export default function UserProfileScreen({ navigation, route }) {
   ];
 
   // Render stars based on rating
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(
-        <Ionicons key={i} name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-      );
-    }
-    if (hasHalfStar) {
-      stars.push(
-        <Ionicons key="half" name="star-half" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-      );
-    }
-    const emptyStars = 5 - Math.ceil(rating);
-    for (let i = 0; i < emptyStars; i++) {
-      stars.push(
-        <Ionicons key={`empty-${i}`} name="star-outline" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-      );
-    }
-    return stars;
-  };
-
   // Show loading state
   if (loading) {
     return (
@@ -457,7 +456,7 @@ export default function UserProfileScreen({ navigation, route }) {
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Summary Card */}
@@ -489,12 +488,54 @@ export default function UserProfileScreen({ navigation, route }) {
           </View>
           
           <View style={styles.reputationContainer}>
-            <Text style={styles.reputationText}>User Reputation: {user.reputation}</Text>
-            <View style={styles.starsContainer}>
-              {renderStars(user.reputation)}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={styles.reputationText}>
+                {Number(ratingSummary.average_rating || 0).toFixed(2)}
+              </Text>
+              <Ionicons name="star" size={18} color="#FFD700" style={{ marginLeft: 6 }} />
             </View>
+            <Text style={styles.reputationSubtext}>
+              {ratingSummary.total_raters} {ratingSummary.total_raters === 1 ? 'review' : 'reviews'}
+            </Text>
           </View>
         </View>
+
+        {recentRatings.length > 0 && (
+          <View style={styles.reviewsSection}>
+            <View style={styles.reviewsHeader}>
+              <Text style={styles.reviewsTitle}>Recent Reviews</Text>
+            </View>
+            {recentRatings.map((rating, idx) => (
+              <View key={`${rating.created_at}-${idx}`} style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <Ionicons name="person-circle" size={30} color="#FF6B35" />
+                  <View style={{ marginLeft: 8, flex: 1 }}>
+                    <Text style={styles.reviewAuthor}>
+                      {rating.reviewer_name || `Buyer ${idx + 1}`}
+                    </Text>
+                    <Text style={styles.reviewDate}>
+                      {rating.created_at ? new Date(rating.created_at).toLocaleDateString() : 'Recently'}
+                    </Text>
+                  </View>
+                  <View style={styles.reviewRatingBadge}>
+                    <Ionicons name="star" size={14} color="#FFD700" />
+                    <Text style={styles.reviewRatingText}>{rating.rating.toFixed(1)}</Text>
+                  </View>
+                </View>
+                {rating.review ? (
+                  <Text style={styles.reviewText}>{rating.review}</Text>
+                ) : (
+                  <Text style={styles.reviewTextMuted}>No written review provided.</Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+        {recentRatings.length === 0 && (
+          <View style={styles.reviewsSection}>
+            <Text style={styles.reviewTextMuted}>No reviews yet for this seller.</Text>
+          </View>
+        )}
 
         {/* Bio Section */}
         <View style={styles.bioSection}>
@@ -597,7 +638,7 @@ export default function UserProfileScreen({ navigation, route }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}

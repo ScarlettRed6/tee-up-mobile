@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator, Modal, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { fetchListingById } from '../api/listingsApi';
+import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { findConversation } from '../api/chatApi';
 import { authContext } from '../context/authContext';
 import jwtDecode from 'jwt-decode';
@@ -12,10 +14,14 @@ import jwtDecode from 'jwt-decode';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const routeProduct = route?.params?.product;
+  const [sellerRatingSummary, setSellerRatingSummary] = useState({ average_rating: '0.00', total_raters: 0 });
+  const [sellerRecentRatings, setSellerRecentRatings] = useState([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
   
   // Get current user ID from token
   const getCurrentUserId = () => {
@@ -68,6 +74,7 @@ export default function ProductDetailScreen({ navigation, route }) {
           reviews: [], // TODO: Fetch reviews from API
         };
         setProduct(transformedProduct);
+        fetchSellerRatings(transformedProduct.user_id);
         setLoading(false);
       } else if (route?.params?.listingId) {
         // If only ID is passed, fetch from API
@@ -107,6 +114,7 @@ export default function ProductDetailScreen({ navigation, route }) {
             reviews: [],
           };
           setProduct(transformedProduct);
+          fetchSellerRatings(transformedProduct.user_id);
         } catch (error) {
           console.error('Error fetching listing:', error);
         } finally {
@@ -114,7 +122,7 @@ export default function ProductDetailScreen({ navigation, route }) {
         }
       } else {
         // Fallback to default
-        setProduct({
+        const fallbackProduct = {
           id: 1,
           title: 'Callaway Epic Flash Driver',
           price: '7,500',
@@ -131,13 +139,35 @@ export default function ProductDetailScreen({ navigation, route }) {
           },
           images: [{ id: 1, uri: null }],
           reviews: [],
-        });
+        };
+        setProduct(fallbackProduct);
+        fetchSellerRatings(fallbackProduct.user_id);
         setLoading(false);
       }
     };
 
     loadProduct();
   }, [routeProduct, route?.params?.listingId]);
+
+  const fetchSellerRatings = async (sellerId) => {
+    if (!sellerId) return;
+    try {
+      setRatingsLoading(true);
+      const [summaryRes, ratingsRes] = await Promise.all([
+        fetchUserRatingSummary(sellerId),
+        fetchUserRatings(sellerId),
+      ]);
+      setSellerRatingSummary({
+        average_rating: summaryRes?.average_rating || '0.00',
+        total_raters: Number(summaryRes?.total_raters || 0),
+      });
+      setSellerRecentRatings((ratingsRes?.ratings || []).slice(0, 2));
+    } catch (error) {
+      console.error('Failed to load seller ratings', error);
+    } finally {
+      setRatingsLoading(false);
+    }
+  };
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -209,6 +239,8 @@ export default function ProductDetailScreen({ navigation, route }) {
   const isOwnListing = currentUserId && productUserId 
     ? currentUserId.toString() === productUserId.toString()
     : false;
+  const hasProductReviews = Array.isArray(product.reviews) && product.reviews.length > 0;
+  const hasSellerReviews = (sellerRatingSummary.total_raters || 0) > 0 || sellerRecentRatings.length > 0;
 
   return (
     <View style={styles.container}>
@@ -236,7 +268,7 @@ export default function ProductDetailScreen({ navigation, route }) {
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 200 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Image Carousel */}
@@ -427,7 +459,7 @@ export default function ProductDetailScreen({ navigation, route }) {
               <View style={styles.ratingContainer}>
                 <Ionicons name="star" size={16} color="#FFD700" />
                 <Text style={styles.ratingText}>
-                  {product.seller.rating} ({product.seller.reviewCount})
+                  {Number(sellerRatingSummary.average_rating || product.seller.rating || 0).toFixed(2)} ({sellerRatingSummary.total_raters || product.seller.reviewCount})
                 </Text>
               </View>
             </View>
@@ -437,23 +469,53 @@ export default function ProductDetailScreen({ navigation, route }) {
 
         {/* Product Reviews Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Product Reviews</Text>
-          {product.reviews && product.reviews.length > 0 ? (
-            product.reviews.map((review) => (
-              <View key={review.id} style={styles.reviewCard}>
-                <Text style={styles.reviewHeading}>{review.heading}</Text>
-                <Text style={styles.reviewText}>{review.text}</Text>
-                <View style={styles.reviewerInfo}>
-                  <View style={styles.reviewerAvatar}>
-                    <Ionicons name="person" size={16} color="#FF6B35" />
+          <Text style={styles.sectionTitle}>Seller Reviews</Text>
+          {hasSellerReviews ? (
+            sellerRecentRatings.slice(0, 2).map((rating, idx) => {
+              const ratingValueDisplay = Number(rating.rating || 0).toFixed(1);
+              return (
+                <View key={`${rating.created_at || idx}`} style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    {rating.reviewer_profile_image ? (
+                      <Image source={{ uri: rating.reviewer_profile_image }} style={styles.reviewAvatarImage} />
+                    ) : (
+                      <Ionicons name="person-circle" size={36} color="#FF6B35" />
+                    )}
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <Text style={styles.reviewHeading}>
+                        {rating.reviewer_name ? `${rating.reviewer_name} (Buyer)` : `Buyer ${idx + 1}`}
+                      </Text>
+                      <Text style={styles.reviewDate}>
+                        {rating.created_at ? new Date(rating.created_at).toLocaleDateString() : 'Recently'}
+                      </Text>
+                    </View>
+                    <View style={styles.reviewBadge}>
+                      <Ionicons name="star" size={16} color="#FFD700" />
+                      <Text style={styles.reviewBadgeText}>{ratingValueDisplay}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.reviewerName}>{review.reviewer.name}</Text>
+                  <Text style={styles.reviewText}>
+                    {rating.review?.length ? rating.review : 'No written review provided.'}
+                  </Text>
                 </View>
-              </View>
-            ))
-          ) : (
+              );
+            })
+          ) : !hasSellerReviews ? (
             <Text style={styles.emptyReviewsText}>No reviews yet. Be the first to review!</Text>
-          )}
+          ) : null}
+          <TouchableOpacity
+            style={styles.seeAllReviewsButton}
+            onPress={() => {
+              navigation.navigate('SellerReviews', {
+                userId: product.user_id || product.seller?.id,
+                sellerName: product.seller?.name,
+              });
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.seeAllReviewsText}>See all seller reviews</Text>
+            <Ionicons name="chevron-forward" size={16} color="#FF6B35" />
+          </TouchableOpacity>
         </View>
 
         {/* Bottom Spacer for Navigation */}
@@ -616,7 +678,7 @@ export default function ProductDetailScreen({ navigation, route }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}

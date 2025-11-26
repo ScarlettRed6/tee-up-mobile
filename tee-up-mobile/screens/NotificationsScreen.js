@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/NotificationsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 
 export default function NotificationsScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   // Sample notification data
   const notifications = [
     {
@@ -134,7 +136,7 @@ export default function NotificationsScreen({ navigation }) {
       {/* Notification List */}
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {notifications.length > 0 ? (
@@ -148,7 +150,7 @@ export default function NotificationsScreen({ navigation }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}

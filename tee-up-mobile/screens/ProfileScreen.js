@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/ProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
@@ -10,7 +11,15 @@ import { getUserProfile } from '../api/userApi';
 import { fetchUserListings } from '../api/listingsApi';
 import jwtDecode from 'jwt-decode';
 
+const normalizeListingStatus = (statusValue = 'available') => {
+  const lower = (statusValue || '').toString().toLowerCase();
+  if (lower === 'sold') return 'Sold';
+  if (lower === 'pending') return 'Pending';
+  return 'Available';
+};
+
 export default function ProfileScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,21 +71,24 @@ export default function ProfileScreen({ navigation, route }) {
         const userListings = await fetchUserListings(userId);
         
         // Transform backend listing data to match ProfileScreen format
-        const transformedListings = userListings.map(listing => ({
-          id: listing.listing_id,
-          name: listing.title,
-          price: `₱${typeof listing.price === 'number' ? listing.price.toLocaleString() : listing.price}`,
-          priceValue: typeof listing.price === 'number' ? listing.price : parseFloat(listing.price) || 0,
-          seller: listing.seller_name || user?.name || 'Unknown',
-          sellerColor: '#FF6B35',
-          category: listing.category,
-          condition: listing.condition,
-          flex: listing.flex || null,
-          hand: listing.hand || null,
-          listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
-          status: listing.status || 'Available',
-          listingData: listing, // Keep original data for updates
-        }));
+        const transformedListings = userListings.map(listing => {
+          const normalizedStatus = normalizeListingStatus(listing.status);
+          return {
+            id: listing.listing_id,
+            name: listing.title,
+            price: `₱${typeof listing.price === 'number' ? listing.price.toLocaleString() : listing.price}`,
+            priceValue: typeof listing.price === 'number' ? listing.price : parseFloat(listing.price) || 0,
+            seller: listing.seller_name || user?.name || 'Unknown',
+            sellerColor: '#FF6B35',
+            category: listing.category,
+            condition: listing.condition,
+            flex: listing.flex || null,
+            hand: listing.hand || null,
+            listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
+            status: normalizedStatus,
+            listingData: { ...listing, status: normalizedStatus },
+          };
+        });
 
         setAllProducts(transformedListings);
       }
@@ -108,7 +120,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
   const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
-  const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold
+  const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(initialFilters.status || 'Available')); // Available, Sold
   const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
   const [showSortModal, setShowSortModal] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null); // Track which product's dropdown is open
@@ -238,7 +250,8 @@ export default function ProfileScreen({ navigation, route }) {
 
     // Status filter (Available/Sold)
     if (selectedStatus) {
-      filtered = filtered.filter(product => product.status === selectedStatus);
+      const normalizedSelected = normalizeListingStatus(selectedStatus);
+      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
     }
 
     // Sort
@@ -479,7 +492,7 @@ export default function ProfileScreen({ navigation, route }) {
     setSelectedCondition(filters.condition || null);
     setSelectedFlex(filters.flex || null);
     setSelectedHand(filters.hand || null);
-    setSelectedStatus(filters.status || 'Available');
+    setSelectedStatus(filters.status ? normalizeListingStatus(filters.status) : 'Available');
     setSearchQuery(filters.searchQuery || '');
   };
 
@@ -527,7 +540,7 @@ export default function ProfileScreen({ navigation, route }) {
 
         <ScrollView 
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
           onScrollBeginDrag={() => setOpenDropdownId(null)}
           scrollEventThrottle={16}
@@ -727,7 +740,7 @@ export default function ProfileScreen({ navigation, route }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}

@@ -6,6 +6,7 @@ import EmailVerificationScreen from '../screens/EmailVerificationScreen';
 import ForgotPasswordRequestScreen from '../screens/ForgotPasswordRequestScreen';
 import ForgotPasswordVerifyScreen from '../screens/ForgotPasswordVerifyScreen';
 import ForgotPasswordResetScreen from '../screens/ForgotPasswordResetScreen';
+import SellerReviewsScreen from '../screens/SellerReviewsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -23,6 +24,7 @@ export default function AuthStack(){
             <Stack.Screen name='ForgotPasswordRequest' component={ForgotPasswordRequestScreen}/>
             <Stack.Screen name='ForgotPasswordVerify' component={ForgotPasswordVerifyScreen}/>
             <Stack.Screen name='ForgotPasswordReset' component={ForgotPasswordResetScreen}/>
+            <Stack.Screen name='SellerReviews' component={SellerReviewsScreen}/>
         </Stack.Navigator>
     );
 }

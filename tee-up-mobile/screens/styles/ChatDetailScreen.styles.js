@@ -195,5 +195,63 @@ export default StyleSheet.create({
     padding: 6,
     marginLeft: 8,
   },
+  ratingCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  ratingTitle: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#111827',
+    marginBottom: 6,
+  },
+  ratingSubtitle: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 14,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ratingStarButton: {
+    marginRight: 6,
+  },
+  ratingReviewInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#111827',
+    marginBottom: 12,
+  },
+  ratingSubmitButton: {
+    backgroundColor: '#FF6B35',
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  ratingSubmitButtonDisabled: {
+    backgroundColor: '#F9A885',
+  },
+  ratingSubmitButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+  },
 });
 
