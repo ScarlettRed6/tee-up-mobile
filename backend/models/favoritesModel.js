@@ -27,7 +27,7 @@ export async function getUserFavorites(user_id) {
     );
     return result.rows.map(row => ({
         ...row,
-        photos: row.photos ? JSON.parse(row.photos) : [],
+        photos: row.photos || [],
     }));
 }
 
