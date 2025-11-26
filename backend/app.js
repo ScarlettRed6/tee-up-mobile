@@ -4,6 +4,7 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import listingsRoutes from "./routes/listingsRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import ratingRoutes from "./routes/ratingRoutes.js";
 
 const app = express();
 
@@ -16,5 +17,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/listings", listingsRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/ratings", ratingRoutes);
 
 export default app;
