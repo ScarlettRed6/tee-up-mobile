@@ -12,8 +12,7 @@ export async function createListing(req, res) {
         return res.status(401).json({ error: "User ID not found in token. Please log in again." });
     }
 
-    const { title, description, category, brand, condition, price, status }
-    = req.body;
+    const { title, description, category, brand, condition, price, status } = req.body;
     
     try{
 

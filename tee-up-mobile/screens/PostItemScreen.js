@@ -146,7 +146,7 @@ export default function PostItemScreen({ navigation, route }) {
         brand: brand.trim() || null, // Optional field
         condition: condition,
         price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
-        status: isEditMode ? (listingData?.status || 'Available') : 'Available', // Keep existing status in edit mode
+        status: isEditMode ? (listingData?.status || 'available') : 'available', // Keep existing status in edit mode
       };
 
       console.log(isEditMode ? 'Updating listing with data:' : 'Posting listing with data:', listingDataToSubmit);
