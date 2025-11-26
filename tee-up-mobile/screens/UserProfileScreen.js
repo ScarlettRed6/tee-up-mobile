@@ -33,6 +33,29 @@ export default function UserProfileScreen({ navigation, route }) {
   const [recentRatings, setRecentRatings] = useState([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   
+  const renderRatingStars = (ratingValue = 0, size = 18) => {
+    const value = Number(ratingValue || 0);
+    const stars = [];
+    for (let i = 1; i <= 5; i += 1) {
+      let iconName = 'star-outline';
+      if (value >= i) {
+        iconName = 'star';
+      } else if (value >= i - 0.5) {
+        iconName = 'star-half';
+      }
+      stars.push(
+        <Ionicons
+          key={`profile-rating-star-${i}`}
+          name={iconName}
+          size={size}
+          color={iconName === 'star-outline' ? '#D1D5DB' : '#FFD700'}
+          style={{ marginRight: i === 5 ? 0 : 3 }}
+        />
+      );
+    }
+    return stars;
+  };
+
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery || '');
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
@@ -197,6 +220,10 @@ export default function UserProfileScreen({ navigation, route }) {
       setRatingsLoading(false);
     }
   };
+
+  const ratingValue = Number(ratingSummary?.average_rating || 0);
+  const reviewCount = Number(ratingSummary?.total_raters || 0);
+  const hasReviews = reviewCount > 0;
 
   // Filter and sort products
   const filteredAndSortedProducts = React.useMemo(() => {
@@ -488,15 +515,17 @@ export default function UserProfileScreen({ navigation, route }) {
           </View>
           
           <View style={styles.reputationContainer}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={styles.reputationText}>
-                {Number(ratingSummary.average_rating || 0).toFixed(2)}
-              </Text>
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginLeft: 6 }} />
-            </View>
-            <Text style={styles.reputationSubtext}>
-              {ratingSummary.total_raters} {ratingSummary.total_raters === 1 ? 'review' : 'reviews'}
+            <Text style={[styles.reputationScore, !hasReviews && styles.reputationScorePlaceholder]}>
+              {hasReviews ? ratingValue.toFixed(2) : 'No ratings yet'}
             </Text>
+            <View style={styles.reputationStars}>
+              {renderRatingStars(ratingValue, 16)}
+            </View>
+            {hasReviews && (
+              <Text style={styles.reputationSubtext}>
+                {`${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`}
+              </Text>
+            )}
           </View>
         </View>
 

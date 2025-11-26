@@ -88,6 +88,12 @@ export default StyleSheet.create({
   starsContainer: {
     flexDirection: 'row',
   },
+  reputationSubtext: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#888',
+    marginTop: 6,
+  },
   bioSection: {
     paddingHorizontal: 20,
     marginBottom: 24,

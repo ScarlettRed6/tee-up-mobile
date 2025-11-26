@@ -75,20 +75,29 @@ export default StyleSheet.create({
   },
   reputationContainer: {
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
   },
-  reputationText: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 28,
+  reputationScore: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 20,
     color: '#111',
+    lineHeight: 24,
   },
-  starsContainer: {
+  reputationScorePlaceholder: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  reputationStars: {
     flexDirection: 'row',
+    marginTop: 4,
   },
   reputationSubtext: {
     fontFamily: 'Exo_400Regular',
     fontSize: 12,
     color: '#6B7280',
+    marginTop: 4,
+    textAlign: 'center',
   },
   bioSection: {
     paddingHorizontal: 20,
@@ -225,6 +234,7 @@ export default StyleSheet.create({
     fontFamily: 'Exo_400Regular_Italic',
     fontSize: 13,
     color: '#9CA3AF',
+    textAlign: 'center',
   },
   productGrid: {
     flexDirection: 'row',

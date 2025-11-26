@@ -239,7 +239,7 @@ export default function SignupScreen({ navigation }) {
         Alert.alert(
           'Account already exists',
           'User already exists, login to verify account.',
-          [{ text: 'Login', onPress: () => navigation.navigate('Login') }]
+          [{ text: 'Login', onPress: () => navigation.replace('Login') }]
         );
       } else if (normalized.includes('password') && normalized.includes('match')) {
         setErrors({ confirmPassword: 'Passwords do not match' });
@@ -266,158 +266,165 @@ export default function SignupScreen({ navigation }) {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView 
-        contentContainerStyle={{ paddingBottom: 120 }} 
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <Text style={styles.title}>Create an account</Text>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput 
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              if (errors.name) {
-                setErrors(prev => ({ ...prev, name: null }));
-              }
-            }}
-            style={[styles.input, errors.name && styles.inputError]}
-            returnKeyType="next"
-            blurOnSubmit={false}
-            autoCapitalize="words"
-          />
-          <View style={[styles.underline, errors.name && styles.underlineError]} />
-          {errors.name && (
-            <Text style={styles.errorText}>{errors.name}</Text>
-          )}
+        <View style={styles.heroCard}>
+          <Text style={styles.title}>Create an account</Text>
+          <Text style={styles.subtitle}>Build trust, list gear, and start connecting with golfers nearby.</Text>
         </View>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput 
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) {
-                setErrors(prev => ({ ...prev, email: null }));
-              }
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            style={[styles.input, errors.email && styles.inputError]} 
-          />
-          <View style={[styles.underline, errors.email && styles.underlineError]} />
-          {errors.email && (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          )}
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput 
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errors.password) {
-                setErrors(prev => ({ ...prev, password: null }));
-              }
-              // Clear confirm password error if passwords now match
-              if (errors.confirmPassword && text === confirmPassword) {
-                setErrors(prev => ({ ...prev, confirmPassword: null }));
-              }
-            }}
-            secureTextEntry
-            returnKeyType="next"
-            blurOnSubmit={false}
-            style={[styles.input, errors.password && styles.inputError]} 
-          />
-          <View style={[styles.underline, errors.password && styles.underlineError]} />
-          {errors.password && (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          )}
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Confirm password</Text>
-          <TextInput 
-            value={confirmPassword}
-            onChangeText={(text) => {
-              setConfirmPassword(text);
-              if (errors.confirmPassword) {
-                setErrors(prev => ({ ...prev, confirmPassword: null }));
-              }
-            }}
-            secureTextEntry
-            returnKeyType="done"
-            onSubmitEditing={handleSignup}
-            style={[styles.input, errors.confirmPassword && styles.inputError]} 
-          />
-          <View style={[styles.underline, errors.confirmPassword && styles.underlineError]} />
-          {errors.confirmPassword && (
-            <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-          )}
-        </View>
-
-        {errors.general && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{errors.general}</Text>
+        <View style={styles.formCard}>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Name</Text>
+            <TextInput 
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                if (errors.name) {
+                  setErrors(prev => ({ ...prev, name: null }));
+                }
+              }}
+              style={[styles.input, errors.name && styles.inputError]}
+              returnKeyType="next"
+              blurOnSubmit={false}
+              autoCapitalize="words"
+              placeholder="Jane Doe"
+              placeholderTextColor="#9CA3AF"
+            />
+            {errors.name && (
+              <Text style={styles.errorText}>{errors.name}</Text>
+            )}
           </View>
-        )}
 
-        <TouchableOpacity 
-          activeOpacity={0.8} 
-          style={[styles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
-          onPress={handleSignup}
-          disabled={!isFormValid || isSubmitting}
-        >
-          <Text style={[styles.primaryButtonText, (!isFormValid || isSubmitting) && styles.primaryButtonTextDisabled]}>
-            {isSubmitting ? 'Creating account...' : 'Sign up'}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput 
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) {
+                  setErrors(prev => ({ ...prev, email: null }));
+                }
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              style={[styles.input, errors.email && styles.inputError]} 
+              placeholder="you@email.com"
+              placeholderTextColor="#9CA3AF"
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
+          </View>
 
-        {/* Google Sign-In Section - Only show if configured */}
-        {isGoogleSignInAvailable && (
-          <>
-            {/* Divider */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Password</Text>
+            <TextInput 
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) {
+                  setErrors(prev => ({ ...prev, password: null }));
+                }
+                if (errors.confirmPassword && text === confirmPassword) {
+                  setErrors(prev => ({ ...prev, confirmPassword: null }));
+                }
+              }}
+              secureTextEntry
+              returnKeyType="next"
+              blurOnSubmit={false}
+              style={[styles.input, errors.password && styles.inputError]} 
+              placeholder="••••••••"
+              placeholderTextColor="#9CA3AF"
+            />
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
+          </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Confirm password</Text>
+            <TextInput 
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                if (errors.confirmPassword) {
+                  setErrors(prev => ({ ...prev, confirmPassword: null }));
+                }
+              }}
+              secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={handleSignup}
+              style={[styles.input, errors.confirmPassword && styles.inputError]} 
+              placeholder="••••••••"
+              placeholderTextColor="#9CA3AF"
+            />
+            {errors.confirmPassword && (
+              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+            )}
+          </View>
+
+          {errors.general && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errors.general}</Text>
             </View>
+          )}
 
-            {/* Google Sign-In Button */}
-            <TouchableOpacity 
-              activeOpacity={0.8} 
-              style={[styles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
-              onPress={handleGooglePress}
-              disabled={isGoogleLoading}
-            >
-              {isGoogleLoading ? (
-                <ActivityIndicator size="small" color="#000" />
-              ) : (
-                <>
-                  <Ionicons name="logo-google" size={20} color="#000" style={styles.googleIcon} />
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </>
-        )}
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            style={[styles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
+            onPress={handleSignup}
+            disabled={!isFormValid || isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Create account</Text>
+            )}
+          </TouchableOpacity>
+
+          {isGoogleSignInAvailable && (
+            <>
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or continue with</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity 
+                activeOpacity={0.8} 
+                style={[styles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
+                onPress={handleGooglePress}
+                disabled={isGoogleLoading}
+              >
+                {isGoogleLoading ? (
+                  <ActivityIndicator size="small" color="#111" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={20} color="#111" style={styles.googleIcon} />
+                    <Text style={styles.googleButtonText}>Continue with Google</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+
+          <View style={styles.bottomRow}>
+            <Text style={styles.bottomMuted}>Already have an account?</Text>
+            <Pressable onPress={() => {
+              Keyboard.dismiss();
+              navigation.replace('Login');
+            }}>
+              <Text style={styles.bottomLink}> Log in</Text>
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
-
-      <View style={styles.bottomRow}>
-        <Text style={styles.bottomMuted}>Already have an account? </Text>
-        <Pressable onPress={() => {
-          Keyboard.dismiss();
-          navigation.navigate('Login');
-        }}>
-          <Text style={styles.bottomLink}>Login</Text>
-        </Pressable>
-      </View>
     </KeyboardAvoidingView>
   );
 }

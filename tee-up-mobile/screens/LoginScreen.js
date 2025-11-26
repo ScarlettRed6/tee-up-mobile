@@ -247,30 +247,30 @@ export default function LoginScreen({ navigation }) {
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.contentWrap}>
-          <Text style={styles.title}>Login</Text>
-          <Text style={styles.subtitle}>Welcome back! please enter your details.</Text>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroTitle}>Welcome back 👋</Text>
+          <Text style={styles.heroSubtitle}>Sign in to keep trading gear with trusted golfers.</Text>
+        </View>
 
+        <View style={styles.formCard}>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email/Username</Text>
+            <Text style={styles.label}>Email / Username</Text>
             <TextInput
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                // Clear error when user starts typing
                 if (errors.email) {
                   setErrors(prev => ({ ...prev, email: null }));
                 }
               }}
-              placeholder=""
+              placeholder="name@email.com"
               style={[styles.input, errors.email && styles.inputError]}
-              placeholderTextColor="#666"
+              placeholderTextColor="#9CA3AF"
               keyboardType="email-address"
               autoCapitalize="none"
               returnKeyType="next"
               blurOnSubmit={false}
             />
-            <View style={[styles.underline, errors.email && styles.underlineError]} />
             {errors.email && (
               <Text style={styles.errorText}>{errors.email}</Text>
             )}
@@ -282,19 +282,17 @@ export default function LoginScreen({ navigation }) {
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
-                // Clear error when user starts typing
                 if (errors.password) {
                   setErrors(prev => ({ ...prev, password: null }));
                 }
               }}
-              placeholder=""
+              placeholder="••••••••"
               secureTextEntry
               style={[styles.input, errors.password && styles.inputError]}
-              placeholderTextColor="#666"
+              placeholderTextColor="#9CA3AF"
               returnKeyType="done"
               onSubmitEditing={handleLogin}
             />
-            <View style={[styles.underline, errors.password && styles.underlineError]} />
             {errors.password && (
               <Text style={styles.errorText}>{errors.password}</Text>
             )}
@@ -320,27 +318,26 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <TouchableOpacity 
-            activeOpacity={0.8} 
+            activeOpacity={0.9} 
             style={[styles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
             onPress={handleLogin}
             disabled={!isFormValid || isSubmitting}
           >
-            <Text style={[styles.primaryButtonText, (!isFormValid || isSubmitting) && styles.primaryButtonTextDisabled]}>
-              {isSubmitting ? 'Logging in...' : 'Log in'}
-            </Text>
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Log in</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Google Sign-In Section - Only show if configured */}
           {isGoogleSignInAvailable && (
             <>
-              {/* Divider */}
               <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
+                <Text style={styles.dividerText}>or continue with</Text>
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Google Sign-In Button */}
               <TouchableOpacity 
                 activeOpacity={0.8} 
                 style={[styles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
@@ -348,10 +345,10 @@ export default function LoginScreen({ navigation }) {
                 disabled={isGoogleLoading}
               >
                 {isGoogleLoading ? (
-                  <ActivityIndicator size="small" color="#000" />
+                  <ActivityIndicator size="small" color="#111" />
                 ) : (
                   <>
-                    <Ionicons name="logo-google" size={20} color="#000" style={styles.googleIcon} />
+                    <Ionicons name="logo-google" size={20} color="#111" style={styles.googleIcon} />
                     <Text style={styles.googleButtonText}>Continue with Google</Text>
                   </>
                 )}
@@ -359,17 +356,17 @@ export default function LoginScreen({ navigation }) {
             </>
           )}
         </View>
-      </ScrollView>
 
-      <View style={styles.bottomRow}>
-        <Text style={styles.bottomMuted}>Don't have an account? </Text>
-        <Pressable onPress={() => {
-          Keyboard.dismiss();
-          navigation.navigate('Signup');
-        }}>
-          <Text style={styles.bottomLink}>Sign up</Text>
-        </Pressable>
-      </View>
+        <View style={styles.bottomRow}>
+          <Text style={styles.bottomMuted}>Don't have an account?</Text>
+          <Pressable onPress={() => {
+            Keyboard.dismiss();
+            navigation.replace('Signup');
+          }}>
+            <Text style={styles.bottomLink}> Sign up</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

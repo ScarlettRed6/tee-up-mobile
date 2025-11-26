@@ -8,6 +8,7 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { authContext } from '../context/authContext';
 import { getUserProfile } from '../api/userApi';
+import { fetchUserRatingSummary } from '../api/ratingApi';
 import { fetchUserListings } from '../api/listingsApi';
 import jwtDecode from 'jwt-decode';
 
@@ -24,6 +25,10 @@ export default function ProfileScreen({ navigation, route }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [ratingSummary, setRatingSummary] = useState({
+    average_rating: 0,
+    total_raters: 0,
+  });
 
   const fetchProfile = useCallback(async () => {
     if(!accessToken) return;
@@ -41,6 +46,27 @@ export default function ProfileScreen({ navigation, route }) {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const fetchUserRatingSummaryData = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const decoded = jwtDecode(accessToken);
+      const userId = decoded?.id;
+      if (!userId) return;
+
+      const summary = await fetchUserRatingSummary(userId);
+      setRatingSummary({
+        average_rating: Number(summary?.average_rating || 0),
+        total_raters: Number(summary?.total_raters || 0),
+      });
+    } catch (err) {
+      console.log('Error fetching rating summary:', err);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchUserRatingSummaryData();
+  }, [fetchUserRatingSummaryData]);
 
   const handleEditProfile = useCallback(() => {
     navigation.navigate('EditProfile', {
@@ -278,6 +304,28 @@ export default function ProfileScreen({ navigation, route }) {
 
     return filtered;
   }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts]);
+
+  const renderRatingStars = (ratingValue = 0) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i += 1) {
+      let iconName = 'star-outline';
+      if (ratingValue >= i) {
+        iconName = 'star';
+      } else if (ratingValue >= i - 0.5) {
+        iconName = 'star-half';
+      }
+      stars.push(
+        <Ionicons
+          key={`rating-star-${i}`}
+          name={iconName}
+          size={18}
+          color={iconName === 'star-outline' ? '#D1D5DB' : '#FFD700'}
+          style={{ marginRight: i === 5 ? 0 : 4 }}
+        />
+      );
+    }
+    return stars;
+  };
 
   const handleMarkAsSold = (productId) => {
     // Show confirmation modal
@@ -579,16 +627,21 @@ export default function ProfileScreen({ navigation, route }) {
             </Text>
           </View>
           
-          <View style={styles.reputationContainer}>
-            <Text style={styles.reputationText}>User Reputation: 5.0</Text>
-            <View style={styles.starsContainer}>
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" />
-            </View>
+        <View style={styles.reputationContainer}>
+          <Text style={styles.reputationText}>
+            {ratingSummary.total_raters > 0
+              ? `User Reputation: ${Number(ratingSummary.average_rating || 0).toFixed(2)}`
+              : 'No ratings yet'}
+          </Text>
+          <View style={styles.starsContainer}>
+            {renderRatingStars(Number(ratingSummary.average_rating || 0))}
           </View>
+          <Text style={styles.reputationSubtext}>
+            {ratingSummary.total_raters > 0
+              ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
+              : 'You have not received any reviews yet.'}
+          </Text>
+        </View>
         </View>
 
         {/* Bio Section */}

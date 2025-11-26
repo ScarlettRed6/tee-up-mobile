@@ -64,8 +64,8 @@ export default function ProductDetailScreen({ navigation, route }) {
             id: routeProduct.user_id, 
             avatar: routeProduct.seller_profile_image || null,
             profile_image: routeProduct.seller_profile_image || null,
-            rating: 4.9, // TODO: Get from user profile
-            reviewCount: 120, // TODO: Get from user profile
+            rating: Number(routeProduct.seller_rating || 0),
+            reviewCount: Number(routeProduct.seller_review_count || 0),
           },
           seller_name: routeProduct.seller_name,
           images: routeProduct.photos && Array.isArray(routeProduct.photos) && routeProduct.photos.length > 0
@@ -104,8 +104,8 @@ export default function ProductDetailScreen({ navigation, route }) {
               id: listingData.user_id, // Include user_id in seller object
               avatar: listingData.seller_profile_image || null,
               profile_image: listingData.seller_profile_image || null,
-              rating: 4.9,
-              reviewCount: 120,
+              rating: Number(listingData.seller_rating || 0),
+              reviewCount: Number(listingData.seller_review_count || 0),
             },
             seller_name: listingData.seller_name,
             images: listingData.photos && Array.isArray(listingData.photos) && listingData.photos.length > 0
@@ -162,6 +162,17 @@ export default function ProductDetailScreen({ navigation, route }) {
         total_raters: Number(summaryRes?.total_raters || 0),
       });
       setSellerRecentRatings((ratingsRes?.ratings || []).slice(0, 2));
+      setProduct(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          seller: {
+            ...prev.seller,
+            rating: Number(summaryRes?.average_rating || 0),
+            reviewCount: Number(summaryRes?.total_raters || 0),
+          },
+        };
+      });
     } catch (error) {
       console.error('Failed to load seller ratings', error);
     } finally {
