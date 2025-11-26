@@ -9,7 +9,7 @@ export const createListing = async (listingData, photos = []) => {
     formData.append('category', listingData.category);
     formData.append('condition', listingData.condition);
     formData.append('price', listingData.price.toString());
-    formData.append('status', listingData.status || 'Available');
+    formData.append('status', listingData.status || 'available');
     
     if (listingData.brand) {
         formData.append('brand', listingData.brand);
@@ -62,7 +62,7 @@ export const updateListing = async (listingId, listingData, photos = []) => {
     formData.append('category', listingData.category);
     formData.append('condition', listingData.condition);
     formData.append('price', listingData.price.toString());
-    formData.append('status', listingData.status || 'Available');
+    formData.append('status', listingData.status || 'available');
     
     if (listingData.brand) {
         formData.append('brand', listingData.brand);
