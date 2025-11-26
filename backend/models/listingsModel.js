@@ -100,7 +100,7 @@ export async function updateListing(id, title, description, category, brand, con
 export async function updateListingStatus(listing_id, user_id, status) {
     const result = await pool.query(
         `UPDATE listings SET status = $1
-        WHERE id = $2 AND user_id = $3
+        WHERE listing_id = $2 AND user_id = $3
         RETURNING *`, [status, listing_id, user_id]
     );
     return result.rows[0];

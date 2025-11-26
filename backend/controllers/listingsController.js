@@ -1,5 +1,5 @@
 import { uploadToCloudinary } from "../config/cloudinary.js";
-import { insertListing, getAllListings, getListingById, updateListing, deleteListing } 
+import { insertListing, getAllListings, getListingById, updateListing, deleteListing, updateListingStatus } 
 from "../models/listingsModel.js";
 
 
@@ -130,6 +130,31 @@ export async function updateListingItem(req, res) {
         res.status(500).json({ error: err.message });
     }
 }
+
+export async function changeListingStatus(req, res) {
+    try{
+        const user_id = req.user.id;
+        const { listing_id } = req.params;
+        const { status } = req.body;
+
+        //Check if passing the right status value
+        const allowed = ["available", "pending", "sold"];
+        if(!allowed.includes(status)){
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const updatedListing = await updateListingStatus(listing_id, user_id, status);
+        if(!updatedListing){
+            return res.status(403).json({ message: "Not allowed, you do not own this listing" });
+        }
+
+        console.log("Listings status updated successfully");
+        res.json({ message: "Listing status updated", listing: updatedListing });
+    }catch(err){
+        console.log(`changeListingStatus error: ${err}`);
+        res.status(500).json({ error: err.message });
+    }
+}//End of changeListingStatus function
 
 export async function deleteListingItem(req, res) {
     try{

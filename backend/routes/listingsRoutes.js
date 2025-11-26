@@ -1,6 +1,6 @@
 import express from "express";
 import upload from "../middleware/upload.js";
-import { createListing, getAllListingItems, getListingItemById, updateListingItem, deleteListingItem } 
+import { createListing, getAllListingItems, getListingItemById, updateListingItem, deleteListingItem, changeListingStatus } 
 from "../controllers/listingsController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
@@ -13,6 +13,7 @@ router.get("/:id", getListingItemById);
 router.post("/", verifyToken, upload.array("photos", 5), createListing);
 router.put("/:id", verifyToken, upload.array("photos", 5), updateListingItem);
 router.delete("/:id", verifyToken, deleteListingItem);
+router.patch("/:listing_id/status", verifyToken, changeListingStatus);
 
 
 export default router;
