@@ -135,13 +135,7 @@ export default function LoginScreen({ navigation }) {
     } catch (err) {
       console.log("Google login failed:", err);
       
-      let errorMessage = 'Google sign-in failed. Please try again.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Google sign-in failed. Please try again.';
 
       Alert.alert(
         'Google Sign-In Failed',
@@ -201,14 +195,26 @@ export default function LoginScreen({ navigation }) {
     }catch(err){
       console.log("Login failed:", err);
       
-      // Handle different error types
-      let errorMessage = 'Login failed. Please try again.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
+      const status = err.response?.status;
+      const serverMessage = err.response?.data?.message;
+      const normalizedMessage = serverMessage?.toLowerCase() || '';
+
+      if (status === 403 && normalizedMessage.includes('not verified')) {
+        Alert.alert(
+          'Verify your email',
+          'Email not verified. We\'re taking you to the verification screen to finish the process.',
+          [{ text: 'OK' }]
+        );
+        navigation.navigate('EmailVerification', {
+          email: email.trim(),
+          password,
+          fromLogin: true,
+        });
+        return;
       }
+      
+      // Handle different error types
+      let errorMessage = serverMessage || err.message || 'Login failed. Please try again.';
 
       // Set specific field errors if available
       if (errorMessage.toLowerCase().includes('user') || errorMessage.toLowerCase().includes('not found')) {
@@ -305,7 +311,10 @@ export default function LoginScreen({ navigation }) {
               <View style={styles.checkbox} />
               <Text style={styles.rememberText}>Remember me</Text>
             </View>
-            <Pressable onPress={() => Keyboard.dismiss()}>
+            <Pressable onPress={() => {
+              Keyboard.dismiss();
+              navigation.navigate('ForgotPasswordRequest');
+            }}>
               <Text style={styles.forgot}>Forgot Password?</Text>
             </Pressable>
           </View>

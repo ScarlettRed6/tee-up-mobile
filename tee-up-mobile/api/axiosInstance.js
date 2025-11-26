@@ -61,7 +61,7 @@ api.interceptors.response.use(
                 status: error.response.status,
                 statusText: error.response.statusText,
                 url: error.config?.url,
-                data: error.response.data
+                data: error.response?.data
             });
         } else {
             console.error('[API Error]', error.message);
@@ -111,6 +111,8 @@ api.interceptors.response.use(
             }
 
         }//end of if statement for checking unauthorized and or not already retrying
+
+        return Promise.reject(error);
     }//End of async arrow function
 );
 

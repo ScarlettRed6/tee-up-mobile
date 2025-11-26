@@ -185,5 +185,81 @@ export default StyleSheet.create({
     fontSize: 16,
     color: '#FFF',
   },
+  passwordSection: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  passwordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  passwordTitle: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#000',
+  },
+  changePasswordButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#FFE5DB',
+  },
+  changePasswordButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 13,
+    color: '#FF6B35',
+  },
+  passwordFields: {
+    marginTop: 4,
+  },
+  passwordInput: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontFamily: 'Exo_400Regular',
+    fontSize: 15,
+    color: '#000',
+    marginBottom: 10,
+  },
+  passwordActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  passwordCancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginRight: 8,
+  },
+  passwordCancelText: {
+    fontFamily: 'Exo_500Medium',
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  passwordSaveButton: {
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  passwordSaveButtonDisabled: {
+    backgroundColor: '#F9A885',
+  },
+  passwordSaveButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    color: '#FFF',
+    fontSize: 14,
+  },
 });
 

@@ -40,3 +40,33 @@ export const googleSignIn = async (idToken) => {
     }
 };
 
+export const sendVerificationOtp = async (email) => {
+    const res = await api.post("/auth/send-email-verification", { email });
+    return res.data;
+};
+
+export const verifyEmailVerificationOtp = async (payload) => {
+    const res = await api.post("/auth/verify-email-otp", payload);
+    return res.data;
+};
+
+export const changePasswordApi = async (payload) => {
+    const res = await api.put("/auth/change-password", payload);
+    return res.data;
+};
+
+export const requestPasswordResetOtp = async (email) => {
+    const res = await api.post("/auth/forget-password", { email });
+    return res.data;
+};
+
+export const verifyPasswordResetOtp = async ({ email, otp }) => {
+    const res = await api.post("/auth/verify-otp", { email, otp });
+    return res.data;
+};
+
+export const resetPasswordWithOtp = async (payload) => {
+    const res = await api.post("/auth/reset-password", payload);
+    return res.data;
+};
+

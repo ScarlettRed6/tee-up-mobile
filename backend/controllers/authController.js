@@ -276,7 +276,7 @@ export async function resetPassword(req, res){
 
 //Functions to help with email verification with register
 //This send email verification usefull for when otp is expired and want to resend again
-export async function sendEmailVerification(){
+export async function sendEmailVerification(req, res){
     const { email } = req.body;
 
     try{
