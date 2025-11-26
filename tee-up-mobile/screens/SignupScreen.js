@@ -151,13 +151,7 @@ export default function SignupScreen({ navigation }) {
     } catch (err) {
       console.log("Google sign-in failed:", err);
       
-      let errorMessage = 'Google sign-in failed. Please try again.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
+      let errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Google sign-in failed. Please try again.';
 
       Alert.alert(
         'Google Sign-In Failed',
@@ -212,43 +206,54 @@ export default function SignupScreen({ navigation }) {
     setIsSubmitting(true);
 
     try{
-      const token = await register({name: name.trim(), email: email.trim(), password, confirmPassword});
+      await register({name: name.trim(), email: email.trim(), password, confirmPassword});
 
-      if (token) {
-        navigation.reset({
-          index: 0,
-          routes: [{name: 'Discover'}],
-        });
-      }
+      Alert.alert(
+        'Verify your email',
+        `We sent a 6-digit code to ${email.trim()}. Enter it to finish creating your account.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              navigation.navigate('EmailVerification', {
+                email: email.trim(),
+                password,
+                fromLogin: false,
+              });
+            }
+          }
+        ]
+      );
       console.log("Registered Successfully!");
     }catch(err){
       console.log("Registration Failed:", err);
       
       // Handle different error types
-      let errorMessage = 'Registration failed. Please try again.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
+      let errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Registration failed. Please try again.';
 
       // Set specific field errors if available
-      if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('exists')) {
-        setErrors({ email: 'This email is already registered' });
-      } else if (errorMessage.toLowerCase().includes('password') && errorMessage.toLowerCase().includes('match')) {
+      const normalized = errorMessage.toLowerCase();
+
+      if (normalized.includes('email') && normalized.includes('exists')) {
+        setErrors({ email: 'Account already exists. Please login to verify your account.' });
+        Alert.alert(
+          'Account already exists',
+          'User already exists, login to verify account.',
+          [{ text: 'Login', onPress: () => navigation.navigate('Login') }]
+        );
+      } else if (normalized.includes('password') && normalized.includes('match')) {
         setErrors({ confirmPassword: 'Passwords do not match' });
       } else {
         setErrors({ general: errorMessage });
+        Alert.alert(
+          'Registration Failed',
+          errorMessage,
+          [{ text: 'OK' }]
+        );
       }
 
-      Alert.alert(
-        'Registration Failed',
-        errorMessage,
-        [{ text: 'OK' }]
-      );
+      // Early return since alert already handled where needed
+      return;
     } finally {
       setIsSubmitting(false);
     }

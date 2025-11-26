@@ -9,7 +9,7 @@ import { getUserProfile, updateUserProfile } from '../api/userApi';
 const BIO_MAX_LENGTH = 200;
 
 export default function EditProfileScreen({ navigation, route }) {
-  const { accessToken } = useContext(authContext);
+  const { accessToken, changePassword } = useContext(authContext);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
@@ -19,6 +19,11 @@ export default function EditProfileScreen({ navigation, route }) {
   const [profileImageUri, setProfileImageUri] = useState(null);
   const [errors, setErrors] = useState({});
   const [isGoogleAccount, setIsGoogleAccount] = useState(false);
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -102,6 +107,54 @@ export default function EditProfileScreen({ navigation, route }) {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const resetPasswordInputs = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+  };
+
+  const handleChangePassword = async () => {
+    if (isGoogleAccount) {
+      Alert.alert('Not available', 'Google account users cannot change password.');
+      return;
+    }
+
+    const validationErrors = {};
+    if (!currentPassword.trim()) validationErrors.currentPassword = 'Current password is required';
+    if (!newPassword.trim()) validationErrors.newPassword = 'New password is required';
+    if (!confirmNewPassword.trim()) validationErrors.confirmNewPassword = 'Please confirm your new password';
+    if (newPassword && newPassword.length < 6) validationErrors.newPassword = 'New password must be at least 6 characters';
+    if (newPassword && confirmNewPassword && newPassword !== confirmNewPassword) validationErrors.confirmNewPassword = 'Passwords do not match';
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(prev => ({ ...prev, ...validationErrors }));
+      return;
+    }
+
+    setPasswordSubmitting(true);
+    try {
+      await changePassword({
+        currentPassword: currentPassword.trim(),
+        newPassword: newPassword.trim(),
+        confirmNewPassword: confirmNewPassword.trim(),
+      });
+      Alert.alert('Success', 'Password changed successfully');
+      setShowPasswordSection(false);
+      resetPasswordInputs();
+      setErrors(prev => ({
+        ...prev,
+        currentPassword: undefined,
+        newPassword: undefined,
+        confirmNewPassword: undefined,
+      }));
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to change password. Please try again.';
+      Alert.alert('Error', message);
+    } finally {
+      setPasswordSubmitting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -304,6 +357,104 @@ export default function EditProfileScreen({ navigation, route }) {
             <Text style={styles.characterCount}>{bio.length}/{BIO_MAX_LENGTH}</Text>
           </View>
         </View>
+
+        {/* Change Password Section */}
+        {!isGoogleAccount && (
+          <View style={styles.passwordSection}>
+            <View style={styles.passwordHeader}>
+              <Text style={styles.passwordTitle}>Password</Text>
+              {!showPasswordSection && (
+                <TouchableOpacity
+                  style={styles.changePasswordButton}
+                  onPress={() => setShowPasswordSection(true)}
+                >
+                  <Text style={styles.changePasswordButtonText}>Change Password</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {showPasswordSection && (
+              <View style={styles.passwordFields}>
+                <TextInput
+                  value={currentPassword}
+                  onChangeText={(text) => {
+                    setCurrentPassword(text);
+                    if (errors.currentPassword) {
+                      setErrors(prev => ({ ...prev, currentPassword: undefined }));
+                    }
+                  }}
+                  placeholder="Current password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  style={[styles.passwordInput, errors.currentPassword && styles.inputError]}
+                />
+                {errors.currentPassword && <Text style={styles.errorText}>{errors.currentPassword}</Text>}
+
+                <TextInput
+                  value={newPassword}
+                  onChangeText={(text) => {
+                    setNewPassword(text);
+                    if (errors.newPassword) {
+                      setErrors(prev => ({ ...prev, newPassword: undefined }));
+                    }
+                    if (errors.confirmNewPassword && confirmNewPassword && text === confirmNewPassword) {
+                      setErrors(prev => ({ ...prev, confirmNewPassword: undefined }));
+                    }
+                  }}
+                  placeholder="New password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  style={[styles.passwordInput, errors.newPassword && styles.inputError]}
+                />
+                {errors.newPassword && <Text style={styles.errorText}>{errors.newPassword}</Text>}
+
+                <TextInput
+                  value={confirmNewPassword}
+                  onChangeText={(text) => {
+                    setConfirmNewPassword(text);
+                    if (errors.confirmNewPassword) {
+                      setErrors(prev => ({ ...prev, confirmNewPassword: undefined }));
+                    }
+                  }}
+                  placeholder="Confirm new password"
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  style={[styles.passwordInput, errors.confirmNewPassword && styles.inputError]}
+                />
+                {errors.confirmNewPassword && <Text style={styles.errorText}>{errors.confirmNewPassword}</Text>}
+
+                <View style={styles.passwordActions}>
+                  <TouchableOpacity
+                    style={styles.passwordCancelButton}
+                    onPress={() => {
+                      setShowPasswordSection(false);
+                      resetPasswordInputs();
+                      setErrors(prev => ({
+                        ...prev,
+                        currentPassword: undefined,
+                        newPassword: undefined,
+                        confirmNewPassword: undefined,
+                      }));
+                    }}
+                  >
+                    <Text style={styles.passwordCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.passwordSaveButton, passwordSubmitting && styles.passwordSaveButtonDisabled]}
+                    onPress={handleChangePassword}
+                    disabled={passwordSubmitting}
+                  >
+                    {passwordSubmitting ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <Text style={styles.passwordSaveButtonText}>Save Password</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Save Button */}
         <TouchableOpacity
