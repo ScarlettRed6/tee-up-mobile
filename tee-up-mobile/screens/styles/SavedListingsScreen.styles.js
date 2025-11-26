@@ -160,5 +160,43 @@ export default StyleSheet.create({
     color: '#000',
     marginTop: 4,
   },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 40,
+  },
+  emptyStateText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#111',
+    marginBottom: 6,
+  },
+  emptyStateSubtext: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  loadingState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#6B7280',
+  },
 });
 

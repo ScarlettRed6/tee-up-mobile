@@ -9,6 +9,7 @@ import { fetchListingById } from '../api/listingsApi';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { findConversation } from '../api/chatApi';
 import { authContext } from '../context/authContext';
+import { favoritesContext } from '../context/favoritesContext';
 import jwtDecode from 'jwt-decode';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -22,6 +23,7 @@ export default function ProductDetailScreen({ navigation, route }) {
   const [sellerRatingSummary, setSellerRatingSummary] = useState({ average_rating: '0.00', total_raters: 0 });
   const [sellerRecentRatings, setSellerRecentRatings] = useState([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
+  const { isFavorite, toggleFavorite, pendingActions } = useContext(favoritesContext);
   
   // Get current user ID from token
   const getCurrentUserId = () => {
@@ -181,7 +183,6 @@ export default function ProductDetailScreen({ navigation, route }) {
   };
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorited, setIsFavorited] = useState(false);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const [fullscreenIndex, setFullscreenIndex] = useState(0);
   const scrollViewRef = useRef(null);
@@ -221,10 +222,6 @@ export default function ProductDetailScreen({ navigation, route }) {
     }
   }, [fullscreenVisible, fullscreenIndex]);
 
-  const toggleFavorite = () => {
-    setIsFavorited(!isFavorited);
-  };
-
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -252,6 +249,14 @@ export default function ProductDetailScreen({ navigation, route }) {
     : false;
   const hasProductReviews = Array.isArray(product.reviews) && product.reviews.length > 0;
   const hasSellerReviews = (sellerRatingSummary.total_raters || 0) > 0 || sellerRecentRatings.length > 0;
+  const favoriteListingId = product?.listing_id || product?.id;
+  const listingFavorited = isFavorite(favoriteListingId);
+  const favoritePending = favoriteListingId ? pendingActions?.[favoriteListingId.toString()] : false;
+
+  const handleFavoritePress = () => {
+    if (!favoriteListingId) return;
+    toggleFavorite(favoriteListingId);
+  };
 
   return (
     <View style={styles.container}>
@@ -358,14 +363,19 @@ export default function ProductDetailScreen({ navigation, route }) {
             </Text>
             <TouchableOpacity 
               style={styles.favoriteButton}
-              onPress={toggleFavorite}
+              onPress={handleFavoritePress}
               activeOpacity={0.7}
+              disabled={favoritePending}
             >
-              <Ionicons 
-                name={isFavorited ? "heart" : "heart-outline"} 
-                size={24} 
-                color={isFavorited ? "#FF6B35" : "#333"} 
-              />
+              {favoritePending ? (
+                <ActivityIndicator size="small" color="#FF6B35" />
+              ) : (
+                <Ionicons 
+                  name={listingFavorited ? "heart" : "heart-outline"} 
+                  size={24} 
+                  color={listingFavorited ? "#FF6B35" : "#333"} 
+                />
+              )}
             </TouchableOpacity>
           </View>
           

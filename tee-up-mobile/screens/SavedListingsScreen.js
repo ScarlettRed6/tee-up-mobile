@@ -1,44 +1,105 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useContext, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/SavedListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
+import { favoritesContext } from '../context/favoritesContext';
+
+const parsePhotos = (photos) => {
+  if (Array.isArray(photos)) return photos;
+  if (typeof photos === 'string') {
+    try {
+      const parsed = JSON.parse(photos);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+  return [];
+};
+
+const formatPrice = (price) => {
+  const numeric = typeof price === 'number' ? price : parseFloat(price) || 0;
+  return `₱${numeric.toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
+};
 
 export default function SavedListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const products = [
-    { name: 'Srixon ZXi5 Iron set 5-P', price: '₱26,500', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'PING G30 9.5', condition: 'Slightly Used', price: '₱7,500', seller: 'issa123', sellerColor: '#333' },
-    { name: 'Titleist AP2 Forged 5-PW', price: '₱9,000', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'Titleist TSR3 9.0', condition: 'BNEW', price: '₱26,500', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'Srixon ZXi5 Iron set 5-P', price: '₱26,500', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'PING G30 9.5', condition: 'Slightly Used', price: '₱7,500', seller: 'issa123', sellerColor: '#333' },
-  ];
+  const { favorites, favoritesLoading, refreshFavorites } = useContext(favoritesContext);
+
+  const savedProducts = useMemo(() => {
+    return favorites.map((item) => {
+      const photos = parsePhotos(item.photos);
+      const sellerName = item.seller_name || item.seller || 'Unknown';
+      const normalized = {
+        id: item.listing_id || item.id,
+        title: item.title || 'Untitled Listing',
+        condition: item.condition || null,
+        category: item.category || null,
+        priceLabel: formatPrice(item.price),
+        seller: sellerName,
+        sellerColor: '#FF6B35',
+        image: photos.length > 0 ? photos[0] : null,
+        rawListing: {
+          ...item,
+          photos,
+        },
+      };
+      return normalized;
+    });
+  }, [favorites]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
     return (
-      <View key={index} style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}>
-        <View style={styles.productImagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>
-            {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
-             item.name.includes('PING') ? 'PING G30' :
-             item.name.includes('AP2') ? 'Titleist AP2' : 'Titleist TSR3'}
-          </Text>
-        </View>
-        <Text style={styles.productName}>{item.name}</Text>
+      <TouchableOpacity
+        key={item.id || index}
+        style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
+        activeOpacity={0.85}
+        onPress={() => {
+          navigation.navigate('ProductDetail', {
+            product: {
+              listing_id: item.rawListing?.listing_id,
+              id: item.rawListing?.listing_id,
+              user_id: item.rawListing?.user_id,
+              title: item.rawListing?.title,
+              price: item.rawListing?.price,
+              location: item.rawListing?.location,
+              date_posted: item.rawListing?.date_posted,
+              description: item.rawListing?.description,
+              category: item.rawListing?.category,
+              condition: item.rawListing?.condition,
+              brand: item.rawListing?.brand,
+              status: item.rawListing?.status,
+              seller_name: item.rawListing?.seller_name || item.rawListing?.seller || item.seller,
+              seller_profile_image: item.rawListing?.profile_image || null,
+              photos: item.rawListing?.photos || [],
+            },
+          });
+        }}
+      >
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Text style={styles.imagePlaceholderText}>{item.title}</Text>
+          </View>
+        )}
+        <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         {item.condition && <Text style={styles.productCondition}>{item.condition}</Text>}
-        <Text style={styles.productPrice}>{item.price}</Text>
+        <Text style={styles.productPrice}>{item.priceLabel}</Text>
         <View style={styles.sellerInfo}>
           <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
             <Ionicons name="person" size={12} color={item.sellerColor} />
           </View>
           <Text style={styles.sellerName}>{item.seller}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
+
+  const isEmpty = !favoritesLoading && savedProducts.length === 0;
 
   return (
     <View style={styles.container}>
@@ -77,14 +138,31 @@ export default function SavedListingsScreen({ navigation }) {
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 140 + insets.bottom, flexGrow: isEmpty ? 1 : 0 },
+        ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={favoritesLoading} onRefresh={refreshFavorites} tintColor="#FF6B35" />
+        }
       >
-
-        {/* Product Grid */}
-        <View style={styles.productGrid}>
-          {products.map((product, index) => renderProductCard(product, index))}
-        </View>
+        {favoritesLoading && savedProducts.length === 0 ? (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color="#FF6B35" />
+            <Text style={styles.loadingText}>Loading your saved listings...</Text>
+          </View>
+        ) : isEmpty ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="heart-outline" size={36} color="#FF6B35" style={{ marginBottom: 8 }} />
+            <Text style={styles.emptyStateText}>No saved listings yet.</Text>
+            <Text style={styles.emptyStateSubtext}>Tap the heart on a product to save it here.</Text>
+          </View>
+        ) : (
+          <View style={styles.productGrid}>
+            {savedProducts.map((product, index) => renderProductCard(product, index))}
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
