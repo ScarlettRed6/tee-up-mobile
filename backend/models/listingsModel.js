@@ -97,6 +97,15 @@ export async function updateListing(id, title, description, category, brand, con
     return result.rows[0];
 }
 
+export async function updateListingStatus(listing_id, user_id, status) {
+    const result = await pool.query(
+        `UPDATE listings SET status = $1
+        WHERE id = $2 AND user_id = $3
+        RETURNING *`, [status, listing_id, user_id]
+    );
+    return result.rows[0];
+}
+
 //DELETES
 export async function deleteListing(id) {
     const result = await pool.query(`DELETE FROM listings WHERE listing_id = $1 RETURNING *`, [id]);
