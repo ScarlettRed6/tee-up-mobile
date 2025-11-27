@@ -30,7 +30,7 @@ export function initSocketHandlers(io){
             socket.join("room_" + conversationId);
         });
 
-        socket.on("send_message", async ({ conversationId, message }) => {
+        socket.on("send_message", async ({ conversationId, message, image_url }) => {
             try {
                 console.log("Socket send_message received:", {
                     conversationId,
@@ -44,7 +44,12 @@ export function initSocketHandlers(io){
                     return;
                 }
                 
-                const result = await saveSentMessage(conversationId, socket.userId, message);
+                if (!message && !image_url) {
+                    socket.emit("error_message", { message: "Cannot send empty message" });
+                    return;
+                }
+                
+                const result = await saveSentMessage(conversationId, socket.userId, message || null, image_url || null);
                 console.log("Message saved with sender_id:", result.sender_id);
                 io.to("room_" + conversationId).emit("new_message", result);
             } catch (err) {

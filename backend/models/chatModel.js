@@ -1,11 +1,11 @@
 import pool from "../config/db.js";
 
 // Store a message
-export async function storeMessage(conversationId, senderId, message){
+export async function storeMessage(conversationId, senderId, message, image_url){
     const result = await pool.query(
-        `INSERT INTO messages (conversation_id, sender_id, message)
-        VALUES ($1, $2, $3) RETURNING *`,
-        [conversationId, senderId, message]
+        `INSERT INTO messages (conversation_id, sender_id, message, image_url)
+        VALUES ($1, $2, $3, $4) RETURNING *`,
+        [conversationId, senderId, message || null, image_url || null]
     );
     return result.rows[0];
 }

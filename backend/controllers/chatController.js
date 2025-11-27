@@ -6,10 +6,11 @@ import {
     getMessagesForConversation,
     getConversationById 
 } from "../models/chatModel.js";
+import { uploadToCloudinary } from "../config/cloudinary.js";
 
-export async function saveSentMessage(conversation_id, senderId, message){
+export async function saveSentMessage(conversation_id, senderId, message, image_url){
     try{
-        const result = await storeMessage(conversation_id, senderId, message);
+        const result = await storeMessage(conversation_id, senderId, message, image_url);
         return result;
     }catch(err){
         console.log('CHATCONTROLLER, ERROR: ', err.message);
@@ -95,4 +96,16 @@ export async function findOrCreateConversationRoute(req, res){
         console.error("Error finding/creating conversation:", err);
         res.status(500).json({ error: err.message });
     }
-}
+}//End of findOrCreateConversationRoute function
+
+export async function uploadImageToChat(req, res) {
+    try{
+        const result = await uploadToCloudinary(req.file.buffer, "chat_images");
+
+        res.json({ image_url: result.secure_url });
+    }catch(err){
+        console.log("uploadImageToChat error: ", err);
+        res.status(500).json({ message: err.message });
+    }
+}//End of uploadImageToChat function
+
