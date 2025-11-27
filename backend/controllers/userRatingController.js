@@ -1,13 +1,14 @@
 import { addOrUpdateRating, getUserRatings, getUserRatingSummary } from "../models/userRatingModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";
+import { getIO } from "../utils/getIo.js";
 
 export async function rateUser(req, res) {
     try{
         const rater_user_id = req.user.id;
         const { rated_user_id } = req.params;
         const { rating, review } = req.body;
-        const io = req.app.get("io");
+        const io = getIO(req);
 
         //Check if user is checking themselve , should not happen
         if(rater_user_id == rated_user_id){

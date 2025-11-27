@@ -4,6 +4,7 @@ import { insertListing, getAllListings, getListingById, updateListing, deleteLis
 from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";
+import { getIO } from "../utils/getIo.js";
 
 
 export async function createListing(req, res) {
@@ -155,6 +156,7 @@ export async function changeListingStatus(req, res) {
         const user_id = req.user.id;
         const { listing_id } = req.params;
         const { status } = req.body;
+        const io = getIO(req);
 
         //Check if passing the right status value
         const allowed = ["available", "pending", "sold"];
