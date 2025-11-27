@@ -1,4 +1,6 @@
 import { addOrUpdateRating, getUserRatings, getUserRatingSummary } from "../models/userRatingModel.js";
+import { createNotification } from "../utils/notifications.js";
+import { sendNotification } from "../utils/socketHandler.js";
 
 export async function rateUser(req, res) {
     try{
@@ -18,6 +20,10 @@ export async function rateUser(req, res) {
 
         //Query the rating
         const ratingData = await addOrUpdateRating(rated_user_id, rater_user_id, rating, review);
+
+        //After rating, sends a notification to the user who was rated
+        const notif = await createNotification(rated_user_id, "rating_received", `You received a new rating from a user.`, { rating });
+        sendNotification(io, rated_user_id, notif);
 
         console.log("User rated successfully");
         res.json({ message: "Rating submitted successfully", data: ratingData });

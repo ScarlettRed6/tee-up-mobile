@@ -132,3 +132,12 @@ export async function getConversationById(conversationId){
     );
     return result.rows[0];
 }
+
+export async function getOtherParticipant(conversationId, senderId) {
+    const result = await pool.query(
+        `SELECT user_id FROM participants
+        WHERE conversation_id = $1 AND user_id = $2`,
+        [conversationId, senderId]
+    );
+    return result.rows[0]?.user_id || null;
+}

@@ -1,6 +1,9 @@
 import { uploadToCloudinary } from "../config/cloudinary.js";
+import { getUsersWhoFavorited } from "../models/favoritesModel.js";
 import { insertListing, getAllListings, getListingById, updateListing, deleteListing, updateListingStatus } 
 from "../models/listingsModel.js";
+import { createNotification } from "../utils/notifications.js";
+import { sendNotification } from "../utils/socketHandler.js";
 
 
 export async function createListing(req, res) {
@@ -164,6 +167,15 @@ export async function changeListingStatus(req, res) {
             return res.status(403).json({ message: "Not allowed, you do not own this listing" });
         }
 
+        //Check if item is sold then send notifications to users who favorited the listing
+        if(status === "sold"){
+            const users = await getUsersWhoFavorited(listing_id);
+            for(const u of users){
+                const notif = await createNotification(u.user_id, "favorite_sold", "A listing you favorited was marked as SOLD", { listing_id });
+                sendNotification(io, u.user_id, notif);
+            }
+        }
+
         console.log("Listings status updated successfully");
         res.json({ message: "Listing status updated", listing: updatedListing });
     }catch(err){
@@ -190,12 +202,4 @@ export async function deleteListingItem(req, res) {
     }
 }
 
-
-
-
-//Implement later features
-/* 
-    Flagging of a listing
-        - 
-*/
 

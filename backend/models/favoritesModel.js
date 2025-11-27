@@ -31,3 +31,11 @@ export async function getUserFavorites(user_id) {
     }));
 }
 
+export async function getUsersWhoFavorited(listing_id) {
+    const result = await pool.query(
+        `SELECT user_id FROM favorites WHERE listing_id = $1`,
+        [listing_id]
+    );
+    return result.rows[0];
+}
+
