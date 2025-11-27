@@ -58,9 +58,10 @@ export default function UserProfileScreen({ navigation, route }) {
 
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery || '');
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
-  const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
-  const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
-  const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
+const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
+const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
+const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
+const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(initialFilters.status || 'Available'));
   const [sortBy, setSortBy] = useState('recentlyListed');
   const [showSortModal, setShowSortModal] = useState(false);
 
@@ -207,7 +208,9 @@ export default function UserProfileScreen({ navigation, route }) {
         if (userData) {
           setUser(prev => ({
             ...prev,
-            activeListings: transformedListings.filter(l => l.status === 'Available' || l.status === 'available').length,
+            activeListings: transformedListings.filter(
+              l => normalizeListingStatus(l.status) === 'Available'
+            ).length,
           }));
         }
       } else {
@@ -265,6 +268,13 @@ export default function UserProfileScreen({ navigation, route }) {
       console.log('After hand filter:', filtered.length);
     }
 
+    // Status filter
+    if (selectedStatus) {
+      const normalizedSelected = normalizeListingStatus(selectedStatus);
+      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
+      console.log('After status filter:', filtered.length);
+    }
+
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
@@ -307,7 +317,7 @@ export default function UserProfileScreen({ navigation, route }) {
     console.log('Final filtered products:', filtered.length);
     console.log('Final filtered products data:', filtered);
     return filtered;
-  }, [userListings, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy]);
+  }, [userListings, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -389,6 +399,7 @@ export default function UserProfileScreen({ navigation, route }) {
         condition: selectedCondition,
         flex: selectedFlex,
         hand: selectedHand,
+        status: selectedStatus,
       },
       returnTo: 'UserProfile',
       user: user,
@@ -401,6 +412,7 @@ export default function UserProfileScreen({ navigation, route }) {
     setSelectedFlex(filters.flex || null);
     setSelectedHand(filters.hand || null);
     setSearchQuery(filters.searchQuery || '');
+    setSelectedStatus(filters.status ? normalizeListingStatus(filters.status) : 'Available');
   };
 
   // Listen for filter updates when navigating back

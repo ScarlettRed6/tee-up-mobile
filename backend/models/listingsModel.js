@@ -37,6 +37,31 @@ export async function getAllListings(filters = {}, sort = "newest"){
         whereClauses.push(`l.status = $${values.length}`);
     }
 
+    if(filters.condition){
+        values.push(filters.condition);
+        whereClauses.push(`l.condition = $${values.length}`);
+    }
+
+    if(typeof filters.min_price === 'number'){
+        values.push(filters.min_price);
+        whereClauses.push(`l.price >= $${values.length}`);
+    }
+
+    if(typeof filters.max_price === 'number'){
+        values.push(filters.max_price);
+        whereClauses.push(`l.price <= $${values.length}`);
+    }
+
+    if(filters.search){
+        values.push(`%${filters.search}%`);
+        const searchIndex = values.length;
+        whereClauses.push(`(
+            l.title ILIKE $${searchIndex}
+            OR l.description ILIKE $${searchIndex}
+            OR l.brand ILIKE $${searchIndex}
+        )`);
+    }
+
     if(whereClauses.length > 0){
         query += ` WHERE ${whereClauses.join(" AND ")}`;
     }

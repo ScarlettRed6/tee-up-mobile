@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/ProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { authContext } from '../context/authContext';
+import { ListingsContext } from '../context/listingsContext';
 import { getUserProfile } from '../api/userApi';
 import { fetchUserRatingSummary } from '../api/ratingApi';
-import { fetchUserListings } from '../api/listingsApi';
+import { fetchUserListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -22,6 +23,7 @@ const normalizeListingStatus = (statusValue = 'available') => {
 export default function ProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
+  const { refreshListings } = useContext(ListingsContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -152,6 +154,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [openDropdownId, setOpenDropdownId] = useState(null); // Track which product's dropdown is open
   const [showConfirmModal, setShowConfirmModal] = useState(false); // Confirmation modal for marking as sold
   const [productToUpdate, setProductToUpdate] = useState(null); // Product ID to update
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
 
   // All products data with listing dates and status
   const [allProducts, setAllProducts] = useState([
@@ -334,27 +337,61 @@ export default function ProfileScreen({ navigation, route }) {
     setOpenDropdownId(null); // Close dropdown
   };
 
+  const updateActiveListingCount = useCallback((listingsArray) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const activeCount = listingsArray.filter(
+        product => normalizeListingStatus(product.status) === 'Available'
+      ).length;
+      return { ...prev, activeListings: activeCount };
+    });
+  }, []);
+
+  const applyLocalStatusChange = useCallback((listingId, nextStatusValue) => {
+    setAllProducts(prevProducts => {
+      const normalizedStatus = normalizeListingStatus(nextStatusValue);
+      const updated = prevProducts.map(product => {
+        if (product.id === listingId) {
+          return {
+            ...product,
+            status: normalizedStatus,
+            listingData: product.listingData
+              ? { ...product.listingData, status: normalizedStatus }
+              : product.listingData,
+          };
+        }
+        return product;
+      });
+      updateActiveListingCount(updated);
+      return updated;
+    });
+  }, [updateActiveListingCount]);
+
+  const performStatusUpdate = useCallback(async (listingId, nextStatusValue) => {
+    if (!listingId) return;
+    setStatusUpdatingId(listingId);
+    try {
+      await updateListingStatusApi(listingId, nextStatusValue.toLowerCase());
+      applyLocalStatusChange(listingId, nextStatusValue);
+      if (typeof refreshListings === 'function') {
+        refreshListings();
+      }
+    } catch (error) {
+      console.log('Failed to update listing status:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to update listing status.');
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  }, [applyLocalStatusChange, refreshListings]);
+
   const handleMarkAsAvailable = (productId) => {
-    // Mark as available immediately (no confirmation needed)
-    setAllProducts(prevProducts =>
-      prevProducts.map(product =>
-        product.id === productId
-          ? { ...product, status: 'Available' }
-          : product
-      )
-    );
     setOpenDropdownId(null); // Close dropdown
+    performStatusUpdate(productId, 'available');
   };
 
-  const confirmMarkAsSold = () => {
+  const confirmMarkAsSold = async () => {
     if (productToUpdate) {
-      setAllProducts(prevProducts =>
-        prevProducts.map(product =>
-          product.id === productToUpdate
-            ? { ...product, status: 'Sold' }
-            : product
-        )
-      );
+      await performStatusUpdate(productToUpdate, 'sold');
     }
     setShowConfirmModal(false);
     setProductToUpdate(null);
@@ -400,6 +437,7 @@ export default function ProfileScreen({ navigation, route }) {
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
     const isDropdownOpen = openDropdownId === item.id;
+    const isStatusUpdating = statusUpdatingId === item.id;
     
     // Get first photo from listing data
     const listingPhotos = item.listingData?.photos || [];
@@ -499,18 +537,28 @@ export default function ProfileScreen({ navigation, route }) {
                 style={styles.dropdownItem}
                 onPress={() => handleMarkAsSold(item.id)}
                 activeOpacity={0.7}
+                disabled={isStatusUpdating}
               >
-                <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
-                <Text style={styles.dropdownText}>Mark as sold</Text>
+                {isStatusUpdating ? (
+                  <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                ) : (
+                  <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                )}
+                <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={styles.dropdownItem}
                 onPress={() => handleMarkAsAvailable(item.id)}
                 activeOpacity={0.7}
+                disabled={isStatusUpdating}
               >
-                <Ionicons name="refresh-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
-                <Text style={styles.dropdownText}>Mark as available</Text>
+                {isStatusUpdating ? (
+                  <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                ) : (
+                  <Ionicons name="refresh-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                )}
+                <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as available'}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -784,8 +832,13 @@ export default function ProfileScreen({ navigation, route }) {
                 style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6 }]}
                 onPress={confirmMarkAsSold}
                 activeOpacity={0.7}
+                disabled={statusUpdatingId === productToUpdate}
               >
-                <Text style={styles.confirmButtonText}>Mark as Sold</Text>
+                {statusUpdatingId === productToUpdate ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>Mark as Sold</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>

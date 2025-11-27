@@ -222,6 +222,41 @@ export default StyleSheet.create({
     fontSize: 13,
     color: '#000',
   },
+  categoryPillActive: {
+    backgroundColor: '#FF6B35',
+    shadowOpacity: 0.2,
+  },
+  categoryTextActive: {
+    color: '#FFF',
+  },
+  categoryHintText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  categoryHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  categoryCountChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#FFE6DB',
+    borderRadius: 12,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  categoryCountText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 12,
+    color: '#FF6B35',
+  },
+  categoryScroll: {
+    marginTop: -8,
+  },
   bottomNav: {
     position: 'absolute',
     bottom: 0,

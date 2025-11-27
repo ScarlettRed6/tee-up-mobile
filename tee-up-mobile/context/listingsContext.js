@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect } from "react";
-import api from "../api/axiosInstance";
+import { createContext, useState, useEffect, useCallback } from "react";
+import { fetchListings as fetchListingsApi } from "../api/listingsApi";
 
 export const ListingsContext = createContext();
 
@@ -7,25 +7,24 @@ export function ListingsProvider({ children }){
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchListings = async () => {
+    const loadListings = useCallback(async () => {
         setLoading(true);
         try{
-            const res = await api.get("/listings");
-            console.log(res.data);
-            setListings(res.data.result);
+            const result = await fetchListingsApi({ status: 'available' });
+            setListings(Array.isArray(result) ? result : []);
         }catch(err){
             console.log("Error fetching listings:", err);
         }finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        fetchListings();
     }, []);
 
+    useEffect(() => {
+        loadListings();
+    }, [loadListings]);
+
     return (
-        <ListingsContext.Provider value={{ listings, loading, refreshListings: fetchListings }}>
+        <ListingsContext.Provider value={{ listings, loading, refreshListings: loadListings }}>
             {children}
         </ListingsContext.Provider>
     );

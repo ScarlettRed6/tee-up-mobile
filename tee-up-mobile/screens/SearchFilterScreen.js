@@ -1,28 +1,72 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable } from 'react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/SearchFilterScreen.styles';
+import jwtDecode from 'jwt-decode';
+import { authContext } from '../context/authContext';
+import { getRecentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } from '../storage/recentSearchStorage';
 
 export default function SearchFilterScreen({ navigation, route }) {
+  const { accessToken } = useContext(authContext);
   // Get initial values from route params if navigating from Profile or SearchResults
   const initialFilters = route?.params?.filters || {};
   const returnTo = route?.params?.returnTo || 'SearchResults';
   const isProfileFilter = returnTo === 'Profile' || returnTo === 'UserProfile'; // Simplified filters for Profile page
   
   const [searchQuery, setSearchQuery] = useState(route?.params?.searchQuery || initialFilters.searchQuery || '');
-  const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || (isProfileFilter ? 'All' : 'Iron'));
-  const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || (isProfileFilter ? null : 'Slightly Used'));
+  const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
+  const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [minPrice, setMinPrice] = useState(initialFilters.minPrice || '');
   const [maxPrice, setMaxPrice] = useState(initialFilters.maxPrice || '');
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
   const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
   const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold (only for Profile)
   const [location, setLocation] = useState(initialFilters.location || 'Makati City, NCR');
-  const [recentSearches, setRecentSearches] = useState([
-    'taylormade golf',
-    'callaway driver',
-    'titleist iron set',
-  ]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [recentLoading, setRecentLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    if (!accessToken) {
+      setCurrentUserId(null);
+      setRecentSearches([]);
+      return;
+    }
+    try {
+      const decoded = jwtDecode(accessToken);
+      setCurrentUserId(decoded.id ? decoded.id.toString() : null);
+    } catch (error) {
+      console.error('Failed to decode token for recent searches', error);
+      setCurrentUserId(null);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadRecent = async () => {
+      if (!currentUserId) {
+        setRecentSearches([]);
+        return;
+      }
+      setRecentLoading(true);
+      try {
+        const stored = await getRecentSearches(currentUserId);
+        if (isMounted) {
+          setRecentSearches(stored);
+        }
+      } catch (error) {
+        console.error('Failed to load recent searches', error);
+      } finally {
+        if (isMounted) {
+          setRecentLoading(false);
+        }
+      }
+    };
+    loadRecent();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUserId]);
 
   // Limit recent searches to 5 items
   const limitedRecentSearches = recentSearches.slice(0, 5);
@@ -38,51 +82,72 @@ export default function SearchFilterScreen({ navigation, route }) {
   // Show hand filter when Driver, Woods, Iron, or Putters is selected
   const showHandSection = selectedCategory === 'Driver' || selectedCategory === 'Woods' || selectedCategory === 'Iron' || selectedCategory === 'Putters';
 
-  const handleClearRecentSearches = () => {
-    setRecentSearches([]);
+  const handleClearRecentSearches = async () => {
+    if (currentUserId) {
+      const cleared = await clearRecentSearches(currentUserId);
+      setRecentSearches(cleared);
+    } else {
+      setRecentSearches([]);
+    }
   };
 
-  const handleRemoveSearch = (searchToRemove) => {
-    const updated = recentSearches.filter(search => search !== searchToRemove);
-    setRecentSearches(updated.slice(0, 5)); // Ensure max 5 items
+  const handleRemoveSearch = async (searchToRemove) => {
+    if (currentUserId) {
+      const updated = await removeRecentSearch(currentUserId, searchToRemove);
+      setRecentSearches(updated);
+    } else {
+      const updated = recentSearches.filter(search => search !== searchToRemove);
+      setRecentSearches(updated.slice(0, 5));
+    }
   };
 
-  // Helper function to add a new search (for future use)
-  const addRecentSearch = (newSearch) => {
-    if (!newSearch || newSearch.trim().length === 0) return;
-    
-    const trimmedSearch = newSearch.trim().toLowerCase();
-    // Remove if already exists, then add to beginning, then limit to 5
-    const filtered = recentSearches.filter(search => search.toLowerCase() !== trimmedSearch);
-    const updated = [trimmedSearch, ...filtered].slice(0, 5);
-    setRecentSearches(updated);
+  const addRecentSearchEntry = async (term) => {
+    const trimmed = term?.trim();
+    if (!trimmed) return;
+    if (currentUserId) {
+      const updated = await addRecentSearch(currentUserId, trimmed);
+      setRecentSearches(updated);
+    } else {
+      const filtered = recentSearches.filter(
+        (search) => search.toLowerCase() !== trimmed.toLowerCase()
+      );
+      const updated = [trimmed, ...filtered].slice(0, 5);
+      setRecentSearches(updated);
+    }
   };
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = async () => {
+    const trimmedQuery = searchQuery.trim();
     // Apply filters logic - only include relevant filters based on context
     const filters = {
-      searchQuery: isProfileFilter ? searchQuery : searchQuery, // Keep search query if from profile
-      category: selectedCategory,
-      condition: selectedCondition,
+      searchQuery: trimmedQuery,
       flex: selectedFlex,
       hand: selectedHand,
     };
+    
+    if (selectedCategory && selectedCategory !== 'All') {
+      filters.category = selectedCategory;
+    }
+
+    if (selectedCondition) {
+      filters.condition = selectedCondition;
+    }
     
     // Include status filter for Profile page
     if (isProfileFilter) {
       filters.status = selectedStatus;
     } else {
       // Only include price and location for SearchResults
-      filters.minPrice = minPrice;
-      filters.maxPrice = maxPrice;
+      if (minPrice) filters.minPrice = minPrice;
+      if (maxPrice) filters.maxPrice = maxPrice;
       filters.location = location;
     }
     
     console.log('Applying filters:', filters);
     
     // Add search query to recent searches if not empty (only for SearchResults)
-    if (!isProfileFilter && searchQuery.trim().length > 0) {
-      addRecentSearch(searchQuery);
+    if (!isProfileFilter && trimmedQuery.length > 0) {
+      await addRecentSearchEntry(trimmedQuery);
     }
     
     // Navigate based on returnTo parameter
@@ -93,7 +158,7 @@ export default function SearchFilterScreen({ navigation, route }) {
           navigation.navigate('UserProfile', { filters, user });
         } else {
           navigation.navigate('SearchResults', { 
-            searchQuery: searchQuery || 'all products',
+            searchQuery: trimmedQuery || 'All products',
             filters 
           });
         }
@@ -138,23 +203,28 @@ export default function SearchFilterScreen({ navigation, route }) {
           <View style={styles.section}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionHeader}>Recent Searches</Text>
-              <Pressable onPress={handleClearRecentSearches}>
-                <Text style={styles.clearButton}>CLEAR</Text>
-              </Pressable>
+              {limitedRecentSearches.length > 0 && (
+                <Pressable onPress={handleClearRecentSearches}>
+                  <Text style={styles.clearButton}>CLEAR</Text>
+                </Pressable>
+              )}
             </View>
-            {limitedRecentSearches.length > 0 ? (
+            {recentLoading ? (
+              <ActivityIndicator size="small" color="#FF6B35" />
+            ) : limitedRecentSearches.length > 0 ? (
               limitedRecentSearches.map((search, index) => (
                 <View key={index}>
                   <View style={styles.searchItem}>
                     <Pressable 
                       style={{ flex: 1 }}
-                      onPress={() => {
+                      onPress={async () => {
                         setSearchQuery(search);
+                        await addRecentSearchEntry(search);
                         navigation.navigate('SearchResults', { 
                           searchQuery: search,
                           filters: {
                             searchQuery: search,
-                            category: selectedCategory,
+                            category: selectedCategory !== 'All' ? selectedCategory : undefined,
                             condition: selectedCondition,
                             minPrice,
                             maxPrice,
