@@ -21,10 +21,10 @@ export default function CategoryListingsScreen({ navigation, route }) {
 
   useEffect(() => {
     const nextCategory = normalizeCategoryParam(route?.params?.category);
-    if (nextCategory !== activeCategory) {
+    if (nextCategory) {
       setActiveCategory(nextCategory);
     }
-  }, [route?.params?.category, activeCategory]);
+  }, [route?.params?.category]);
 
   const categoryListings = useMemo(
     () => listings.filter((listing) => doesListingMatchCategory(listing.category, activeCategory)),
@@ -166,14 +166,6 @@ export default function CategoryListingsScreen({ navigation, route }) {
             <Text style={styles.categoryStatsText}>
               {activeCount} {activeCategory.toLowerCase()} {activeCount === 1 ? 'listing' : 'listings'}
             </Text>
-            <TouchableOpacity
-              style={styles.clearFiltersButton}
-              onPress={() => navigation.navigate('SearchFilter', { category: activeCategory })}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="options-outline" size={16} color="#FF6B35" />
-              <Text style={styles.clearFiltersText}>Refine</Text>
-            </TouchableOpacity>
           </View>
         </View>
 

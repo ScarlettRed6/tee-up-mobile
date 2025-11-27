@@ -82,29 +82,12 @@ export default StyleSheet.create({
     color: '#FFF',
   },
   categoryStatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 12,
   },
   categoryStatsText: {
     fontFamily: 'Exo_500Medium',
     fontSize: 13,
     color: '#111827',
-  },
-  clearFiltersButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#FFE6DB',
-  },
-  clearFiltersText: {
-    fontFamily: 'Exo_500Medium',
-    fontSize: 12,
-    color: '#FF6B35',
-    marginLeft: 4,
   },
   productGrid: {
     flexDirection: 'row',

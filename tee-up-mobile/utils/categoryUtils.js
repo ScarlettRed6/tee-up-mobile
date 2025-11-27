@@ -1,4 +1,4 @@
-export const CATEGORY_OPTIONS = ['Driver', 'Iron', 'Putters', 'Apparel', 'Accessories', 'Others'];
+export const CATEGORY_OPTIONS = ['Driver', 'Iron', 'Woods', 'Putters', 'Apparel', 'Accessories', 'Others'];
 
 export const formatPriceLabel = (price) => {
   if (typeof price === 'number' && Number.isFinite(price)) {
@@ -35,6 +35,7 @@ const mapCategoryKey = (value = '') => {
   if (!normalized) return 'others';
   if (normalized.includes('driver')) return 'driver';
   if (normalized.includes('iron')) return 'iron';
+  if (normalized.includes('wood')) return 'woods';
   if (normalized.includes('putter')) return 'putters';
   if (normalized.includes('apparel') || normalized.includes('clothing')) return 'apparel';
   if (normalized.includes('accessor')) return 'accessories';
@@ -45,7 +46,7 @@ export const doesListingMatchCategory = (listingCategory, targetCategory) => {
   const listingKey = mapCategoryKey(listingCategory);
   const targetKey = mapCategoryKey(targetCategory);
   if (targetKey === 'others') {
-    return !['driver', 'iron', 'putters', 'apparel', 'accessories'].includes(listingKey);
+    return !['driver', 'iron', 'woods', 'putters', 'apparel', 'accessories'].includes(listingKey);
   }
   return listingKey === targetKey;
 };
