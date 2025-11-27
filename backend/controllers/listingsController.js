@@ -53,12 +53,28 @@ export async function createListing(req, res) {
 
 export async function getAllListingItems(req, res) {
     try{
-        const { category, user_id, sort, status } = req.query;
+        const { category, user_id, sort, status, search, min_price, max_price, condition } = req.query;
 
         const filters = {};
         if (category) filters.category = category;
         if (user_id) filters.user_id = user_id;
         if (status) filters.status = status;
+        if (condition) filters.condition = condition;
+        if (search) filters.search = search;
+
+        if (min_price !== undefined) {
+            const parsedMin = parseFloat(min_price);
+            if (!Number.isNaN(parsedMin)) {
+                filters.min_price = parsedMin;
+            }
+        }
+
+        if (max_price !== undefined) {
+            const parsedMax = parseFloat(max_price);
+            if (!Number.isNaN(parsedMax)) {
+                filters.max_price = parsedMax;
+            }
+        }
 
         const result = await getAllListings(filters, sort);
         res.status(200).json({ message: "Fetch listings successfully!", result });

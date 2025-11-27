@@ -36,8 +36,14 @@ export const createListing = async (listingData, photos = []) => {
 };
 
 export async function fetchListings(filters = {}) {
-    const params = new URLSearchParams(filters).toString();
-    const response = await api.get(`/listings?${params}`);
+    const params = new URLSearchParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        params.append(key, value);
+    });
+    const queryString = params.toString();
+    const endpoint = queryString ? `/listings?${queryString}` : '/listings';
+    const response = await api.get(endpoint);
     return response.data.result;
 }
 
@@ -51,6 +57,11 @@ export async function fetchUserListings(userId){
     const response = await api.get(`/listings?user_id=${userId}`);
     console.log('fetchUserListings response:', response.data);
     return response.data.result || [];
+}
+
+export async function updateListingStatus(listingId, status){
+    const response = await api.patch(`/listings/${listingId}/status`, { status });
+    return response.data.listing;
 }
 
 export const updateListing = async (listingId, listingData, photos = []) => {

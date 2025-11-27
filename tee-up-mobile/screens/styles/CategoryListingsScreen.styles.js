@@ -5,32 +5,27 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: '#F6EDE2',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-    paddingHorizontal: 20,
-    paddingTop: 110,
-  },
-  headerIcons: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 50,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     backgroundColor: '#F6EDE2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D9CC',
-    zIndex: 10,
   },
-  iconButton: {
-    padding: 4,
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileAvatar: {
     width: 32,
@@ -42,41 +37,74 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  titleSection: {
-    marginBottom: 32,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
+  pageTitle: {
     fontFamily: 'Exo_700Bold',
-    fontSize: 28,
+    fontSize: 26,
     color: '#000',
-    marginRight: 12,
   },
-  filterButton: {
-    padding: 4,
+  scrollView: {
+    flex: 1,
   },
-  resultMetaRow: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
+  scrollContent: {
+    paddingTop: 8,
+    paddingHorizontal: 20,
   },
-  resultCountText: {
+  categorySwitcher: {
+    marginBottom: 20,
+  },
+  switcherContent: {
+    paddingVertical: 6,
+  },
+  switcherPill: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  switcherPillActive: {
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35',
+  },
+  switcherText: {
     fontFamily: 'Exo_500Medium',
     fontSize: 13,
-    color: '#4B5563',
-    marginHorizontal: 4,
+    color: '#111827',
   },
-  activeFilterText: {
-    fontFamily: 'Exo_400Regular',
+  switcherTextActive: {
+    color: '#FFF',
+  },
+  categoryStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  categoryStatsText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 13,
+    color: '#111827',
+  },
+  clearFiltersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#FFE6DB',
+  },
+  clearFiltersText: {
+    fontFamily: 'Exo_500Medium',
     fontSize: 12,
-    color: '#6B7280',
-    marginHorizontal: 4,
+    color: '#FF6B35',
+    marginLeft: 4,
   },
   productGrid: {
     flexDirection: 'row',
@@ -111,28 +139,30 @@ export default StyleSheet.create({
   productImagePlaceholder: {
     width: '100%',
     height: 120,
-    backgroundColor: '#F5F5F5',
     borderRadius: 12,
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 6,
     marginBottom: 10,
   },
   imagePlaceholderText: {
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
-    color: '#666',
+    color: '#6B7280',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',
     fontSize: 12,
-    color: '#000',
+    color: '#111827',
     marginBottom: 4,
   },
   productCondition: {
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
-    color: '#666',
+    color: '#6B7280',
     marginBottom: 6,
   },
   productPrice: {
@@ -146,78 +176,36 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   sellerAvatar: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sellerAvatarImage: {
     width: 18,
     height: 18,
     borderRadius: 9,
     backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   sellerName: {
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
-    color: '#666',
-  },
-  statusChip: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
-    backgroundColor: '#FFE6DB',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusChipText: {
-    fontFamily: 'Exo_500Medium',
-    fontSize: 11,
-    color: '#C2410C',
-  },
-  loadingState: {
-    paddingVertical: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontFamily: 'Exo_400Regular',
-    fontSize: 13,
     color: '#6B7280',
   },
-  errorState: {
+  emptyState: {
+    width: '100%',
     paddingVertical: 60,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  errorText: {
-    marginTop: 8,
-    fontFamily: 'Exo_500Medium',
-    fontSize: 14,
-    color: '#C2410C',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyState: {
-    paddingVertical: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   emptyStateTitle: {
-    marginTop: 12,
     fontFamily: 'Exo_600SemiBold',
-    fontSize: 16,
+    fontSize: 14,
     color: '#111827',
+    marginBottom: 4,
   },
   emptyStateSubtitle: {
     fontFamily: 'Exo_400Regular',
-    fontSize: 13,
+    fontSize: 12,
     color: '#6B7280',
     textAlign: 'center',
-    paddingHorizontal: 20,
   },
   bottomNav: {
     position: 'absolute',
@@ -256,4 +244,5 @@ export default StyleSheet.create({
     marginTop: 4,
   },
 });
+
 

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,14 +8,14 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
 import { getUserProfile } from '../api/userApi';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { CATEGORY_OPTIONS, extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function DiscoverScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { listings, loading } = useContext(ListingsContext);
   const { accessToken } = useContext(authContext);
   const [userProfileImage, setUserProfileImage] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(CATEGORY_OPTIONS[0]);
 
   // Helper function to navigate to product detail
   const navigateToProductDetail = (productData) => {
@@ -43,6 +43,11 @@ export default function DiscoverScreen({ navigation }) {
       fetchUserProfile();
     }, [fetchUserProfile])
   );
+
+  const handleCategoryPress = (category) => {
+    setSelectedCategory(category);
+    navigation.navigate('CategoryListings', { category });
+  };
 
   if(loading){
     return (
@@ -120,9 +125,8 @@ export default function DiscoverScreen({ navigation }) {
               style={styles.horizontalScrollView}
             >
               {listings.slice(0, 6).map(item => {
-                const firstPhoto = item.photos && Array.isArray(item.photos) && item.photos.length > 0 
-                  ? item.photos[0] 
-                  : null;
+                const photos = extractPhotos(item.photos);
+                const firstPhoto = photos.length > 0 ? photos[0] : null;
                 
                 return (
                   <TouchableOpacity
@@ -152,7 +156,7 @@ export default function DiscoverScreen({ navigation }) {
                     <Text style={styles.productName} numberOfLines={2}>
                       {item.title}
                     </Text>
-                    <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
+                    <Text style={styles.productPrice}>{formatPriceLabel(item.price)}</Text>
                     <View style={styles.sellerInfo}>
                       {item.seller_profile_image ? (
                         <Image 
@@ -194,30 +198,21 @@ export default function DiscoverScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categories</Text>
           <View style={styles.categoriesRow}>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Driver</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Iron</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Putters</Text>
-            </TouchableOpacity>
+            {CATEGORY_OPTIONS.map((category) => {
+              const isActive = selectedCategory === category;
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[styles.categoryPill, isActive && styles.categoryPillActive]}
+                  onPress={() => handleCategoryPress(category)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>{category}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <View style={styles.categoriesRow}>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Apparel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Others</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Accessories</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.categoryHintText}>Tap a category to instantly filter active listings.</Text>
         </View>
 
         {/* Recommended For You */}
@@ -240,7 +235,7 @@ export default function DiscoverScreen({ navigation }) {
                   <Text style={styles.productName} numberOfLines={2}>
                     {item.title}
                   </Text>
-                  <Text style={styles.productPrice}>₱{item.price?.toLocaleString() || item.price}</Text>
+                  <Text style={styles.productPrice}>{formatPriceLabel(item.price)}</Text>
                   <View style={styles.sellerInfo}>
                     {item.seller_profile_image ? (
                       <Image 
