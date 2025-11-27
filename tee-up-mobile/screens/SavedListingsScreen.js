@@ -6,6 +6,13 @@ import styles from './styles/SavedListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { favoritesContext } from '../context/favoritesContext';
 
+const normalizeListingStatus = (statusValue = 'available') => {
+  const lower = (statusValue || '').toString().toLowerCase();
+  if (lower === 'sold') return 'Sold';
+  if (lower === 'pending') return 'Pending';
+  return 'Available';
+};
+
 const parsePhotos = (photos) => {
   if (Array.isArray(photos)) return photos;
   if (typeof photos === 'string') {
@@ -32,6 +39,7 @@ export default function SavedListingsScreen({ navigation }) {
     return favorites.map((item) => {
       const photos = parsePhotos(item.photos);
       const sellerName = item.seller_name || item.seller || 'Unknown';
+      const statusLabel = normalizeListingStatus(item.status);
       const normalized = {
         id: item.listing_id || item.id,
         title: item.title || 'Untitled Listing',
@@ -41,6 +49,7 @@ export default function SavedListingsScreen({ navigation }) {
         seller: sellerName,
         sellerColor: '#FF6B35',
         image: photos.length > 0 ? photos[0] : null,
+        status: statusLabel,
         rawListing: {
           ...item,
           photos,
@@ -79,13 +88,20 @@ export default function SavedListingsScreen({ navigation }) {
           });
         }}
       >
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="cover" />
-        ) : (
-          <View style={styles.productImagePlaceholder}>
-            <Text style={styles.imagePlaceholderText}>{item.title}</Text>
-          </View>
-        )}
+        <View style={styles.productImageWrapper}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.productImage} resizeMode="cover" />
+          ) : (
+            <View style={styles.productImagePlaceholder}>
+              <Text style={styles.imagePlaceholderText}>{item.title}</Text>
+            </View>
+          )}
+          {item.status === 'Sold' && (
+            <View style={styles.soldBadge}>
+              <Text style={styles.soldBadgeText}>SOLD</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         {item.condition && <Text style={styles.productCondition}>{item.condition}</Text>}
         <Text style={styles.productPrice}>{item.priceLabel}</Text>

@@ -148,7 +148,9 @@ export default function ProfileScreen({ navigation, route }) {
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
   const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
-  const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(initialFilters.status || 'Available')); // Available, Sold
+  const [selectedStatus, setSelectedStatus] = useState(
+    initialFilters.status ? normalizeListingStatus(initialFilters.status) : 'All'
+  ); // All, Available, Sold
   const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
   const [showSortModal, setShowSortModal] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null); // Track which product's dropdown is open
@@ -245,6 +247,14 @@ export default function ProfileScreen({ navigation, route }) {
   ]);
 
   // Filter and sort products
+  const getStatusPriority = useCallback((statusValue) => {
+    const normalized = normalizeListingStatus(statusValue);
+    if (normalized === 'Available') return 0;
+    if (normalized === 'Pending') return 1;
+    if (normalized === 'Sold') return 2;
+    return 3;
+  }, []);
+
   const filteredAndSortedProducts = React.useMemo(() => {
     let filtered = [...allProducts];
 
@@ -277,36 +287,36 @@ export default function ProfileScreen({ navigation, route }) {
       filtered = filtered.filter(product => product.hand === selectedHand);
     }
 
-    // Status filter (Available/Sold)
-    if (selectedStatus) {
+    // Status filter (Available/Sold) - skip when "All" is selected
+    if (selectedStatus && selectedStatus !== 'All') {
       const normalizedSelected = normalizeListingStatus(selectedStatus);
       filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
     }
 
-    // Sort
-    switch (sortBy) {
-      case 'recentlyListed':
-        // Sort by most recent listing date first (newest first)
-        filtered.sort((a, b) => b.listedDate - a.listedDate);
-        break;
-      case 'oldestListing':
-        // Sort by oldest listing date first
-        filtered.sort((a, b) => a.listedDate - b.listedDate);
-        break;
-      case 'mostExpensive':
-        filtered.sort((a, b) => b.priceValue - a.priceValue);
-        break;
-      case 'cheapest':
-        filtered.sort((a, b) => a.priceValue - b.priceValue);
-        break;
-      default:
-        // Default to recently listed
-        filtered.sort((a, b) => b.listedDate - a.listedDate);
-        break;
-    }
+    const compareBySort = (a, b) => {
+      if (!selectedStatus || selectedStatus === 'All') {
+        const statusDiff = getStatusPriority(a.status) - getStatusPriority(b.status);
+        if (statusDiff !== 0) {
+          return statusDiff;
+        }
+      }
 
-    return filtered;
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts]);
+      switch (sortBy) {
+        case 'recentlyListed':
+          return b.listedDate - a.listedDate;
+        case 'oldestListing':
+          return a.listedDate - b.listedDate;
+        case 'mostExpensive':
+          return b.priceValue - a.priceValue;
+        case 'cheapest':
+          return a.priceValue - b.priceValue;
+        default:
+          return b.listedDate - a.listedDate;
+      }
+    };
+
+    return filtered.sort(compareBySort);
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts, getStatusPriority]);
 
   const renderRatingStars = (ratingValue = 0) => {
     const stars = [];
@@ -588,7 +598,11 @@ export default function ProfileScreen({ navigation, route }) {
     setSelectedCondition(filters.condition || null);
     setSelectedFlex(filters.flex || null);
     setSelectedHand(filters.hand || null);
-    setSelectedStatus(filters.status ? normalizeListingStatus(filters.status) : 'Available');
+    if (filters.status && filters.status !== 'All') {
+      setSelectedStatus(normalizeListingStatus(filters.status));
+    } else {
+      setSelectedStatus('All');
+    }
     setSearchQuery(filters.searchQuery || '');
   };
 

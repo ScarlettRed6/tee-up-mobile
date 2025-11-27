@@ -33,3 +33,12 @@ export const findOrCreateConversation = async (sellerId, listingId) => {
     return res.data.conversation;
 };
 
+export const uploadChatImage = async (formData) => {
+    const res = await api.post("/chat/upload-image", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+    return res.data;
+};
+

@@ -163,6 +163,15 @@ export default StyleSheet.create({
     color: '#000',
     lineHeight: 20,
   },
+  messageImage: {
+    width: 180,
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#F0F0F0',
+  },
+  messageImageWithText: {
+    marginBottom: 8,
+  },
   // Input Bar
   inputBar: {
     flexDirection: 'row',
@@ -181,6 +190,9 @@ export default StyleSheet.create({
   inputIcon: {
     padding: 6,
     marginRight: 8,
+  },
+  inputIconDisabled: {
+    opacity: 0.4,
   },
   textInput: {
     flex: 1,
@@ -252,6 +264,40 @@ export default StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Exo_600SemiBold',
     fontSize: 14,
+  },
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  previewContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '90%',
+    height: '80%',
+  },
+  previewCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
 });
 

@@ -2,10 +2,18 @@ import pool from "../config/db.js";
 
 // Store a message
 export async function storeMessage(conversationId, senderId, message, image_url){
+    const hasText = typeof message === "string" && message.trim().length > 0;
+    const normalizedMessage = hasText ? message.trim() : "";
+    const normalizedImage = image_url || null;
+
+    if (!hasText && !normalizedImage) {
+        throw new Error("Cannot store empty message");
+    }
+
     const result = await pool.query(
         `INSERT INTO messages (conversation_id, sender_id, message, image_url)
         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [conversationId, senderId, message || null, image_url || null]
+        [conversationId, senderId, normalizedMessage, normalizedImage]
     );
     return result.rows[0];
 }

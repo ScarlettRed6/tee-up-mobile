@@ -42,7 +42,8 @@ export function initSocketHandlers(io){
                 console.log("Socket send_message received:", {
                     conversationId,
                     socketUserId: socket.userId,
-                    message: message.substring(0, 50)
+                    messagePreview: message ? message.substring(0, 50) : null,
+                    hasImage: !!image_url
                 });
                 
                 if (!socket.userId) {

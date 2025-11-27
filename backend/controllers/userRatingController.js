@@ -7,6 +7,7 @@ export async function rateUser(req, res) {
         const rater_user_id = req.user.id;
         const { rated_user_id } = req.params;
         const { rating, review } = req.body;
+        const io = req.app.get("io");
 
         //Check if user is checking themselve , should not happen
         if(rater_user_id == rated_user_id){
@@ -22,8 +23,10 @@ export async function rateUser(req, res) {
         const ratingData = await addOrUpdateRating(rated_user_id, rater_user_id, rating, review);
 
         //After rating, sends a notification to the user who was rated
-        const notif = await createNotification(rated_user_id, "rating_received", `You received a new rating from a user.`, { rating });
-        sendNotification(io, rated_user_id, notif);
+        if (io) {
+            const notif = await createNotification(rated_user_id, "rating_received", `You received a new rating from a user.`, { rating });
+            sendNotification(io, rated_user_id, notif);
+        }
 
         console.log("User rated successfully");
         res.json({ message: "Rating submitted successfully", data: ratingData });

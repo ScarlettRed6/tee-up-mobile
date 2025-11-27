@@ -1,14 +1,15 @@
-import React, { useState, useRef, useEffect, useContext, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard, Image } from 'react-native';
+import React, { useState, useRef, useEffect, useContext, useMemo, useCallback } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/ChatDetailScreen.styles';
-import { getMessages, findOrCreateConversation } from '../api/chatApi';
+import { getMessages, findOrCreateConversation, uploadChatImage } from '../api/chatApi';
 import { getSocket, disconnectSocket } from '../utils/socketClient';
 import { authContext } from '../context/authContext';
 import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { rateUser } from '../api/ratingApi';
+import * as ImagePicker from 'expo-image-picker';
 
 const MIN_MESSAGES_FOR_RATING = 6;
 const buildRatedStorageKey = (identifier) => `rated_conversation:${identifier}`;
@@ -30,6 +31,8 @@ export default function ChatDetailScreen({ navigation, route }) {
   const [ratingReview, setRatingReview] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [hasRatedConversation, setHasRatedConversation] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
 
   // Get route params
   const conversationId = route?.params?.conversationId;
@@ -47,6 +50,30 @@ export default function ChatDetailScreen({ navigation, route }) {
     }
     return null;
   }, [conversation?.conversation_id, conversation?.listing_id, conversation?.other_user_id, conversationId]);
+
+  const resolvedOtherUserId = useMemo(() => {
+    if (conversation?.other_user_id) {
+      return conversation.other_user_id;
+    }
+    const currentUserId = currentUserIdRef.current;
+    if (!conversation || !currentUserId) return null;
+    const currentUserIdStr = String(currentUserId);
+    const buyerIdStr = String(conversation.buyer_id || '');
+    const sellerIdStr = String(conversation.seller_id || '');
+    if (currentUserIdStr === buyerIdStr) {
+      return conversation.seller_id;
+    }
+    if (currentUserIdStr === sellerIdStr) {
+      return conversation.buyer_id;
+    }
+    return null;
+  }, [conversation]);
+
+  const scrollToBottom = useCallback((delay = 100) => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, delay);
+  }, []);
 
   // Get current user ID and store it in ref for consistent comparison
   const getCurrentUserId = () => {
@@ -79,6 +106,69 @@ export default function ChatDetailScreen({ navigation, route }) {
       currentUserIdRef.current = null;
     }
   }, [accessToken]);
+
+  const handleIncomingSocketMessage = useCallback((newMessage) => {
+    const currentUserId = getCurrentUserId();
+    const msgSenderId = String(newMessage.sender_id || '');
+    const currentUserIdStr = String(currentUserId || '');
+    const isMyMessage = msgSenderId === currentUserIdStr;
+
+    setMessages(prev => {
+      const filtered = prev.filter(m => !String(m.id).startsWith('temp_') && m.id !== newMessage.id);
+
+      const transformedMessage = {
+        id: newMessage.id,
+        text: newMessage.message || '',
+        imageUrl: newMessage.image_url || null,
+        sender: isMyMessage ? 'me' : 'other',
+        timestamp: newMessage.created_at
+          ? new Date(newMessage.created_at).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true,
+            })
+          : 'Now',
+        sender_name: newMessage.sender_name || null,
+        sender_profile_image:
+          newMessage.sender_profile_image ||
+          (isMyMessage ? currentUserProfileImage : otherUserProfileImage) ||
+          null,
+      };
+
+      return [...filtered, transformedMessage];
+    });
+
+    scrollToBottom();
+  }, [currentUserProfileImage, otherUserProfileImage, scrollToBottom]);
+
+  const attachSocketListeners = useCallback((socketInstance) => {
+    if (!socketInstance) return;
+    socketInstance.off('new_message');
+    socketInstance.off('error_message');
+    socketInstance.on('new_message', handleIncomingSocketMessage);
+    socketInstance.on('error_message', (error) => {
+      Alert.alert('Error', error.message || 'Failed to send message');
+    });
+  }, [handleIncomingSocketMessage]);
+
+  const joinConversationRoom = useCallback(async (conversationIdToJoin) => {
+    if (!conversationIdToJoin) return null;
+    try {
+      if (!socketRef.current) {
+        const socket = await getSocket();
+        socketRef.current = socket;
+        attachSocketListeners(socket);
+      } else {
+        attachSocketListeners(socketRef.current);
+      }
+
+      socketRef.current.emit('join_conversation', { conversationId: conversationIdToJoin });
+      return socketRef.current;
+    } catch (socketError) {
+      console.error('Socket connection error:', socketError);
+      return null;
+    }
+  }, [attachSocketListeners]);
 
   useEffect(() => {
     const loadRatedStatus = async () => {
@@ -219,7 +309,8 @@ export default function ChatDetailScreen({ navigation, route }) {
             
             return {
               id: msg.id,
-              text: msg.message,
+              text: msg.message || '',
+              imageUrl: msg.image_url || null,
               sender: isMyMessage ? 'me' : 'other', // 'me' = right side, 'other' = left side
               timestamp: msg.created_at 
                 ? new Date(msg.created_at).toLocaleTimeString('en-US', { 
@@ -240,68 +331,7 @@ export default function ChatDetailScreen({ navigation, route }) {
           
           setMessages(transformedMessages);
 
-          // Connect to Socket.IO and join conversation room
-          try {
-            const socket = await getSocket();
-            socketRef.current = socket;
-            
-            socket.emit('join_conversation', { conversationId });
-            
-            // Listen for new messages
-            socket.on('new_message', (newMessage) => {
-              const currentUserId = getCurrentUserId();
-              // Convert both to strings for consistent comparison
-              const msgSenderId = String(newMessage.sender_id || '');
-              const currentUserIdStr = String(currentUserId || '');
-              const isMyMessage = msgSenderId === currentUserIdStr;
-              
-              console.log('=== New Message via Socket ===');
-              console.log({
-                sender_id: newMessage.sender_id,
-                sender_id_type: typeof newMessage.sender_id,
-                sender_id_str: msgSenderId,
-                currentUserId: currentUserId,
-                currentUserId_str: currentUserIdStr,
-                isMyMessage: isMyMessage,
-                sender: isMyMessage ? 'me (RIGHT)' : 'other (LEFT)'
-              });
-              
-              // Check if this message already exists (from optimistic update)
-              setMessages(prev => {
-                // Remove optimistic message if it exists (temporary ID with 'temp_' prefix)
-                const filtered = prev.filter(m => !String(m.id).startsWith('temp_') && m.id !== newMessage.id);
-                
-                const transformedMessage = {
-                  id: newMessage.id,
-                  text: newMessage.message,
-                  sender: isMyMessage ? 'me' : 'other', // 'me' = right side, 'other' = left side
-                  timestamp: newMessage.created_at 
-                    ? new Date(newMessage.created_at).toLocaleTimeString('en-US', { 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        hour12: true 
-                      })
-                    : 'Now',
-                  sender_name: newMessage.sender_name || null,
-                  sender_profile_image: newMessage.sender_profile_image || null,
-                };
-                
-                return [...filtered, transformedMessage];
-              });
-              
-              // Scroll to bottom
-              setTimeout(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-              }, 100);
-            });
-
-            socket.on('error_message', (error) => {
-              Alert.alert('Error', error.message || 'Failed to send message');
-            });
-          } catch (socketError) {
-            console.error('Socket connection error:', socketError);
-            // Continue without Socket.IO - messages will still work via API
-          }
+          await joinConversationRoom(conversationId);
         } else if (existingChat && existingChat.conversation_id) {
           // Use existing chat data if provided, but still fetch messages to ensure we have latest
           const existingConvId = existingChat.conversation_id || existingChat.id;
@@ -418,7 +448,8 @@ export default function ChatDetailScreen({ navigation, route }) {
             
             return {
               id: msg.id,
-              text: msg.message,
+              text: msg.message || '',
+              imageUrl: msg.image_url || null,
               sender: isMyMessage ? 'me' : 'other',
               timestamp: msg.created_at 
                 ? new Date(msg.created_at).toLocaleTimeString('en-US', { 
@@ -434,52 +465,7 @@ export default function ChatDetailScreen({ navigation, route }) {
           
           setMessages(transformedMessages);
           
-          // Connect to Socket.IO and join conversation room
-          try {
-            const socket = await getSocket();
-            socketRef.current = socket;
-            
-            socket.emit('join_conversation', { conversationId: existingConvId });
-            
-            // Listen for new messages (same logic as above)
-            socket.on('new_message', (newMessage) => {
-              const currentUserId = getCurrentUserId();
-              const msgSenderId = String(newMessage.sender_id || '');
-              const currentUserIdStr = String(currentUserId || '');
-              const isMyMessage = msgSenderId === currentUserIdStr;
-              
-              setMessages(prev => {
-                const filtered = prev.filter(m => !String(m.id).startsWith('temp_') && m.id !== newMessage.id);
-                
-                const transformedMessage = {
-                  id: newMessage.id,
-                  text: newMessage.message,
-                  sender: isMyMessage ? 'me' : 'other',
-                  timestamp: newMessage.created_at 
-                    ? new Date(newMessage.created_at).toLocaleTimeString('en-US', { 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        hour12: true 
-                      })
-                    : 'Now',
-                  sender_name: newMessage.sender_name || null,
-                  sender_profile_image: newMessage.sender_profile_image || null,
-                };
-                
-                return [...filtered, transformedMessage];
-              });
-              
-              setTimeout(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-              }, 100);
-            });
-            
-            socket.on('error_message', (error) => {
-              Alert.alert('Error', error.message || 'Failed to send message');
-            });
-          } catch (socketError) {
-            console.error('Socket connection error:', socketError);
-          }
+          await joinConversationRoom(existingConvId);
         }
 
         setLoading(false);
@@ -510,9 +496,7 @@ export default function ChatDetailScreen({ navigation, route }) {
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       () => {
         // Scroll to bottom when keyboard opens
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        scrollToBottom();
       }
     );
 
@@ -520,9 +504,7 @@ export default function ChatDetailScreen({ navigation, route }) {
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
         // Optional: scroll to bottom when keyboard closes
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        scrollToBottom();
       }
     );
 
@@ -530,10 +512,10 @@ export default function ChatDetailScreen({ navigation, route }) {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
-  }, []);
+  }, [scrollToBottom]);
 
   useEffect(() => {
-    if (!conversation?.other_user_id || !conversationIdentifier) {
+    if (!resolvedOtherUserId || !conversationIdentifier) {
       setShowRatingPrompt(false);
       return;
     }
@@ -542,10 +524,10 @@ export default function ChatDetailScreen({ navigation, route }) {
     } else if (hasRatedConversation) {
       setShowRatingPrompt(false);
     }
-  }, [messages.length, conversation?.other_user_id, hasRatedConversation, conversationIdentifier, ratingThreshold]);
+  }, [messages.length, resolvedOtherUserId, hasRatedConversation, conversationIdentifier, ratingThreshold]);
 
   const handleSubmitRating = async () => {
-    if (!conversation?.other_user_id) return;
+    if (!resolvedOtherUserId) return;
     if (ratingValue < 1) {
       Alert.alert('Select rating', 'Please choose a star rating before submitting.');
       return;
@@ -553,7 +535,7 @@ export default function ChatDetailScreen({ navigation, route }) {
 
     setRatingSubmitting(true);
     try {
-      await rateUser(conversation.other_user_id, {
+      await rateUser(resolvedOtherUserId, {
         rating: ratingValue,
         review: ratingReview.trim() || undefined,
       });
@@ -575,138 +557,169 @@ export default function ChatDetailScreen({ navigation, route }) {
     }
   };
 
-  const handleSend = async () => {
-    if (message.trim().length === 0 || sending) return;
+  const ensureConversationReady = useCallback(async () => {
+    let currentConversationId = conversation?.conversation_id || conversationId;
 
-    const messageText = message.trim();
-    setMessage('');
+    if (!currentConversationId) {
+      if (!listingInfo || !isNewConversation) {
+        Alert.alert('Error', 'Unable to start this conversation. Please reopen the chat.');
+        return null;
+      }
+
+      const newConversation = await findOrCreateConversation(
+        listingInfo.sellerId,
+        listingInfo.listingId
+      );
+      currentConversationId = newConversation.conversation_id;
+      setConversation(prev => ({
+        ...prev,
+        conversation_id: currentConversationId,
+      }));
+    }
+
+    await joinConversationRoom(currentConversationId);
+    return currentConversationId;
+  }, [conversation?.conversation_id, conversationId, listingInfo, isNewConversation, joinConversationRoom]);
+
+  const sendMessagePayload = useCallback(async ({ text = '', imageUrl = null }) => {
+    const trimmedText = (text || '').trim();
+    const hasContent = trimmedText.length > 0 || !!imageUrl;
+    if (!hasContent || sending) return;
+
     setSending(true);
 
     try {
-      const currentUserId = getCurrentUserId();
-      let currentConversationId = conversationId;
+      const currentConversationId = await ensureConversationReady();
 
-      // If this is a new conversation, create it first
-      if (!currentConversationId && listingInfo) {
-        const newConversation = await findOrCreateConversation(
-          listingInfo.sellerId,
-          listingInfo.listingId
-        );
-        currentConversationId = newConversation.conversation_id;
-        setConversation(prev => ({
-          ...prev,
-          conversation_id: currentConversationId,
-        }));
-
-        // Connect to Socket.IO and join the new conversation room
-        try {
-          const socket = await getSocket();
-          socketRef.current = socket;
-          
-          socket.emit('join_conversation', { conversationId: currentConversationId });
-          
-          // Listen for new messages
-          socket.on('new_message', (newMessage) => {
-            const currentUserId = getCurrentUserId();
-            // Convert both to strings for consistent comparison
-            const msgSenderId = String(newMessage.sender_id || '');
-            const currentUserIdStr = String(currentUserId || '');
-            const isMyMessage = msgSenderId === currentUserIdStr;
-            
-            console.log('=== New Message via Socket (new conv) ===');
-            console.log({
-              sender_id: newMessage.sender_id,
-              sender_id_type: typeof newMessage.sender_id,
-              sender_id_str: msgSenderId,
-              currentUserId: currentUserId,
-              currentUserId_str: currentUserIdStr,
-              isMyMessage: isMyMessage,
-              sender: isMyMessage ? 'me (RIGHT)' : 'other (LEFT)'
-            });
-            
-            // Check if this message already exists (from optimistic update)
-            setMessages(prev => {
-              // Remove optimistic message if it exists (temporary ID with 'temp_' prefix)
-              const filtered = prev.filter(m => !String(m.id).startsWith('temp_') && m.id !== newMessage.id);
-              
-              const transformedMessage = {
-                id: newMessage.id,
-                text: newMessage.message,
-                sender: isMyMessage ? 'me' : 'other', // 'me' = right side, 'other' = left side
-                timestamp: newMessage.created_at 
-                  ? new Date(newMessage.created_at).toLocaleTimeString('en-US', { 
-                      hour: 'numeric', 
-                      minute: '2-digit',
-                      hour12: true 
-                    })
-                  : 'Now',
-                sender_name: newMessage.sender_name || null,
-                sender_profile_image: newMessage.sender_profile_image || (isMyMessage ? currentUserProfileImage : otherUserProfileImage) || null,
-              };
-              
-              return [...filtered, transformedMessage];
-            });
-            
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-          });
-
-          socket.on('error_message', (error) => {
-            Alert.alert('Error', error.message || 'Failed to send message');
-          });
-        } catch (socketError) {
-          console.error('Socket connection error:', socketError);
-        }
-      }
-
-      // Send message via Socket.IO
-      if (socketRef.current && currentConversationId) {
-        socketRef.current.emit('send_message', {
-          conversationId: currentConversationId,
-          message: messageText,
-        });
-
-        // Optimistically add message to UI
-        const tempId = `temp_${Date.now()}`; // Use a unique temporary ID with prefix
-        const optimisticMessage = {
-          id: tempId, // Temporary ID with prefix
-          text: messageText,
-          sender: 'me', // Always 'me' for sent messages
-          timestamp: new Date().toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
-          }),
-          sender_profile_image: currentUserProfileImage || null,
-        };
-        
-        setMessages(prev => [...prev, optimisticMessage]);
-        
-        // Scroll to bottom
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      } else {
+      if (!currentConversationId || !socketRef.current) {
         Alert.alert('Error', 'Unable to send message. Please try again.');
+        return;
       }
+
+      socketRef.current.emit('send_message', {
+        conversationId: currentConversationId,
+        message: trimmedText || null,
+        image_url: imageUrl || null,
+      });
+
+      const tempId = `temp_${Date.now()}`;
+      const optimisticMessage = {
+        id: tempId,
+        text: trimmedText,
+        imageUrl: imageUrl || null,
+        sender: 'me',
+        timestamp: new Date().toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        sender_profile_image: currentUserProfileImage || null,
+      };
+
+      setMessages(prev => [...prev, optimisticMessage]);
+      scrollToBottom();
     } catch (err) {
       console.error('Error sending message:', err);
       Alert.alert('Error', err.response?.data?.message || err.message || 'Failed to send message');
-      // Restore message on error
-      setMessage(messageText);
+      throw err;
     } finally {
       setSending(false);
     }
+  }, [ensureConversationReady, sending, currentUserProfileImage, scrollToBottom]);
+
+  const handleSend = async () => {
+    const messageText = message.trim();
+    if (messageText.length === 0) return;
+
+    setMessage('');
+    try {
+      await sendMessagePayload({ text: messageText });
+    } catch {
+      setMessage(messageText);
+    }
+  };
+
+  const buildImageFormData = (asset) => {
+    const uri = asset?.uri;
+    if (!uri) {
+      throw new Error('Invalid image selected.');
+    }
+
+    const fileName = asset.fileName || `chat-${Date.now()}.jpg`;
+    const mimeType = asset.mimeType || 'image/jpeg';
+
+    const formData = new FormData();
+    formData.append('image', {
+      uri,
+      name: fileName,
+      type: mimeType,
+    });
+
+    return formData;
+  };
+
+  const handleImageSelectionResult = async (result) => {
+    if (!result || result.canceled || !result.assets?.length) return;
+
+    try {
+      setUploadingImage(true);
+      const asset = result.assets[0];
+      const formData = buildImageFormData(asset);
+      const uploadResult = await uploadChatImage(formData);
+      const uploadedUrl = uploadResult?.image_url;
+
+      if (!uploadedUrl) {
+        throw new Error('Failed to upload image.');
+      }
+
+      await sendMessagePayload({ imageUrl: uploadedUrl });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      Alert.alert('Error', error.response?.data?.message || error.message || 'Failed to send image.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handlePickImage = async () => {
+    if (uploadingImage) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow photo library access to send images.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    await handleImageSelectionResult(result);
+  };
+
+  const handleTakePhoto = async () => {
+    if (uploadingImage) return;
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow camera access to take photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+    });
+
+    await handleImageSelectionResult(result);
   };
 
   // Navigate to user profile
   const handleViewProfile = () => {
-    if (conversation?.other_user_id) {
+    if (resolvedOtherUserId) {
       navigation.navigate('UserProfile', {
-        userId: conversation.other_user_id,
+        userId: resolvedOtherUserId,
         user: {
-          id: conversation.other_user_id,
+          id: resolvedOtherUserId,
           username: conversation.other_user_name,
         }
       });
@@ -714,7 +727,7 @@ export default function ChatDetailScreen({ navigation, route }) {
   };
 
   const renderRatingPrompt = () => {
-    if (!showRatingPrompt || !conversation?.other_user_id) return null;
+    if (!showRatingPrompt || !resolvedOtherUserId) return null;
     const otherName = conversation?.other_user_name || 'this user';
 
     return (
@@ -760,6 +773,16 @@ export default function ChatDetailScreen({ navigation, route }) {
       </View>
     );
   };
+
+  const openImagePreview = useCallback((uri) => {
+    if (uri) {
+      setPreviewImageUrl(uri);
+    }
+  }, []);
+
+  const closeImagePreview = useCallback(() => {
+    setPreviewImageUrl(null);
+  }, []);
 
   if (loading) {
     return (
@@ -874,15 +897,11 @@ export default function ChatDetailScreen({ navigation, route }) {
         keyboardDismissMode="interactive"
         onContentSizeChange={() => {
           // Scroll to bottom when content size changes
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 50);
+          scrollToBottom(50);
         }}
         onLayout={() => {
           // Scroll to bottom on layout
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: false });
-          }, 100);
+          scrollToBottom(100);
         }}
       >
         {messages.length > 0 ? (
@@ -890,6 +909,8 @@ export default function ChatDetailScreen({ navigation, route }) {
             // 'me' = current logged-in user's messages = RIGHT side
             // 'other' = other user's messages = LEFT side
             const isMyMessage = msg.sender === 'me';
+            const hasImage = Boolean(msg.imageUrl);
+            const hasText = Boolean(msg.text);
             
             // Debug log for rendering
             if (msg.id === messages[messages.length - 1]?.id) {
@@ -898,10 +919,12 @@ export default function ChatDetailScreen({ navigation, route }) {
                 sender: msg.sender,
                 isMyMessage: isMyMessage,
                 side: isMyMessage ? 'RIGHT' : 'LEFT',
-                text: msg.text.substring(0, 20) + '...'
+                text: hasText ? `${msg.text.substring(0, 20)}...` : (hasImage ? '[image]' : '[empty]'),
               });
             }
             
+            const BubbleComponent = hasImage ? TouchableOpacity : View;
+
             return (
               <View
                 key={msg.id}
@@ -935,12 +958,25 @@ export default function ChatDetailScreen({ navigation, route }) {
                   ]}>
                     {msg.timestamp}
                   </Text>
-                  <View style={[
+                  <BubbleComponent
+                    activeOpacity={0.9}
+                    onPress={hasImage ? () => openImagePreview(msg.imageUrl) : undefined}
+                    style={[
                     styles.messageBubble,
                     isMyMessage ? styles.messageBubbleMe : styles.messageBubbleOther
-                  ]}>
-                    <Text style={styles.messageText}>{msg.text}</Text>
-                  </View>
+                  ]}
+                  >
+                    {hasImage && (
+                      <Image 
+                        source={{ uri: msg.imageUrl }}
+                        style={[styles.messageImage, hasText && styles.messageImageWithText]}
+                        resizeMode="cover"
+                      />
+                    )}
+                    {hasText && (
+                      <Text style={styles.messageText}>{msg.text}</Text>
+                    )}
+                  </BubbleComponent>
                 </View>
                 
                 {/* Right side: My messages - Bubble first, then avatar */}
@@ -974,10 +1010,30 @@ export default function ChatDetailScreen({ navigation, route }) {
 
       {/* Message Input Bar */}
       <View style={styles.inputBar}>
-        <TouchableOpacity style={styles.inputIcon} activeOpacity={0.7}>
-          <Ionicons name="images-outline" size={22} color="#000" />
+        <TouchableOpacity 
+          style={[
+            styles.inputIcon,
+            (uploadingImage) && styles.inputIconDisabled
+          ]}
+          activeOpacity={0.7}
+          onPress={handlePickImage}
+          disabled={uploadingImage}
+        >
+          {uploadingImage ? (
+            <ActivityIndicator size="small" color="#000" />
+          ) : (
+            <Ionicons name="images-outline" size={22} color="#000" />
+          )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.inputIcon} activeOpacity={0.7}>
+        <TouchableOpacity 
+          style={[
+            styles.inputIcon,
+            (uploadingImage) && styles.inputIconDisabled
+          ]}
+          activeOpacity={0.7}
+          onPress={handleTakePhoto}
+          disabled={uploadingImage}
+        >
           <Ionicons name="camera-outline" size={22} color="#000" />
         </TouchableOpacity>
         <TextInput
@@ -988,17 +1044,13 @@ export default function ChatDetailScreen({ navigation, route }) {
           onChangeText={(text) => {
             setMessage(text);
             // Scroll to bottom when typing
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            scrollToBottom();
           }}
           multiline
           maxLength={500}
           onFocus={() => {
             // Scroll to bottom when input is focused
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 300);
+            scrollToBottom(300);
           }}
         />
         <TouchableOpacity 
@@ -1018,6 +1070,35 @@ export default function ChatDetailScreen({ navigation, route }) {
           )}
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={!!previewImageUrl}
+        transparent
+        animationType="fade"
+        onRequestClose={closeImagePreview}
+      >
+        <View style={styles.previewOverlay}>
+          <TouchableOpacity
+            style={styles.previewBackdrop}
+            activeOpacity={1}
+            onPress={closeImagePreview}
+          />
+          <View style={styles.previewContent}>
+            <Image
+              source={{ uri: previewImageUrl || undefined }}
+              style={styles.previewImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity
+              style={styles.previewCloseButton}
+              onPress={closeImagePreview}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

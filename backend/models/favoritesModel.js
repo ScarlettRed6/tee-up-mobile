@@ -20,9 +20,16 @@ export async function removeFavorite(user_id, listing_id) {
 
 export async function getUserFavorites(user_id) {
     const result = await pool.query(
-        `SELECT f.*, l.* FROM favorites f
+        `SELECT 
+            f.*,
+            l.*,
+            u.name AS seller_name,
+            u.profile_image AS seller_profile_image
+        FROM favorites f
         JOIN listings l ON f.listing_id = l.listing_id
-        WHERE f.user_id = $1 ORDER BY f.created_at DESC`,
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE f.user_id = $1
+        ORDER BY f.created_at DESC`,
         [user_id]
     );
     return result.rows.map(row => ({
@@ -36,6 +43,6 @@ export async function getUsersWhoFavorited(listing_id) {
         `SELECT user_id FROM favorites WHERE listing_id = $1`,
         [listing_id]
     );
-    return result.rows[0];
+    return result.rows || [];
 }
 
