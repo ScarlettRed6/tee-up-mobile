@@ -8,6 +8,7 @@ import ratingRoutes from "./routes/ratingRoutes.js";
 import favoritesRoutes from "./routes/favoritesRoutes.js";
 import reportsRoutes from "./routes/reportsRoutes.js";
 import followerRoutes from "./routes/followerRoutes.js";
+import notificationsRoutes from "./routes/notificationsRoutes.js";
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use("/api/ratings", ratingRoutes);
 app.use("/api/favorites", favoritesRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/following", followerRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 export default app;

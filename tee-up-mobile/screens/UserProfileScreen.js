@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
-import { isCurrentUser } from '../utils/userConstants';
 import { getUserById } from '../api/userApi';
 import { fetchUserListings } from '../api/listingsApi';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
+import { followUser, unfollowUser, getFollowerCount, getFollowStatus } from '../api/followerApi';
+import { authContext } from '../context/authContext';
+import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
   const lower = (statusValue || '').toString().toLowerCase();
@@ -25,6 +27,8 @@ export default function UserProfileScreen({ navigation, route }) {
   // Get filters from route params if navigating from filter screen
   const initialFilters = route?.params?.filters || {};
   
+  const { accessToken } = useContext(authContext);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [user, setUser] = useState(userFromParams || null);
   const [userListings, setUserListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +36,24 @@ export default function UserProfileScreen({ navigation, route }) {
   const [ratingSummary, setRatingSummary] = useState({ average_rating: '0.00', total_raters: 0 });
   const [recentRatings, setRecentRatings] = useState([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   
+  useEffect(() => {
+    if (!accessToken) {
+      setCurrentUserId(null);
+      return;
+    }
+    try {
+      const decoded = jwtDecode(accessToken);
+      setCurrentUserId(Number(decoded?.id) || null);
+    } catch (err) {
+      console.warn('Failed to decode token for follow state:', err.message);
+      setCurrentUserId(null);
+    }
+  }, [accessToken]);
+
   const renderRatingStars = (ratingValue = 0, size = 18) => {
     const value = Number(ratingValue || 0);
     const stars = [];
@@ -55,6 +76,32 @@ export default function UserProfileScreen({ navigation, route }) {
     }
     return stars;
   };
+
+  const fetchFollowerInfo = useCallback(async (targetUserId) => {
+    if (!targetUserId) {
+      setFollowersCount(0);
+      setIsFollowing(false);
+      return;
+    }
+    try {
+      const countPromise = getFollowerCount(targetUserId);
+      let statusPromise = Promise.resolve({ isFollowing: false });
+      if (currentUserId && Number(targetUserId) !== Number(currentUserId)) {
+        statusPromise = getFollowStatus(targetUserId);
+      }
+      const [countRes, statusRes] = await Promise.all([countPromise, statusPromise]);
+      setFollowersCount(Number(countRes?.followers || 0));
+      if (currentUserId && Number(targetUserId) !== Number(currentUserId)) {
+        setIsFollowing(Boolean(statusRes?.isFollowing));
+      } else {
+        setIsFollowing(false);
+      }
+    } catch (err) {
+      console.error('Failed to load follower info:', err.response?.data || err.message);
+      setFollowersCount(0);
+      setIsFollowing(false);
+    }
+  }, [currentUserId]);
 
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery || '');
   const [selectedCategory, setSelectedCategory] = useState(initialFilters.category || 'All');
@@ -142,11 +189,14 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         }
 
         if (targetUserId) {
-          await fetchRatingsAndListings(targetUserId, userData);
-        } else {
-          console.warn('No targetUserId available, cannot fetch listings');
-          setUserListings([]);
-        }
+            await fetchRatingsAndListings(targetUserId, userData);
+            await fetchFollowerInfo(targetUserId);
+          } else {
+            console.warn('No targetUserId available, cannot fetch listings');
+            setUserListings([]);
+            setFollowersCount(0);
+            setIsFollowing(false);
+          }
       } catch (err) {
         console.error('Error fetching user data:', err);
         console.error('Error details:', err.response?.data || err.message);
@@ -163,7 +213,13 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     };
 
     fetchUserData();
-  }, [userIdFromParams, userFromParams?.id]);
+  }, [userIdFromParams, userFromParams?.id, fetchFollowerInfo]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchFollowerInfo(user.id);
+    }
+  }, [user?.id, fetchFollowerInfo]);
 
   const fetchRatingsAndListings = async (targetUserId, userData) => {
     try {
@@ -223,6 +279,32 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
       setRatingsLoading(false);
     }
   };
+
+  const handleFollowToggle = useCallback(async () => {
+    if (!user?.id || followLoading) return;
+    if (!accessToken) {
+      Alert.alert('Login required', 'Please login to follow users.');
+      return;
+    }
+
+    try {
+      setFollowLoading(true);
+      if (isFollowing) {
+        await unfollowUser(user.id);
+        setIsFollowing(false);
+        setFollowersCount((prev) => Math.max(prev - 1, 0));
+      } else {
+        await followUser(user.id);
+        setIsFollowing(true);
+        setFollowersCount((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.error('Failed to toggle follow:', err.response?.data || err.message);
+      Alert.alert('Error', err.response?.data?.message || err.message || 'Failed to update follow status.');
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [user?.id, followLoading, accessToken, isFollowing]);
 
   const ratingValue = Number(ratingSummary?.average_rating || 0);
   const reviewCount = Number(ratingSummary?.total_raters || 0);
@@ -480,6 +562,8 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     );
   }
 
+  const isOwnProfile = currentUserId && user?.id && Number(currentUserId) === Number(user.id);
+
   return (
     <View style={styles.container}>
       {/* Header with Back Button - No Settings Icon */}
@@ -522,9 +606,34 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
           
           <View style={styles.statsContainer}>
             <Text style={styles.statText}>Active Listings: {user.activeListings}</Text>
-            <Text style={styles.statText}>{user.followers} followers</Text>
+            <Text style={styles.statText}>{followersCount} follower{followersCount === 1 ? '' : 's'}</Text>
             <Text style={styles.statText}>{user.itemsSold} items sold</Text>
           </View>
+
+          {!isOwnProfile && (
+            <TouchableOpacity
+              style={[
+                styles.followButton,
+                isFollowing && styles.followButtonActive,
+              ]}
+              onPress={handleFollowToggle}
+              activeOpacity={0.8}
+              disabled={followLoading}
+            >
+              {followLoading ? (
+                <ActivityIndicator size="small" color={isFollowing ? '#111' : '#FFF'} />
+              ) : (
+                <Text
+                  style={[
+                    styles.followButtonText,
+                    isFollowing && styles.followButtonTextActive,
+                  ]}
+                >
+                  {isFollowing ? 'Following' : 'Follow'}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
           
           <View style={styles.reputationContainer}>
             <Text style={[styles.reputationScore, !hasReviews && styles.reputationScorePlaceholder]}>

@@ -3,7 +3,10 @@ import api from "./axiosInstance.js";
 // Get all conversations for the current user
 export const getConversations = async () => {
     const res = await api.get("/chat/conversations");
-    return res.data.conversations;
+    return {
+        conversations: res.data.conversations,
+        unreadCount: res.data.unreadCount,
+    };
 };
 
 // Get messages for a specific conversation

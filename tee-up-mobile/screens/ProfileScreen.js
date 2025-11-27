@@ -154,9 +154,10 @@ export default function ProfileScreen({ navigation, route }) {
   const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
   const [showSortModal, setShowSortModal] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null); // Track which product's dropdown is open
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Confirmation modal for marking as sold
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Confirmation modal for marking status change
   const [productToUpdate, setProductToUpdate] = useState(null); // Product ID to update
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
+  const [pendingStatusAction, setPendingStatusAction] = useState(null); // 'sold' | 'pending'
 
   // All products data with listing dates and status
   const [allProducts, setAllProducts] = useState([
@@ -340,11 +341,11 @@ export default function ProfileScreen({ navigation, route }) {
     return stars;
   };
 
-  const handleMarkAsSold = (productId) => {
-    // Show confirmation modal
+  const handleStatusChangeWithConfirm = (productId, action) => {
     setProductToUpdate(productId);
+    setPendingStatusAction(action);
     setShowConfirmModal(true);
-    setOpenDropdownId(null); // Close dropdown
+    setOpenDropdownId(null);
   };
 
   const updateActiveListingCount = useCallback((listingsArray) => {
@@ -399,12 +400,13 @@ export default function ProfileScreen({ navigation, route }) {
     performStatusUpdate(productId, 'available');
   };
 
-  const confirmMarkAsSold = async () => {
-    if (productToUpdate) {
-      await performStatusUpdate(productToUpdate, 'sold');
+  const confirmStatusChange = async () => {
+    if (productToUpdate && pendingStatusAction) {
+      await performStatusUpdate(productToUpdate, pendingStatusAction);
     }
     setShowConfirmModal(false);
     setProductToUpdate(null);
+    setPendingStatusAction(null);
   };
 
   const cancelMarkAsSold = () => {
@@ -448,6 +450,7 @@ export default function ProfileScreen({ navigation, route }) {
     const isLeft = index % 2 === 0;
     const isDropdownOpen = openDropdownId === item.id;
     const isStatusUpdating = statusUpdatingId === item.id;
+    const statusLabel = item.status;
     
     // Get first photo from listing data
     const listingPhotos = item.listingData?.photos || [];
@@ -498,9 +501,14 @@ export default function ProfileScreen({ navigation, route }) {
                 </Text>
               </View>
             )}
-            {item.status === 'Sold' && (
-              <View style={styles.soldBadge}>
-                <Text style={styles.soldBadgeText}>SOLD</Text>
+            {item.status !== 'Available' && (
+              <View style={[
+                styles.statusBadge,
+                item.status === 'Sold' ? styles.statusBadgeSold : styles.statusBadgePending
+              ]}>
+                <Text style={styles.statusBadgeText}>
+                  {item.status.toUpperCase()}
+                </Text>
               </View>
             )}
           </View>
@@ -542,10 +550,40 @@ export default function ProfileScreen({ navigation, route }) {
               <Ionicons name="analytics-outline" size={18} color="#000" style={styles.dropdownIcon} />
               <Text style={styles.dropdownText}>View Analytics</Text>
             </TouchableOpacity>
-            {item.status === 'Available' ? (
+            {item.status === 'Available' && (
+              <>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleStatusChangeWithConfirm(item.id, 'pending')}
+                  activeOpacity={0.7}
+                  disabled={isStatusUpdating}
+                >
+                  {isStatusUpdating ? (
+                    <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                  ) : (
+                    <Ionicons name="time-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                  )}
+                  <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as pending'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleStatusChangeWithConfirm(item.id, 'sold')}
+                  activeOpacity={0.7}
+                  disabled={isStatusUpdating}
+                >
+                  {isStatusUpdating ? (
+                    <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                  ) : (
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                  )}
+                  <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {item.status === 'Pending' && (
               <TouchableOpacity
                 style={styles.dropdownItem}
-                onPress={() => handleMarkAsSold(item.id)}
+                onPress={() => handleStatusChangeWithConfirm(item.id, 'sold')}
                 activeOpacity={0.7}
                 disabled={isStatusUpdating}
               >
@@ -556,7 +594,8 @@ export default function ProfileScreen({ navigation, route }) {
                 )}
                 <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
               </TouchableOpacity>
-            ) : (
+            )}
+            {item.status !== 'Available' && (
               <TouchableOpacity
                 style={styles.dropdownItem}
                 onPress={() => handleMarkAsAvailable(item.id)}
@@ -576,6 +615,21 @@ export default function ProfileScreen({ navigation, route }) {
       </View>
     );
   };
+
+  const statusModalCopy =
+    pendingStatusAction === 'pending'
+      ? {
+          title: 'Mark as Pending?',
+          message:
+            "Are you sure you want to mark this item as pending? It will be hidden from Discover and Search until it's marked available again.",
+          confirmLabel: 'Mark as Pending',
+        }
+      : {
+          title: 'Mark as Sold?',
+          message:
+            "Are you sure you want to mark this item as sold? This action will update the item's status and it will be moved to your sold listings.",
+          confirmLabel: 'Mark as Sold',
+        };
 
   const handleFilterPress = () => {
     // Navigate to SearchFilterScreen with current filters
@@ -830,9 +884,9 @@ export default function ProfileScreen({ navigation, route }) {
             <View style={styles.confirmModalIcon}>
               <Ionicons name="warning-outline" size={48} color="#FF6B35" />
             </View>
-            <Text style={styles.confirmModalTitle}>Mark as Sold?</Text>
+            <Text style={styles.confirmModalTitle}>{statusModalCopy.title}</Text>
             <Text style={styles.confirmModalMessage}>
-              Are you sure you want to mark this item as sold? This action will update the item's status and it will be moved to your sold listings.
+              {statusModalCopy.message}
             </Text>
             <View style={styles.confirmModalButtons}>
               <TouchableOpacity
@@ -844,14 +898,16 @@ export default function ProfileScreen({ navigation, route }) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6 }]}
-                onPress={confirmMarkAsSold}
+                onPress={confirmStatusChange}
                 activeOpacity={0.7}
                 disabled={statusUpdatingId === productToUpdate}
               >
                 {statusUpdatingId === productToUpdate ? (
                   <ActivityIndicator size="small" color="#FFF" />
                 ) : (
-                  <Text style={styles.confirmButtonText}>Mark as Sold</Text>
+                  <Text style={styles.confirmButtonText}>
+                    {statusModalCopy.confirmLabel}
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>

@@ -363,6 +363,25 @@ export default StyleSheet.create({
     color: '#000',
     marginBottom: 8,
   },
+  statusBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  statusBadgeSold: {
+    backgroundColor: '#FF6B35',
+  },
+  statusBadgePending: {
+    backgroundColor: '#FBBF24',
+  },
+  statusBadgeText: {
+    fontFamily: 'Exo_700Bold',
+    fontSize: 10,
+    color: '#FFF',
+  },
   sellerInfo: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -73,6 +73,28 @@ export default StyleSheet.create({
     color: '#666',
     marginBottom: 4,
   },
+  followButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    backgroundColor: '#FF6B35',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  followButtonActive: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  followButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  followButtonTextActive: {
+    color: '#111827',
+  },
   reputationContainer: {
     alignItems: 'center',
     marginTop: 6,

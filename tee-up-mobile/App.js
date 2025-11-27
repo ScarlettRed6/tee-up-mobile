@@ -6,6 +6,7 @@ import { useFonts, Exo_400Regular, Exo_500Medium, Exo_600SemiBold, Exo_700Bold, 
 import { AuthProvider } from './context/authContext';
 import { ListingsProvider } from './context/listingsContext';
 import { FavoritesProvider } from './context/favoritesContext';
+import { NotificationsProvider } from './context/notificationsContext';
 
 
 export default function App() {
@@ -25,10 +26,12 @@ export default function App() {
     <AuthProvider>
       <FavoritesProvider>
         <ListingsProvider>
-          <View style={{ flex: 1 }}>
-            <StatusBar style="dark" />
-            <AppNavigator />
-          </View>
+          <NotificationsProvider>
+            <View style={{ flex: 1 }}>
+              <StatusBar style="dark" />
+              <AppNavigator />
+            </View>
+          </NotificationsProvider>
         </ListingsProvider>
       </FavoritesProvider>
     </AuthProvider>

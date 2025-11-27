@@ -7,13 +7,26 @@ export default StyleSheet.create({
   },
   // Header Section
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 20,
     backgroundColor: '#F6EDE2',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  headerIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  markAllRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   headerLeft: {
     flex: 1,
@@ -22,11 +35,31 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  markAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#FFE1D4',
+  },
+  markAllText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 12,
+    color: '#FF6B35',
+    marginLeft: 6,
+  },
+  markAllTextDisabled: {
+    color: '#BDBDBD',
+  },
   headerIcon: {
     width: 36,
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 12,
   },
   profileAvatar: {
     width: 32,
@@ -50,6 +83,7 @@ export default StyleSheet.create({
   scrollContent: {
     paddingTop: 8,
     paddingBottom: 100,
+    paddingHorizontal: 12,
   },
   // Notification Item
   notificationItem: {
@@ -57,12 +91,17 @@ export default StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     minHeight: 64,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
+  notificationItemUnread: {
+    backgroundColor: '#FFF8F3',
   },
   notificationItemEven: {
     backgroundColor: '#FFFFFF',
   },
   notificationItemOdd: {
-    backgroundColor: '#F6EDE2',
+    backgroundColor: '#F9F3EC',
   },
   // Avatar Container
   avatarContainer: {
@@ -80,23 +119,25 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
+  unreadDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FF6B35',
+  },
   // Notification Content
   notificationContent: {
     flex: 1,
     justifyContent: 'center',
   },
-  notificationText: {
-    marginBottom: 4,
-  },
-  username: {
-    fontFamily: 'Exo_700Bold',
-    fontSize: 15,
-    color: '#000',
-  },
-  actionText: {
-    fontFamily: 'Exo_400Regular',
+  notificationMessage: {
+    fontFamily: 'Exo_500Medium',
     fontSize: 14,
     color: '#000',
+    marginBottom: 4,
   },
   timestamp: {
     fontFamily: 'Exo_400Regular',
@@ -116,6 +157,18 @@ export default StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginTop: 16,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingState: {
+    paddingVertical: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlay: {
+    marginTop: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   // Bottom Navigation
   bottomNav: {
@@ -143,6 +196,24 @@ export default StyleSheet.create({
     flex: 1,
     minHeight: 44,
     minWidth: 44,
+    position: 'relative',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 2,
+    right: 18,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontFamily: 'Exo_700Bold',
+    fontSize: 10,
   },
   navLabel: {
     fontFamily: 'Exo_300Light',

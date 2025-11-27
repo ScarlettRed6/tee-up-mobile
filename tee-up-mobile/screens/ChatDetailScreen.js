@@ -7,12 +7,10 @@ import { getSocket, disconnectSocket } from '../utils/socketClient';
 import { authContext } from '../context/authContext';
 import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { rateUser } from '../api/ratingApi';
 import * as ImagePicker from 'expo-image-picker';
 
 const MIN_MESSAGES_FOR_RATING = 6;
-const buildRatedStorageKey = (identifier) => `rated_conversation:${identifier}`;
 
 export default function ChatDetailScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
@@ -30,9 +28,9 @@ export default function ChatDetailScreen({ navigation, route }) {
   const [ratingValue, setRatingValue] = useState(0);
   const [ratingReview, setRatingReview] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
-  const [hasRatedConversation, setHasRatedConversation] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
+  const [lastRatingPromptCount, setLastRatingPromptCount] = useState(0);
 
   // Get route params
   const conversationId = route?.params?.conversationId;
@@ -171,19 +169,8 @@ export default function ChatDetailScreen({ navigation, route }) {
   }, [attachSocketListeners]);
 
   useEffect(() => {
-    const loadRatedStatus = async () => {
-      if (!conversationIdentifier) {
-        setHasRatedConversation(false);
-        return;
-      }
-      try {
-        const flag = await AsyncStorage.getItem(buildRatedStorageKey(conversationIdentifier));
-        setHasRatedConversation(Boolean(flag));
-      } catch (error) {
-        console.log('Error loading rating status', error);
-      }
-    };
-    loadRatedStatus();
+    setLastRatingPromptCount(0);
+    setShowRatingPrompt(false);
   }, [conversationIdentifier]);
 
   // Initialize conversation and messages
@@ -519,12 +506,11 @@ export default function ChatDetailScreen({ navigation, route }) {
       setShowRatingPrompt(false);
       return;
     }
-    if (messages.length >= ratingThreshold && !hasRatedConversation) {
+    const totalMessages = messages.length;
+    if (!showRatingPrompt && totalMessages - lastRatingPromptCount >= ratingThreshold) {
       setShowRatingPrompt(true);
-    } else if (hasRatedConversation) {
-      setShowRatingPrompt(false);
     }
-  }, [messages.length, resolvedOtherUserId, hasRatedConversation, conversationIdentifier, ratingThreshold]);
+  }, [messages.length, resolvedOtherUserId, conversationIdentifier, ratingThreshold, lastRatingPromptCount, showRatingPrompt]);
 
   const handleSubmitRating = async () => {
     if (!resolvedOtherUserId) return;
@@ -540,11 +526,7 @@ export default function ChatDetailScreen({ navigation, route }) {
         review: ratingReview.trim() || undefined,
       });
 
-      if (conversationIdentifier) {
-        await AsyncStorage.setItem(buildRatedStorageKey(conversationIdentifier), 'true');
-        setHasRatedConversation(true);
-      }
-
+      setLastRatingPromptCount(messages.length);
       setShowRatingPrompt(false);
       setRatingReview('');
       setRatingValue(0);

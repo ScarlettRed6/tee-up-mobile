@@ -23,7 +23,8 @@ export async function getConversations(req, res){
     try{
         const userId = req.user.id;
         const conversations = await getConversationsForUser(userId);
-        res.status(200).json({ message: "Conversations fetched successfully", conversations });
+        const unreadCount = 0;
+        res.status(200).json({ message: "Conversations fetched successfully", conversations, unreadCount });
     }catch(err){
         console.error("Error fetching conversations:", err);
         res.status(500).json({ error: err.message });

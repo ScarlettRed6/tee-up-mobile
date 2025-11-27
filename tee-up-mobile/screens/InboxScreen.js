@@ -7,16 +7,18 @@ import styles from './styles/InboxScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { getConversations } from '../api/chatApi';
 import { authContext } from '../context/authContext';
-import jwtDecode from 'jwt-decode';
+import { NotificationsContext } from '../context/notificationsContext';
 
 export default function InboxScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
+  const { unreadCount: notificationsUnreadCount } = useContext(NotificationsContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const hasNavigatedRef = useRef(false); // Track if we've already navigated to ChatDetail
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
 
   // Check if navigating from ProductDetailScreen with listing info
   const listingInfo = route?.params?.listingInfo;
@@ -31,10 +33,10 @@ export default function InboxScreen({ navigation, route }) {
     try {
       setLoading(true);
       setError(null);
-      const data = await getConversations();
+      const { conversations: apiConversations, unreadCount: apiUnreadCount } = await getConversations();
       
       // Transform API data to match UI format
-      const transformedConversations = data.map(conv => {
+      const transformedConversations = apiConversations.map(conv => {
         // Parse listing_photos if it's a string (PostgreSQL array/JSON might be returned as string)
         let listingPhotos = [];
         if (conv.listing_photos) {
@@ -82,6 +84,7 @@ export default function InboxScreen({ navigation, route }) {
       });
 
       setConversations(transformedConversations);
+      setInboxUnreadCount(apiUnreadCount || 0);
     } catch (err) {
       console.error('Error fetching conversations:', err);
       setError(err.message || 'Failed to load conversations');
@@ -242,7 +245,6 @@ export default function InboxScreen({ navigation, route }) {
         )}
       </ScrollView>
 
-      {/* Bottom Navigation Bar */}
       <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
@@ -253,12 +255,17 @@ export default function InboxScreen({ navigation, route }) {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => {
-            // Already on Inbox, do nothing
-          }}
+          onPress={() => {}}
         >
           <Ionicons name="chatbubble" size={22} color="#000" />
           <Text style={styles.navLabelActive}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -273,47 +280,13 @@ export default function InboxScreen({ navigation, route }) {
         >
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigateToBottomNav(navigation, 'Profile')}
-        >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigateToBottomNav(navigation, 'Discover')}
-        >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => {
-            // Already on Inbox, do nothing
-          }}
-        >
-          <Ionicons name="chatbubble" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Inbox</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('PostItem')}
-        >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigateToBottomNav(navigation, 'Notifications')}
-        >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          {notificationsUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {notificationsUnreadCount > 99 ? '99+' : notificationsUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
