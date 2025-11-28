@@ -50,8 +50,8 @@ export async function googleAuth(req, res) {
             user = await createGoogleUser(name, email, googleId, picture);
         }
 
-        const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {expiresIn: "1h"});
-        const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESH_SECRET, {expiresIn: "7d"});
+        const accessToken = jwt.sign({ id: user.id, role: user.role}, process.env.JWT_SECRET, {expiresIn: "1h"});
+        const refreshToken = jwt.sign({ id: user.id, role: user.role }, process.env.REFRESH_SECRET, {expiresIn: "7d"});
 
         await storeRefreshToken(refreshToken, user.id);
 
@@ -85,7 +85,7 @@ export async function register(req, res){
         //Send the otp to the email for verification
         await sendEmail(email, "Verify your Email", `Your TeeUp verification code is: ${otp}`);
 
-        const token = jwt.sign({id: user.id}, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({id: user.id, role: user.role}, process.env.JWT_SECRET, { expiresIn: "1h" });
 
         res.status(201).json({ message: "User registered successfully", token });
     }catch(err){
@@ -110,8 +110,8 @@ export async function login(req, res){
             return res.status(400).json({message: "Invalid password!"});
         }
 
-        const accessToken = jwt.sign({id: user.id}, process.env.JWT_SECRET, { expiresIn: "1h" });
-        const refreshToken = jwt.sign({id: user.id}, process.env.REFRESH_SECRET, { expiresIn: "7d" });
+        const accessToken = jwt.sign({id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        const refreshToken = jwt.sign({id: user.id, role: user.role}, process.env.REFRESH_SECRET, { expiresIn: "7d" });
 
         await storeRefreshToken(refreshToken, user.id);
 
@@ -133,7 +133,7 @@ export async function refreshToken(req, res){
         jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
             if(err) return res.status(403).json({ message: "Expired or Invalid refresh token!" });
 
-            const newAccessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h"});
+            const newAccessToken = jwt.sign({ id: user.id, role: user.role}, process.env.JWT_SECRET, { expiresIn: "1h"});
             res.json({ token: newAccessToken });
         });
 
@@ -232,7 +232,7 @@ export async function verifyResetOtp(req, res){
         }
 
         //Mark OTP as verified by generating a short duration reset token
-        const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "10m" });
+        const resetToken = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "10m" });
 
         console.log("OTP VERIFIED");
         res.json({ message: "OTP verified", resetToken });
