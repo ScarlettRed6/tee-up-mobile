@@ -317,34 +317,17 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     header: { backgroundColor: theme.background },
     scrollView: { backgroundColor: theme.background },
     scrollContent: { backgroundColor: 'transparent' },
-    profileSection: { 
-      backgroundColor: 'transparent',
-      borderRadius: 0,
-      borderWidth: 0,
-      borderColor: 'transparent',
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      shadowColor: 'transparent',
-      shadowOffset: { width: 0, height: 0 },
-      elevation: 0,
-    },
+    profileSection: { backgroundColor: 'transparent' },
     username: { color: theme.text },
-    statText: { color: theme.textMuted },
-    bioSection: { 
-      backgroundColor: 'transparent',
-      borderRadius: 0,
-      borderWidth: 0,
-      borderColor: 'transparent',
-      shadowOpacity: 0,
-      shadowRadius: 0,
-      shadowColor: 'transparent',
-      shadowOffset: { width: 0, height: 0 },
-      elevation: 0,
-    },
+    statText: { color: theme.textSecondary },
+    reputationText: { color: theme.text },
+    reputationSubtext: { color: theme.textMuted },
+    bioSection: { backgroundColor: 'transparent' },
     bioText: { color: theme.text },
-    searchBar: { backgroundColor: 'transparent' },
+    bioPlaceholderText: { color: theme.textMuted },
+    searchBar: { backgroundColor: theme.card },
     searchInput: { color: theme.text },
-    filterButton: { backgroundColor: 'transparent' },
+    filterButton: { backgroundColor: theme.lightGray },
     filterButtonText: { color: theme.text },
     productCard: { backgroundColor: theme.card },
     productName: { color: theme.text },
@@ -353,7 +336,7 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     emptyStateText: { color: theme.textMuted },
     reviewsSection: { backgroundColor: 'transparent' },
     reviewsTitle: { color: theme.text },
-    reviewCard: { backgroundColor: theme.backgroundAlt },
+    reviewCard: { backgroundColor: theme.card },
     reviewText: { color: theme.text },
     reviewAuthor: { color: theme.text },
     reviewDate: { color: theme.textMuted },
@@ -647,7 +630,7 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Summary Card */}
-        <View style={[styles.profileSection, dynamicStyles.profileSection, { backgroundColor: 'transparent' }]}>
+        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
           <View style={styles.profilePhotoContainer}>
             {user.profile_image ? (
               <Image 
@@ -669,9 +652,31 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
           <Text style={[styles.username, dynamicStyles.username]}>{user.username || user.name}</Text>
           
           <View style={styles.statsContainer}>
-            <Text style={[styles.statText, dynamicStyles.statText]}>Active Listings: {user.activeListings}</Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>{followersCount} follower{followersCount === 1 ? '' : 's'}</Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>{user.itemsSold} items sold</Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
+              Active Listings: {user.activeListings}
+            </Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
+              Total Listings: {userListings.length}
+            </Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
+              Sold: {userListings.filter(l => normalizeListingStatus(l.status) === 'Sold').length}
+            </Text>
+          </View>
+          
+          <View style={styles.reputationContainer}>
+            <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
+              {hasReviews
+                ? `User Reputation: ${ratingValue.toFixed(2)}`
+                : 'No ratings yet'}
+            </Text>
+            <View style={styles.starsContainer}>
+              {renderRatingStars(ratingValue)}
+            </View>
+            <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
+              {hasReviews
+                ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
+                : 'This user has not received any reviews yet.'}
+            </Text>
           </View>
 
           {!isOwnProfile && (
@@ -698,20 +703,21 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
               )}
             </TouchableOpacity>
           )}
-          
-          <View style={styles.reputationContainer}>
-            <Text style={[styles.reputationScore, !hasReviews && styles.reputationScorePlaceholder]}>
-              {hasReviews ? ratingValue.toFixed(2) : 'No ratings yet'}
-            </Text>
-            <View style={styles.reputationStars}>
-              {renderRatingStars(ratingValue, 16)}
-            </View>
-            {hasReviews && (
-              <Text style={styles.reputationSubtext}>
-                {`${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`}
-              </Text>
-            )}
-          </View>
+        </View>
+
+        {/* Bio Section */}
+        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
+          <Text
+            style={[
+              styles.bioText,
+              dynamicStyles.bioText,
+              !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
+            ]}
+          >
+            {user.bio && user.bio.trim().length
+              ? user.bio.trim()
+              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
+          </Text>
         </View>
 
         {recentRatings.length > 0 && (
@@ -750,13 +756,6 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
             <Text style={[styles.reviewTextMuted, { color: theme.textMuted }]}>No reviews yet for this seller.</Text>
           </View>
         )}
-
-        {/* Bio Section */}
-        <View style={[styles.bioSection, dynamicStyles.bioSection, { backgroundColor: 'transparent' }]}>
-          <Text style={[styles.bioText, dynamicStyles.bioText]}>
-            {user.bio}
-          </Text>
-        </View>
 
         {/* Search and Filters */}
         <View style={styles.searchSection}>

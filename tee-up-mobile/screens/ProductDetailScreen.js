@@ -249,7 +249,7 @@ export default function ProductDetailScreen({ navigation, route }) {
         ? '#FFD700' 
         : '#C2410C' 
     },
-    seeAllReviewsButton: { backgroundColor: theme.card },
+    seeAllReviewsButton: { backgroundColor: 'transparent' },
     seeAllReviewsText: { color: theme.text },
     section: { backgroundColor: theme.background },
     bottomNav: { backgroundColor: theme.card },

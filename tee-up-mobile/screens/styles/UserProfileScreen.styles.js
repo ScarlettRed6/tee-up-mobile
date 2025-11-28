@@ -31,7 +31,7 @@ export default StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
-    paddingTop: 60,
+    paddingTop: 120,
     backgroundColor: 'transparent',
   },
   profileSection: {
@@ -98,29 +98,22 @@ export default StyleSheet.create({
   },
   reputationContainer: {
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 8,
   },
-  reputationScore: {
-    fontFamily: 'Exo_600SemiBold',
-    fontSize: 20,
-    color: '#111',
-    lineHeight: 24,
+  reputationText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 6,
   },
-  reputationScorePlaceholder: {
-    fontFamily: 'Exo_500Medium',
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  reputationStars: {
+  starsContainer: {
     flexDirection: 'row',
-    marginTop: 4,
   },
   reputationSubtext: {
     fontFamily: 'Exo_400Regular',
     fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-    textAlign: 'center',
+    color: '#888',
+    marginTop: 6,
   },
   bioSection: {
     paddingHorizontal: 20,
@@ -134,6 +127,10 @@ export default StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
+  bioPlaceholderText: {
+    fontFamily: 'Exo_400Regular',
+    color: '#888',
+  },
   searchSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -141,11 +138,16 @@ export default StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFF',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   searchIcon: {
     marginRight: 8,
@@ -162,12 +164,17 @@ export default StyleSheet.create({
   filterButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: 'transparent',
+    backgroundColor: '#FFF',
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   filterButtonText: {
     fontFamily: 'Exo_500Medium',
@@ -204,8 +211,8 @@ export default StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
