@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { requestPasswordResetOtp } from '../api/authApi';
+import { ThemeContext } from '../context/themeContext';
 import styles from './styles/ForgotPassword.styles';
 
 export default function ForgotPasswordRequestScreen({ navigation }) {
+  const { theme } = useContext(ThemeContext);
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);

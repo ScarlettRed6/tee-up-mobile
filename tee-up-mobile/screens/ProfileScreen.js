@@ -8,6 +8,7 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { authContext } from '../context/authContext';
 import { ListingsContext } from '../context/listingsContext';
+import { ThemeContext } from '../context/themeContext';
 import { getUserProfile } from '../api/userApi';
 import { fetchUserRatingSummary } from '../api/ratingApi';
 import { fetchUserListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
@@ -24,6 +25,7 @@ export default function ProfileScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
   const { refreshListings } = useContext(ListingsContext);
+  const { theme } = useContext(ThemeContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -333,7 +335,7 @@ export default function ProfileScreen({ navigation, route }) {
           key={`rating-star-${i}`}
           name={iconName}
           size={18}
-          color={iconName === 'star-outline' ? '#D1D5DB' : '#FFD700'}
+          color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
           style={{ marginRight: i === 5 ? 0 : 4 }}
         />
       );
@@ -461,7 +463,7 @@ export default function ProfileScreen({ navigation, route }) {
     return (
       <View key={item.id} style={[styles.productCardWrapper, isLeft ? styles.cardLeft : styles.cardRight]}>
         <TouchableOpacity
-          style={styles.productCard}
+          style={[styles.productCard, { backgroundColor: theme.card }]}
           onPress={() => {
             // Use listingData if available (from API), otherwise construct from item
             const productData = item.listingData || {
@@ -495,8 +497,8 @@ export default function ProfileScreen({ navigation, route }) {
               />
             ) : (
               <View style={styles.productImagePlaceholder}>
-                <Ionicons name="image-outline" size={24} color="#999" />
-                <Text style={styles.imagePlaceholderText}>
+                <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+                <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
                   {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
                 </Text>
               </View>
@@ -512,13 +514,13 @@ export default function ProfileScreen({ navigation, route }) {
               </View>
             )}
           </View>
-          <Text style={styles.productName}>{item.name}</Text>
-          <Text style={styles.productPrice}>{item.price}</Text>
+          <Text style={[styles.productName, dynamicStyles.productName]}>{item.name}</Text>
+          <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{item.price}</Text>
           <View style={styles.sellerInfo}>
             <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-              <Ionicons name="person" size={12} color={item.sellerColor} />
+              <Ionicons name="person" size={12} color={item.sellerColor || theme.primary} />
             </View>
-            <Text style={styles.sellerName}>@{item.seller}</Text>
+            <Text style={[styles.sellerName, { color: theme.textMuted }]}>@{item.seller}</Text>
           </View>
         </TouchableOpacity>
         
@@ -528,27 +530,27 @@ export default function ProfileScreen({ navigation, route }) {
           onPress={() => setOpenDropdownId(isDropdownOpen ? null : item.id)}
           activeOpacity={0.7}
         >
-          <Ionicons name="ellipsis-vertical" size={18} color="#666" />
+          <Ionicons name="ellipsis-vertical" size={18} color={theme.textMuted} />
         </TouchableOpacity>
         
         {/* Dropdown menu */}
         {isDropdownOpen && (
-          <View style={styles.dropdownMenu}>
+          <View style={[styles.dropdownMenu, dynamicStyles.dropdownMenu]}>
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => handleEditListing(item)}
               activeOpacity={0.7}
             >
-              <Ionicons name="create-outline" size={18} color="#000" style={styles.dropdownIcon} />
-              <Text style={styles.dropdownText}>Edit Listing</Text>
+              <Ionicons name="create-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+              <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>Edit Listing</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => handleViewAnalytics(item.id)}
               activeOpacity={0.7}
             >
-              <Ionicons name="analytics-outline" size={18} color="#000" style={styles.dropdownIcon} />
-              <Text style={styles.dropdownText}>View Analytics</Text>
+              <Ionicons name="analytics-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+              <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>View Analytics</Text>
             </TouchableOpacity>
             {item.status === 'Available' && (
               <>
@@ -559,11 +561,11 @@ export default function ProfileScreen({ navigation, route }) {
                   disabled={isStatusUpdating}
                 >
                   {isStatusUpdating ? (
-                    <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                    <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
                   ) : (
-                    <Ionicons name="time-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                    <Ionicons name="time-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
                   )}
-                  <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as pending'}</Text>
+                  <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as pending'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.dropdownItem}
@@ -572,11 +574,11 @@ export default function ProfileScreen({ navigation, route }) {
                   disabled={isStatusUpdating}
                 >
                   {isStatusUpdating ? (
-                    <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                    <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
                   ) : (
-                    <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                    <Ionicons name="checkmark-circle-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
                   )}
-                  <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
+                  <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -588,11 +590,11 @@ export default function ProfileScreen({ navigation, route }) {
                 disabled={isStatusUpdating}
               >
                 {isStatusUpdating ? (
-                  <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                  <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
                 ) : (
-                  <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                  <Ionicons name="checkmark-circle-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
                 )}
-                <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
+                <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
               </TouchableOpacity>
             )}
             {item.status !== 'Available' && (
@@ -603,11 +605,11 @@ export default function ProfileScreen({ navigation, route }) {
                 disabled={isStatusUpdating}
               >
                 {isStatusUpdating ? (
-                  <ActivityIndicator size="small" color="#000" style={{ marginRight: 12 }} />
+                  <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
                 ) : (
-                  <Ionicons name="refresh-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
+                  <Ionicons name="refresh-circle-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
                 )}
-                <Text style={styles.dropdownText}>{isStatusUpdating ? 'Updating...' : 'Mark as available'}</Text>
+                <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as available'}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -674,17 +676,50 @@ export default function ProfileScreen({ navigation, route }) {
     { value: 'cheapest', label: 'Cheapest' },
   ];
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    scrollView: { backgroundColor: theme.background },
+    profileSection: { backgroundColor: theme.card },
+    username: { color: theme.text },
+    statText: { color: theme.textSecondary },
+    reputationText: { color: theme.text },
+    reputationSubtext: { color: theme.textMuted },
+    bioSection: { backgroundColor: theme.card },
+    bioText: { color: theme.text },
+    bioPlaceholderText: { color: theme.textMuted },
+    searchBar: { backgroundColor: theme.card },
+    searchInput: { color: theme.text },
+    filterButton: { backgroundColor: theme.lightGray },
+    filterButtonText: { color: theme.text },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    emptyStateText: { color: theme.textMuted },
+    modalOverlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+    modalContent: { backgroundColor: theme.card },
+    modalTitle: { color: theme.text },
+    modalOption: { backgroundColor: theme.card },
+    modalOptionText: { color: theme.text },
+    modalOptionSelected: { backgroundColor: theme.backgroundAlt },
+    confirmModalContent: { backgroundColor: theme.card },
+    confirmModalTitle: { color: theme.text },
+    confirmModalMessage: { color: theme.textSecondary },
+    bottomNav: { backgroundColor: theme.card },
+    dropdownMenu: { backgroundColor: theme.card },
+    dropdownText: { color: theme.text },
+  };
+
   if(loading || listingsLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#FF6B35" />
+      <View style={[styles.container, dynamicStyles.container, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
-  if(!user) return <Text>No Profile found!</Text>;
+  if(!user) return <Text style={{ color: theme.text }}>No Profile found!</Text>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
         {/* Header Icons - Top Right */}
         <View style={styles.headerIcons}>
           <View style={styles.headerIconsRight}>
@@ -697,20 +732,20 @@ export default function ProfileScreen({ navigation, route }) {
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="settings-outline" size={20} color="#000" />
+              <Ionicons name="settings-outline" size={20} color={theme.text} />
             </TouchableOpacity>
           </View>
         </View>
 
         <ScrollView 
-          style={styles.scrollView}
+          style={[styles.scrollView, dynamicStyles.scrollView]}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
           onScrollBeginDrag={() => setOpenDropdownId(null)}
           scrollEventThrottle={16}
         >
         {/* Profile Summary Card */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
           <View style={styles.profilePhotoContainer}>
             {user.profile_image ? (
               <Image 
@@ -724,27 +759,27 @@ export default function ProfileScreen({ navigation, route }) {
               />
             ) : (
               <View style={styles.profilePhoto}>
-                <Ionicons name="person" size={50} color="#FF6B35" />
+                <Ionicons name="person" size={50} color={theme.primary} />
               </View>
             )}
           </View>
           
-          <Text style={styles.username}>{user.name}</Text>
+          <Text style={[styles.username, dynamicStyles.username]}>{user.name}</Text>
           
           <View style={styles.statsContainer}>
-            <Text style={styles.statText}>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
               Active Listings: {allProducts.filter(p => p.status === 'Available').length}
             </Text>
-            <Text style={styles.statText}>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
               Total Listings: {allProducts.length}
             </Text>
-            <Text style={styles.statText}>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
               Sold: {allProducts.filter(p => p.status === 'Sold').length}
             </Text>
           </View>
           
         <View style={styles.reputationContainer}>
-          <Text style={styles.reputationText}>
+          <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
             {ratingSummary.total_raters > 0
               ? `User Reputation: ${Number(ratingSummary.average_rating || 0).toFixed(2)}`
               : 'No ratings yet'}
@@ -752,7 +787,7 @@ export default function ProfileScreen({ navigation, route }) {
           <View style={styles.starsContainer}>
             {renderRatingStars(Number(ratingSummary.average_rating || 0))}
           </View>
-          <Text style={styles.reputationSubtext}>
+          <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
             {ratingSummary.total_raters > 0
               ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
               : 'You have not received any reviews yet.'}
@@ -761,11 +796,12 @@ export default function ProfileScreen({ navigation, route }) {
         </View>
 
         {/* Bio Section */}
-        <View style={styles.bioSection}>
+        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
           <Text
             style={[
               styles.bioText,
-              !(user.bio && user.bio.trim().length) && styles.bioPlaceholderText
+              dynamicStyles.bioText,
+              !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
             ]}
           >
             {user.bio && user.bio.trim().length
@@ -785,12 +821,12 @@ export default function ProfileScreen({ navigation, route }) {
 
         {/* Search and Filters */}
         <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={18} color="#666" style={styles.searchIcon} />
+          <View style={[styles.searchBar, dynamicStyles.searchBar]}>
+            <Ionicons name="search-outline" size={18} color={theme.textMuted} style={styles.searchIcon} />
             <TextInput
               placeholder="Search seller's listing."
-              placeholderTextColor="#999"
-              style={styles.searchInput}
+              placeholderTextColor={theme.textMuted}
+              style={[styles.searchInput, dynamicStyles.searchInput]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -798,17 +834,17 @@ export default function ProfileScreen({ navigation, route }) {
           
           <View style={styles.filterButtons}>
             <TouchableOpacity 
-              style={[styles.filterButton, { marginRight: 12 }]}
+              style={[styles.filterButton, dynamicStyles.filterButton, { marginRight: 12 }]}
               onPress={handleFilterPress}
             >
-              <Text style={styles.filterButtonText}>Filters</Text>
+              <Text style={[styles.filterButtonText, dynamicStyles.filterButtonText]}>Filters</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.filterButton}
+              style={[styles.filterButton, dynamicStyles.filterButton]}
               onPress={() => setShowSortModal(true)}
             >
-              <Text style={styles.filterButtonText}>Sort by</Text>
-              <Ionicons name="chevron-down" size={16} color="#000" style={{ marginLeft: 4 }} />
+              <Text style={[styles.filterButtonText, dynamicStyles.filterButtonText]}>Sort by</Text>
+              <Ionicons name="chevron-down" size={16} color={theme.text} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
         </View>
@@ -820,7 +856,7 @@ export default function ProfileScreen({ navigation, route }) {
               filteredAndSortedProducts.map((product, index) => renderProductCard(product, index))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No products found</Text>
+                <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No products found</Text>
               </View>
             )}
           </View>
@@ -834,18 +870,19 @@ export default function ProfileScreen({ navigation, route }) {
         animationType="fade"
         onRequestClose={() => setShowSortModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, dynamicStyles.modalOverlay]}>
           <Pressable 
             style={styles.modalOverlayBackdrop}
             onPress={() => setShowSortModal(false)}
           />
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sort by</Text>
+          <View style={[styles.modalContent, dynamicStyles.modalContent]}>
+            <Text style={[styles.modalTitle, dynamicStyles.modalTitle]}>Sort by</Text>
             {sortOptions.map((option) => (
               <Pressable
                 key={option.value}
                 style={[
                   styles.modalOption,
+                  dynamicStyles.modalOption,
                   sortBy === option.value && styles.modalOptionSelected
                 ]}
                 onPress={() => {
@@ -855,12 +892,13 @@ export default function ProfileScreen({ navigation, route }) {
               >
                 <Text style={[
                   styles.modalOptionText,
+                  dynamicStyles.modalOptionText,
                   sortBy === option.value && styles.modalOptionTextSelected
                 ]}>
                   {option.label}
                 </Text>
                 {sortBy === option.value && (
-                  <Ionicons name="checkmark" size={20} color="#FF6B35" />
+                  <Ionicons name="checkmark" size={20} color={theme.primary} />
                 )}
               </Pressable>
             ))}
@@ -875,29 +913,29 @@ export default function ProfileScreen({ navigation, route }) {
         animationType="fade"
         onRequestClose={cancelMarkAsSold}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, dynamicStyles.modalOverlay]}>
           <Pressable 
             style={styles.modalOverlayBackdrop}
             onPress={cancelMarkAsSold}
           />
-          <View style={styles.confirmModalContent}>
+          <View style={[styles.confirmModalContent, dynamicStyles.confirmModalContent]}>
             <View style={styles.confirmModalIcon}>
-              <Ionicons name="warning-outline" size={48} color="#FF6B35" />
+              <Ionicons name="warning-outline" size={48} color={theme.primary} />
             </View>
-            <Text style={styles.confirmModalTitle}>{statusModalCopy.title}</Text>
-            <Text style={styles.confirmModalMessage}>
+            <Text style={[styles.confirmModalTitle, dynamicStyles.confirmModalTitle]}>{statusModalCopy.title}</Text>
+            <Text style={[styles.confirmModalMessage, dynamicStyles.confirmModalMessage]}>
               {statusModalCopy.message}
             </Text>
             <View style={styles.confirmModalButtons}>
               <TouchableOpacity
-                style={[styles.confirmModalButton, styles.cancelButton, { marginRight: 6 }]}
+                style={[styles.confirmModalButton, styles.cancelButton, { marginRight: 6, backgroundColor: theme.lightGray }]}
                 onPress={cancelMarkAsSold}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6 }]}
+                style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6, backgroundColor: theme.primary }]}
                 onPress={confirmStatusChange}
                 activeOpacity={0.7}
                 disabled={statusUpdatingId === productToUpdate}
@@ -916,34 +954,34 @@ export default function ProfileScreen({ navigation, route }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Ionicons name="home-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -951,8 +989,8 @@ export default function ProfileScreen({ navigation, route }) {
             // Already on Profile, do nothing
           }}
         >
-          <Ionicons name="person-outline" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

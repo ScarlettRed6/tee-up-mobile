@@ -15,12 +15,14 @@ const GOOGLE_ANDROID_CLIENT_ID = ENV_ANDROID_ID || DEFAULT_CLIENT_ID;
 const GOOGLE_IOS_CLIENT_ID = ENV_IOS_ID || DEFAULT_CLIENT_ID;
 import styles from './styles/SignupScreen.styles';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 
 // Complete the OAuth flow
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignupScreen({ navigation }) {
   const { register, loginWithGoogle } = useContext(authContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -259,26 +261,75 @@ export default function SignupScreen({ navigation }) {
     }
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    heroCard: { backgroundColor: theme.primary },
+    formCard: { backgroundColor: theme.card },
+    title: { color: '#FFF' },
+    subtitle: { color: '#FFF' },
+    label: { color: theme.text },
+    input: { 
+      borderColor: errors.name || errors.email || errors.password || errors.confirmPassword ? theme.error : theme.border,
+      backgroundColor: errors.name || errors.email || errors.password || errors.confirmPassword ? (theme.mode === 'dark' ? '#3A2A2A' : '#FFF6F2') : (theme.mode === 'dark' ? '#333333' : '#F9FAFB'),
+      color: theme.text,
+    },
+    inputError: {
+      borderColor: theme.error,
+      backgroundColor: theme.mode === 'dark' ? '#3A2A2A' : '#FFF6F2',
+    },
+    primaryButton: { backgroundColor: theme.mode === 'dark' ? theme.text : '#111827' },
+    primaryButtonText: { color: theme.mode === 'dark' ? theme.background : '#FFF' },
+    errorText: { color: theme.error },
+    errorContainer: {
+      backgroundColor: theme.mode === 'dark' ? '#3A2A2A' : '#FFF1ED',
+      borderColor: theme.mode === 'dark' ? '#5A3A3A' : '#FFB199',
+    },
+    dividerLine: { backgroundColor: theme.border },
+    dividerText: { color: theme.textMuted },
+    googleButton: { 
+      backgroundColor: theme.card,
+      borderColor: theme.border,
+    },
+    googleButtonText: { color: theme.text },
+    bottomMuted: { color: theme.textMuted },
+    bottomLink: { color: theme.primary },
+  };
+
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
+      {/* Theme Toggle Button */}
+      <View style={styles.themeToggleContainer}>
+        <TouchableOpacity
+          style={[styles.themeToggleButton, { backgroundColor: theme.card }]}
+          onPress={toggleTheme}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name={theme.mode === 'dark' ? 'sunny' : 'moon'} 
+            size={22} 
+            color={theme.primary} 
+          />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <View style={styles.heroCard}>
-          <Text style={styles.title}>Create an account</Text>
-          <Text style={styles.subtitle}>Build trust, list gear, and start connecting with golfers nearby.</Text>
+        <View style={[styles.heroCard, dynamicStyles.heroCard]}>
+          <Text style={[styles.title, dynamicStyles.title]}>Create an account</Text>
+          <Text style={[styles.subtitle, dynamicStyles.subtitle]}>Build trust, list gear, and start connecting with golfers nearby.</Text>
         </View>
 
-        <View style={styles.formCard}>
+        <View style={[styles.formCard, dynamicStyles.formCard]}>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={[styles.label, dynamicStyles.label]}>Name</Text>
             <TextInput 
               value={name}
               onChangeText={(text) => {
@@ -287,20 +338,20 @@ export default function SignupScreen({ navigation }) {
                   setErrors(prev => ({ ...prev, name: null }));
                 }
               }}
-              style={[styles.input, errors.name && styles.inputError]}
+              style={[styles.input, dynamicStyles.input, errors.name && styles.inputError]}
               returnKeyType="next"
               blurOnSubmit={false}
               autoCapitalize="words"
               placeholder="Jane Doe"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.textMuted}
             />
             {errors.name && (
-              <Text style={styles.errorText}>{errors.name}</Text>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.name}</Text>
             )}
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, dynamicStyles.label]}>Email</Text>
             <TextInput 
               value={email}
               onChangeText={(text) => {
@@ -313,17 +364,17 @@ export default function SignupScreen({ navigation }) {
               autoCapitalize="none"
               returnKeyType="next"
               blurOnSubmit={false}
-              style={[styles.input, errors.email && styles.inputError]} 
+              style={[styles.input, dynamicStyles.input, errors.email && styles.inputError]} 
               placeholder="you@email.com"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.textMuted}
             />
             {errors.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.email}</Text>
             )}
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, dynamicStyles.label]}>Password</Text>
             <TextInput 
               value={password}
               onChangeText={(text) => {
@@ -338,17 +389,17 @@ export default function SignupScreen({ navigation }) {
               secureTextEntry
               returnKeyType="next"
               blurOnSubmit={false}
-              style={[styles.input, errors.password && styles.inputError]} 
+              style={[styles.input, dynamicStyles.input, errors.password && styles.inputError]} 
               placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.textMuted}
             />
             {errors.password && (
-              <Text style={styles.errorText}>{errors.password}</Text>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.password}</Text>
             )}
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Confirm password</Text>
+            <Text style={[styles.label, dynamicStyles.label]}>Confirm password</Text>
             <TextInput 
               value={confirmPassword}
               onChangeText={(text) => {
@@ -360,54 +411,54 @@ export default function SignupScreen({ navigation }) {
               secureTextEntry
               returnKeyType="done"
               onSubmitEditing={handleSignup}
-              style={[styles.input, errors.confirmPassword && styles.inputError]} 
+              style={[styles.input, dynamicStyles.input, errors.confirmPassword && styles.inputError]} 
               placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.textMuted}
             />
             {errors.confirmPassword && (
-              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.confirmPassword}</Text>
             )}
           </View>
 
           {errors.general && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{errors.general}</Text>
+            <View style={[styles.errorContainer, dynamicStyles.errorContainer]}>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.general}</Text>
             </View>
           )}
 
           <TouchableOpacity 
             activeOpacity={0.9} 
-            style={[styles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
+            style={[styles.primaryButton, dynamicStyles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
             onPress={handleSignup}
             disabled={!isFormValid || isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator size="small" color="#FFF" />
+              <ActivityIndicator size="small" color={theme.mode === 'dark' ? theme.background : '#FFF'} />
             ) : (
-              <Text style={styles.primaryButtonText}>Create account</Text>
+              <Text style={[styles.primaryButtonText, dynamicStyles.primaryButtonText]}>Create account</Text>
             )}
           </TouchableOpacity>
 
           {isGoogleSignInAvailable && (
             <>
               <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
+                <Text style={[styles.dividerText, dynamicStyles.dividerText]}>or continue with</Text>
+                <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
               </View>
 
               <TouchableOpacity 
                 activeOpacity={0.8} 
-                style={[styles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
+                style={[styles.googleButton, dynamicStyles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
                 onPress={handleGooglePress}
                 disabled={isGoogleLoading}
               >
                 {isGoogleLoading ? (
-                  <ActivityIndicator size="small" color="#111" />
+                  <ActivityIndicator size="small" color={theme.text} />
                 ) : (
                   <>
-                    <Ionicons name="logo-google" size={20} color="#111" style={styles.googleIcon} />
-                    <Text style={styles.googleButtonText}>Continue with Google</Text>
+                    <Ionicons name="logo-google" size={20} color={theme.text} style={styles.googleIcon} />
+                    <Text style={[styles.googleButtonText, dynamicStyles.googleButtonText]}>Continue with Google</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -415,12 +466,12 @@ export default function SignupScreen({ navigation }) {
           )}
 
           <View style={styles.bottomRow}>
-            <Text style={styles.bottomMuted}>Already have an account?</Text>
+            <Text style={[styles.bottomMuted, dynamicStyles.bottomMuted]}>Already have an account?</Text>
             <Pressable onPress={() => {
               Keyboard.dismiss();
               navigation.replace('Login');
             }}>
-              <Text style={styles.bottomLink}> Log in</Text>
+              <Text style={[styles.bottomLink, dynamicStyles.bottomLink]}> Log in</Text>
             </Pressable>
           </View>
         </View>

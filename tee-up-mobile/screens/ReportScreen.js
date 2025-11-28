@@ -6,10 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/ReportScreen.styles';
 import { reportListing, reportUser } from '../api/reportApi';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 
 export default function ReportScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
   const [reason, setReason] = useState('');
   const [photo, setPhoto] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,60 +127,81 @@ export default function ReportScreen({ navigation, route }) {
     return 'Report';
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    headerTitle: { color: theme.text },
+    scrollView: { backgroundColor: theme.background },
+    infoSection: { backgroundColor: theme.card },
+    infoText: { color: theme.textSecondary },
+    section: { backgroundColor: theme.card },
+    label: { color: theme.text },
+    input: { 
+      backgroundColor: theme.mode === 'dark' ? '#333333' : '#F9FAFB',
+      borderColor: theme.border,
+      color: theme.text,
+    },
+    hintText: { color: theme.textMuted },
+    photoButton: { backgroundColor: theme.lightGray, borderColor: theme.border },
+    photoButtonText: { color: theme.text },
+    submitButton: { backgroundColor: theme.primary },
+    submitButtonDisabled: { backgroundColor: theme.textMuted, opacity: 0.5 },
+  };
+
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, dynamicStyles.container]}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: 50 + insets.top }]}>
+        <View style={[styles.header, dynamicStyles.header, { paddingTop: 50 + insets.top }]}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{getReportTitle()}</Text>
+          <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>{getReportTitle()}</Text>
           <View style={styles.backButton} />
         </View>
 
         <ScrollView 
-          style={styles.scrollView}
+          style={[styles.scrollView, dynamicStyles.scrollView]}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Info Section */}
-          <View style={styles.infoSection}>
-            <Text style={styles.infoText}>
+          <View style={[styles.infoSection, dynamicStyles.infoSection]}>
+            <Text style={[styles.infoText, dynamicStyles.infoText]}>
               Please provide details about why you're reporting this {reportType === 'listing' ? 'listing' : 'user'}. 
               Your report will be reviewed by our team.
             </Text>
           </View>
 
           {/* Reason Input */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Reason for Reporting *</Text>
+          <View style={[styles.section, dynamicStyles.section]}>
+            <Text style={[styles.label, dynamicStyles.label]}>Reason for Reporting *</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, dynamicStyles.input]}
               placeholder="Describe the issue in detail..."
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.textMuted}
               value={reason}
               onChangeText={setReason}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
             />
-            <Text style={styles.hintText}>
+            <Text style={[styles.hintText, dynamicStyles.hintText]}>
               Minimum 10 characters required
             </Text>
           </View>
 
           {/* Photo Section */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Attach Photo (Optional)</Text>
-            <Text style={[styles.hintText, { marginBottom: 12 }]}>
+          <View style={[styles.section, dynamicStyles.section]}>
+            <Text style={[styles.label, dynamicStyles.label]}>Attach Photo (Optional)</Text>
+            <Text style={[styles.hintText, dynamicStyles.hintText, { marginBottom: 12 }]}>
               Add a photo to support your report
             </Text>
             
@@ -190,26 +213,26 @@ export default function ReportScreen({ navigation, route }) {
                   onPress={handleRemovePhoto}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  <Ionicons name="close-circle" size={24} color={theme.error || '#EF4444'} />
                 </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.photoButtonsContainer}>
                 <TouchableOpacity
-                  style={styles.photoButton}
+                  style={[styles.photoButton, dynamicStyles.photoButton]}
                   onPress={handlePickImage}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="image-outline" size={24} color="#FF6B35" />
-                  <Text style={styles.photoButtonText}>Choose from Library</Text>
+                  <Ionicons name="image-outline" size={24} color={theme.primary} />
+                  <Text style={[styles.photoButtonText, dynamicStyles.photoButtonText]}>Choose from Library</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.photoButton}
+                  style={[styles.photoButton, dynamicStyles.photoButton]}
                   onPress={handleTakePhoto}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="camera-outline" size={24} color="#FF6B35" />
-                  <Text style={styles.photoButtonText}>Take Photo</Text>
+                  <Ionicons name="camera-outline" size={24} color={theme.primary} />
+                  <Text style={[styles.photoButtonText, dynamicStyles.photoButtonText]}>Take Photo</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -219,7 +242,11 @@ export default function ReportScreen({ navigation, route }) {
         {/* Submit Button */}
         <View style={[styles.footer, { paddingBottom: 20 + insets.bottom }]}>
           <TouchableOpacity
-            style={[styles.submitButton, (!reason.trim() || reason.trim().length < 10) && styles.submitButtonDisabled]}
+            style={[
+              styles.submitButton, 
+              dynamicStyles.submitButton,
+              (!reason.trim() || reason.trim().length < 10) && dynamicStyles.submitButtonDisabled
+            ]}
             onPress={handleSubmit}
             disabled={isSubmitting || !reason.trim() || reason.trim().length < 10}
             activeOpacity={0.8}

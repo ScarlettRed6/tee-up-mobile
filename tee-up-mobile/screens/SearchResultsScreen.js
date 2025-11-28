@@ -1,14 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useContext } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/SearchResultsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { fetchListings } from '../api/listingsApi';
+import { ThemeContext } from '../context/themeContext';
 import { extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function SearchResultsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const { theme } = useContext(ThemeContext);
   const filtersFromRoute = route?.params?.filters || {};
   const filtersKey = JSON.stringify(filtersFromRoute || {});
   const appliedFilters = useMemo(() => {
@@ -103,7 +105,7 @@ export default function SearchResultsScreen({ navigation, route }) {
     return (
       <TouchableOpacity
         key={cardKey}
-        style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
+        style={[styles.productCard, dynamicStyles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
         onPress={() => navigation.navigate('ProductDetail', { product: { ...item, photos } })}
         activeOpacity={0.8}
       >
@@ -115,15 +117,15 @@ export default function SearchResultsScreen({ navigation, route }) {
           />
         ) : (
           <View style={styles.productImagePlaceholder}>
-            <Ionicons name="image-outline" size={24} color="#999" />
-            <Text style={styles.imagePlaceholderText}>
+            <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+            <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
               {item.title?.length > 18 ? `${item.title.substring(0, 18)}...` : item.title}
             </Text>
           </View>
         )}
-        <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
-        {item.condition ? <Text style={styles.productCondition}>{item.condition}</Text> : null}
-        <Text style={styles.productPrice}>{priceLabel}</Text>
+        <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>{item.title}</Text>
+        {item.condition ? <Text style={[styles.productCondition, { color: theme.textMuted }]}>{item.condition}</Text> : null}
+        <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{priceLabel}</Text>
         <View style={styles.sellerInfo}>
           {item.seller_profile_image ? (
             <Image
@@ -132,10 +134,10 @@ export default function SearchResultsScreen({ navigation, route }) {
             />
           ) : (
             <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-              <Ionicons name="person" size={12} color="#FF6B35" />
+              <Ionicons name="person" size={12} color={theme.primary} />
             </View>
           )}
-          <Text style={styles.sellerName}>{sellerName}</Text>
+          <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{sellerName}</Text>
         </View>
         {statusLabel && (
           <View style={styles.statusChip}>
@@ -154,44 +156,63 @@ export default function SearchResultsScreen({ navigation, route }) {
     });
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    headerIcons: { backgroundColor: theme.background },
+    scrollView: { backgroundColor: theme.background },
+    titleSection: { backgroundColor: theme.background },
+    title: { color: theme.text },
+    resultCountText: { color: theme.textMuted },
+    activeFilterText: { color: theme.textMuted },
+    loadingText: { color: theme.textMuted },
+    errorText: { color: theme.error || '#C2410C' },
+    emptyStateTitle: { color: theme.text },
+    emptyStateSubtitle: { color: theme.textMuted },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    sellerName: { color: theme.textMuted },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Floating Header Icons */}
-      <View style={styles.headerIcons}>
+      <View style={[styles.headerIcons, dynamicStyles.headerIcons]}>
         <TouchableOpacity 
           style={styles.iconButton}
           onPress={() => navigation.navigate('SearchFilter')}
         >
-          <Ionicons name="search-outline" size={22} color="#333" />
+          <Ionicons name="search-outline" size={22} color={theme.text} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="people-outline" size={22} color="#333" />
+          <Ionicons name="people-outline" size={22} color={theme.text} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.iconButton} 
           onPress={() => navigation.navigate('SavedListings')}
         >
-          <Ionicons name="heart-outline" size={22} color="#333" />
+          <Ionicons name="heart-outline" size={22} color={theme.text} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.iconButton} 
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
           <View style={styles.profileAvatar}>
-            <Ionicons name="person" size={16} color="#FF6B35" />
+            <Ionicons name="person" size={16} color={theme.primary} />
           </View>
         </TouchableOpacity>
       </View>
 
       <ScrollView 
-        style={styles.scrollView}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Page Title with Filter Icon */}
-        <View style={styles.titleSection}>
+        <View style={[styles.titleSection, dynamicStyles.titleSection]}>
           <View style={styles.titleRow}>
-            <Text style={styles.title} numberOfLines={1}>
+            <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
               {trimmedQuery.length ? `'${displayQuery}'` : 'All Listings'}
             </Text>
             <TouchableOpacity 
@@ -199,34 +220,34 @@ export default function SearchResultsScreen({ navigation, route }) {
               onPress={handleFilterPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="options-outline" size={22} color="#333" />
+              <Ionicons name="options-outline" size={22} color={theme.text} />
             </TouchableOpacity>
           </View>
           <View style={styles.resultMetaRow}>
-            <Text style={styles.resultCountText}>
+            <Text style={[styles.resultCountText, dynamicStyles.resultCountText]}>
               {results.length} result{results.length === 1 ? '' : 's'}
             </Text>
             {appliedFilters.category && appliedFilters.category !== 'All' && (
-              <Text style={styles.activeFilterText}>Category: {appliedFilters.category}</Text>
+              <Text style={[styles.activeFilterText, dynamicStyles.activeFilterText]}>Category: {appliedFilters.category}</Text>
             )}
           </View>
         </View>
 
         {resultsLoading ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color="#FF6B35" />
-            <Text style={styles.loadingText}>Searching listings...</Text>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, dynamicStyles.loadingText]}>Searching listings...</Text>
           </View>
         ) : resultsError ? (
           <View style={styles.errorState}>
-            <Ionicons name="alert-circle-outline" size={24} color="#C2410C" />
-            <Text style={styles.errorText}>{resultsError}</Text>
+            <Ionicons name="alert-circle-outline" size={24} color={theme.error || '#C2410C'} />
+            <Text style={[styles.errorText, dynamicStyles.errorText]}>{resultsError}</Text>
           </View>
         ) : results.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="search-outline" size={32} color="#FF6B35" />
-            <Text style={styles.emptyStateTitle}>No listings found</Text>
-            <Text style={styles.emptyStateSubtitle}>
+            <Ionicons name="search-outline" size={32} color={theme.primary} />
+            <Text style={[styles.emptyStateTitle, dynamicStyles.emptyStateTitle]}>No listings found</Text>
+            <Text style={[styles.emptyStateSubtitle, dynamicStyles.emptyStateSubtitle]}>
               Try adjusting your filters or search keywords.
             </Text>
           </View>
@@ -238,41 +259,41 @@ export default function SearchResultsScreen({ navigation, route }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Home</Text>
+          <Ionicons name="home" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

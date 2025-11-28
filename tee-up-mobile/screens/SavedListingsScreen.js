@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/SavedListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { favoritesContext } from '../context/favoritesContext';
+import { ThemeContext } from '../context/themeContext';
 
 const normalizeListingStatus = (statusValue = 'available') => {
   const lower = (statusValue || '').toString().toLowerCase();
@@ -34,6 +35,7 @@ const formatPrice = (price) => {
 export default function SavedListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { favorites, favoritesLoading, refreshFavorites } = useContext(favoritesContext);
+  const { theme } = useContext(ThemeContext);
 
   const savedProducts = useMemo(() => {
     return favorites.map((item) => {
@@ -64,7 +66,7 @@ export default function SavedListingsScreen({ navigation }) {
     return (
       <TouchableOpacity
         key={item.id || index}
-        style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
+        style={[styles.productCard, dynamicStyles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
         activeOpacity={0.85}
         onPress={() => {
           navigation.navigate('ProductDetail', {
@@ -102,14 +104,14 @@ export default function SavedListingsScreen({ navigation }) {
             </View>
           )}
         </View>
-        <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
-        {item.condition && <Text style={styles.productCondition}>{item.condition}</Text>}
-        <Text style={styles.productPrice}>{item.priceLabel}</Text>
+        <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>{item.title}</Text>
+        {item.condition && <Text style={[styles.productCondition, { color: theme.textMuted }]}>{item.condition}</Text>}
+        <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{item.priceLabel}</Text>
         <View style={styles.sellerInfo}>
           <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-            <Ionicons name="person" size={12} color={item.sellerColor} />
+            <Ionicons name="person" size={12} color={item.sellerColor || theme.primary} />
           </View>
-          <Text style={styles.sellerName}>{item.seller}</Text>
+          <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{item.seller}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -117,19 +119,34 @@ export default function SavedListingsScreen({ navigation }) {
 
   const isEmpty = !favoritesLoading && savedProducts.length === 0;
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
+    scrollView: { backgroundColor: theme.background },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    sellerName: { color: theme.textMuted },
+    loadingText: { color: theme.textMuted },
+    emptyStateText: { color: theme.text },
+    emptyStateSubtext: { color: theme.textMuted },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header Section */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <View style={styles.headerLeft}>
-          <Text style={styles.pageTitle}>Saved Listings</Text>
+          <Text style={[styles.pageTitle, dynamicStyles.pageTitle]}>Saved Listings</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity 
             style={styles.headerIcon}
             activeOpacity={0.7}
           >
-            <Ionicons name="people-outline" size={24} color="#000" />
+            <Ionicons name="people-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
@@ -138,7 +155,7 @@ export default function SavedListingsScreen({ navigation }) {
               // Already on SavedListings, do nothing or show active state
             }}
           >
-            <Ionicons name="heart" size={24} color="#FF6B35" />
+            <Ionicons name="heart" size={24} color={theme.primary} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
@@ -146,33 +163,33 @@ export default function SavedListingsScreen({ navigation }) {
             onPress={() => navigateToBottomNav(navigation, 'Profile')}
           >
             <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={18} color="#FF6B35" />
+              <Ionicons name="person" size={18} color={theme.primary} />
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView 
-        style={styles.scrollView}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: 140 + insets.bottom, flexGrow: isEmpty ? 1 : 0 },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={favoritesLoading} onRefresh={refreshFavorites} tintColor="#FF6B35" />
+          <RefreshControl refreshing={favoritesLoading} onRefresh={refreshFavorites} tintColor={theme.primary} />
         }
       >
         {favoritesLoading && savedProducts.length === 0 ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color="#FF6B35" />
-            <Text style={styles.loadingText}>Loading your saved listings...</Text>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, dynamicStyles.loadingText]}>Loading your saved listings...</Text>
           </View>
         ) : isEmpty ? (
           <View style={styles.emptyState}>
-            <Ionicons name="heart-outline" size={36} color="#FF6B35" style={{ marginBottom: 8 }} />
-            <Text style={styles.emptyStateText}>No saved listings yet.</Text>
-            <Text style={styles.emptyStateSubtext}>Tap the heart on a product to save it here.</Text>
+            <Ionicons name="heart-outline" size={36} color={theme.primary} style={{ marginBottom: 8 }} />
+            <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No saved listings yet.</Text>
+            <Text style={[styles.emptyStateSubtext, dynamicStyles.emptyStateSubtext]}>Tap the heart on a product to save it here.</Text>
           </View>
         ) : (
           <View style={styles.productGrid}>
@@ -182,41 +199,41 @@ export default function SavedListingsScreen({ navigation }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Home</Text>
+          <Ionicons name="home" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

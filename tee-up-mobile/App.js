@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
@@ -7,6 +7,27 @@ import { AuthProvider } from './context/authContext';
 import { ListingsProvider } from './context/listingsContext';
 import { FavoritesProvider } from './context/favoritesContext';
 import { NotificationsProvider } from './context/notificationsContext';
+import { ThemeProvider, ThemeContext } from './context/themeContext';
+
+// Inner component to access theme
+function AppContent() {
+  const { theme } = useContext(ThemeContext);
+  
+  return (
+    <AuthProvider>
+      <FavoritesProvider>
+        <ListingsProvider>
+          <NotificationsProvider>
+            <View style={{ flex: 1 }}>
+              <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+              <AppNavigator />
+            </View>
+          </NotificationsProvider>
+        </ListingsProvider>
+      </FavoritesProvider>
+    </AuthProvider>
+  );
+}
 
 
 export default function App() {
@@ -23,18 +44,9 @@ export default function App() {
   }
 
   return (
-    <AuthProvider>
-      <FavoritesProvider>
-        <ListingsProvider>
-          <NotificationsProvider>
-            <View style={{ flex: 1 }}>
-              <StatusBar style="dark" />
-              <AppNavigator />
-            </View>
-          </NotificationsProvider>
-        </ListingsProvider>
-      </FavoritesProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

@@ -10,6 +10,7 @@ import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { findConversation } from '../api/chatApi';
 import { authContext } from '../context/authContext';
 import { favoritesContext } from '../context/favoritesContext';
+import { ThemeContext } from '../context/themeContext';
 import jwtDecode from 'jwt-decode';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -17,6 +18,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function ProductDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const routeProduct = route?.params?.product;
@@ -222,20 +224,51 @@ export default function ProductDetailScreen({ navigation, route }) {
     }
   }, [fullscreenVisible, fullscreenIndex]);
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    scrollView: { backgroundColor: theme.background },
+    productInfo: { backgroundColor: theme.card },
+    productTitle: { color: theme.text },
+    productPrice: { color: theme.primary },
+    productLocation: { color: theme.textMuted },
+    productDescription: { color: theme.text },
+    sellerCard: { backgroundColor: theme.card },
+    sellerInfoContainer: { backgroundColor: theme.card },
+    sellerName: { color: theme.text },
+    sellerRating: { color: theme.textMuted },
+    reviewCard: { backgroundColor: theme.card },
+    reviewText: { color: theme.text },
+    reviewBadge: { 
+      backgroundColor: theme.mode === 'dark' 
+        ? 'rgba(255, 107, 53, 0.2)' 
+        : '#FFF7ED' 
+    },
+    reviewBadgeText: { 
+      color: theme.mode === 'dark' 
+        ? '#FFD700' 
+        : '#C2410C' 
+    },
+    seeAllReviewsButton: { backgroundColor: theme.card },
+    seeAllReviewsText: { color: theme.text },
+    section: { backgroundColor: theme.background },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#FF6B35" />
+      <View style={[styles.container, dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   if (!product) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text>Product not found</Text>
+      <View style={[styles.container, dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.text }}>Product not found</Text>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ color: '#FF6B35', marginTop: 10 }}>Go Back</Text>
+          <Text style={{ color: theme.primary, marginTop: 10 }}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -259,15 +292,15 @@ export default function ProductDetailScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header with Back Button and Report Button */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.reportButton}
@@ -282,12 +315,12 @@ export default function ProductDetailScreen({ navigation, route }) {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="flag-outline" size={22} color="#000" />
+          <Ionicons name="flag-outline" size={22} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       <ScrollView 
-        style={styles.scrollView}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 200 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
@@ -326,8 +359,8 @@ export default function ProductDetailScreen({ navigation, route }) {
                       />
                     ) : (
                       <View style={styles.productImagePlaceholder}>
-                        <Ionicons name="image-outline" size={48} color="#999" />
-                        <Text style={styles.imagePlaceholderText}>No Image</Text>
+                        <Ionicons name="image-outline" size={48} color={theme.textMuted} />
+                        <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>No Image</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -335,8 +368,8 @@ export default function ProductDetailScreen({ navigation, route }) {
               ) : (
                 <View style={styles.imageSlide}>
                   <View style={styles.productImagePlaceholder}>
-                    <Ionicons name="image-outline" size={48} color="#999" />
-                    <Text style={styles.imagePlaceholderText}>No Image</Text>
+                    <Ionicons name="image-outline" size={48} color={theme.textMuted} />
+                    <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>No Image</Text>
                   </View>
                 </View>
               )}
@@ -362,7 +395,7 @@ export default function ProductDetailScreen({ navigation, route }) {
         {/* Product Title, Price, and Location */}
         <View style={styles.productInfoSection}>
           <View style={styles.titleRow}>
-            <Text style={styles.productTitle} numberOfLines={2}>
+            <Text style={[styles.productTitle, dynamicStyles.productTitle]} numberOfLines={2}>
               {product.title}
             </Text>
             <TouchableOpacity 
@@ -372,50 +405,50 @@ export default function ProductDetailScreen({ navigation, route }) {
               disabled={favoritePending}
             >
               {favoritePending ? (
-                <ActivityIndicator size="small" color="#FF6B35" />
+                <ActivityIndicator size="small" color={theme.primary} />
               ) : (
                 <Ionicons 
                   name={listingFavorited ? "heart" : "heart-outline"} 
                   size={24} 
-                  color={listingFavorited ? "#FF6B35" : "#333"} 
+                  color={listingFavorited ? theme.primary : theme.textMuted} 
                 />
               )}
             </TouchableOpacity>
           </View>
           
-          <Text style={styles.productPrice}>
+          <Text style={[styles.productPrice, dynamicStyles.productPrice]}>
             ₱{typeof product.price === 'number' ? product.price.toLocaleString() : product.price}
           </Text>
           
-          <Text style={styles.locationDate}>
+          <Text style={[styles.locationDate, { color: theme.textMuted }]}>
             {product.location} | Posted on {product.postedDate}
           </Text>
         </View>
 
         {/* Description Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.sectionContent}>{product.description}</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Description</Text>
+          <Text style={[styles.sectionContent, dynamicStyles.productDescription]}>{product.description}</Text>
         </View>
 
         {/* Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Details</Text>
-          <Text style={styles.detailLine}>Category: {product.category}</Text>
-          <Text style={styles.detailLine}>Condition: {product.condition}</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Details</Text>
+          <Text style={[styles.detailLine, { color: theme.text }]}>Category: {product.category}</Text>
+          <Text style={[styles.detailLine, { color: theme.text }]}>Condition: {product.condition}</Text>
           {product.brand && (
-            <Text style={styles.detailLine}>Brand: {product.brand}</Text>
+            <Text style={[styles.detailLine, { color: theme.text }]}>Brand: {product.brand}</Text>
           )}
           {product.status && (
-            <Text style={styles.detailLine}>Status: {product.status}</Text>
+            <Text style={[styles.detailLine, { color: theme.text }]}>Status: {product.status}</Text>
           )}
         </View>
 
         {/* Seller Information Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seller Information</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Seller Information</Text>
           <TouchableOpacity
-            style={styles.sellerInfoContainer}
+            style={[styles.sellerInfoContainer, dynamicStyles.sellerInfoContainer]}
             onPress={() => {
               const currentUserId = getCurrentUserId();
               const productUserId = product.user_id || product.seller?.id;
@@ -476,60 +509,60 @@ export default function ProductDetailScreen({ navigation, route }) {
               />
             ) : (
               <View style={styles.sellerAvatar}>
-                <Ionicons name="person" size={30} color="#FF6B35" />
+                <Ionicons name="person" size={30} color={theme.primary} />
               </View>
             )}
             <View style={styles.sellerDetails}>
-              <Text style={styles.sellerName}>{product.seller.name}</Text>
+              <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{product.seller.name}</Text>
               <View style={styles.ratingContainer}>
                 <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={styles.ratingText}>
+                <Text style={[styles.ratingText, { color: theme.textMuted }]}>
                   {Number(sellerRatingSummary.average_rating || product.seller.rating || 0).toFixed(2)} ({sellerRatingSummary.total_raters || product.seller.reviewCount})
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* Product Reviews Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seller Reviews</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Seller Reviews</Text>
           {hasSellerReviews ? (
             sellerRecentRatings.slice(0, 2).map((rating, idx) => {
               const ratingValueDisplay = Number(rating.rating || 0).toFixed(1);
               return (
-                <View key={`${rating.created_at || idx}`} style={styles.reviewCard}>
+                <View key={`${rating.created_at || idx}`} style={[styles.reviewCard, dynamicStyles.reviewCard]}>
                   <View style={styles.reviewHeader}>
                     {rating.reviewer_profile_image ? (
                       <Image source={{ uri: rating.reviewer_profile_image }} style={styles.reviewAvatarImage} />
                     ) : (
-                      <Ionicons name="person-circle" size={36} color="#FF6B35" />
+                      <Ionicons name="person-circle" size={36} color={theme.primary} />
                     )}
                     <View style={{ marginLeft: 10, flex: 1 }}>
-                      <Text style={styles.reviewHeading}>
+                      <Text style={[styles.reviewHeading, { color: theme.text }]}>
                         {rating.reviewer_name ? `${rating.reviewer_name} (Buyer)` : `Buyer ${idx + 1}`}
                       </Text>
-                      <Text style={styles.reviewDate}>
+                      <Text style={[styles.reviewDate, { color: theme.textMuted }]}>
                         {rating.created_at ? new Date(rating.created_at).toLocaleDateString() : 'Recently'}
                       </Text>
                     </View>
-                    <View style={styles.reviewBadge}>
+                    <View style={[styles.reviewBadge, dynamicStyles.reviewBadge]}>
                       <Ionicons name="star" size={16} color="#FFD700" />
-                      <Text style={styles.reviewBadgeText}>{ratingValueDisplay}</Text>
+                      <Text style={[styles.reviewBadgeText, dynamicStyles.reviewBadgeText]}>{ratingValueDisplay}</Text>
                     </View>
                   </View>
-                  <Text style={styles.reviewText}>
+                  <Text style={[styles.reviewText, dynamicStyles.reviewText]}>
                     {rating.review?.length ? rating.review : 'No written review provided.'}
                   </Text>
                 </View>
               );
             })
           ) : !hasSellerReviews ? (
-            <Text style={styles.emptyReviewsText}>No reviews yet. Be the first to review!</Text>
+            <Text style={[styles.emptyReviewsText, { color: theme.textMuted }]}>No reviews yet. Be the first to review!</Text>
           ) : null}
           <TouchableOpacity
-            style={styles.seeAllReviewsButton}
+            style={[styles.seeAllReviewsButton, dynamicStyles.seeAllReviewsButton]}
             onPress={() => {
               navigation.navigate('SellerReviews', {
                 userId: product.user_id || product.seller?.id,
@@ -538,8 +571,8 @@ export default function ProductDetailScreen({ navigation, route }) {
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.seeAllReviewsText}>See all seller reviews</Text>
-            <Ionicons name="chevron-forward" size={16} color="#FF6B35" />
+            <Text style={[styles.seeAllReviewsText, dynamicStyles.seeAllReviewsText]}>See all seller reviews</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.primary} />
           </TouchableOpacity>
         </View>
 
@@ -703,41 +736,41 @@ export default function ProductDetailScreen({ navigation, route }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Ionicons name="home-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

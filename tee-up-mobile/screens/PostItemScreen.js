@@ -6,12 +6,14 @@ import styles from './styles/PostItemScreen.styles';
 import { createListing, updateListing } from '../api/listingsApi';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function PostItemScreen({ navigation, route }) {
   const { refreshListings } = useContext(ListingsContext);
   const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
   
   // Check if we're in edit mode
   const isEditMode = route?.params?.editMode || false;
@@ -289,28 +291,70 @@ export default function PostItemScreen({ navigation, route }) {
     setPhotos(photos.filter(photo => photo.id !== photoId));
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    headerTitle: { color: theme.text },
+    scrollView: { backgroundColor: theme.background },
+    section: { backgroundColor: theme.card },
+    label: { color: theme.text },
+    input: { 
+      backgroundColor: theme.mode === 'dark' ? '#333333' : '#F9FAFB',
+      borderColor: theme.border,
+      color: theme.text,
+    },
+    textArea: { 
+      backgroundColor: theme.mode === 'dark' ? '#333333' : '#F9FAFB',
+      borderColor: theme.border,
+      color: theme.text,
+    },
+    pickerButton: { backgroundColor: theme.lightGray, borderColor: theme.border },
+    pickerButtonText: { color: theme.text },
+    submitButton: { backgroundColor: theme.primary },
+    submitButtonDisabled: { backgroundColor: theme.textMuted, opacity: 0.5 },
+    categoryPill: { backgroundColor: theme.lightGray },
+    categoryPillSelected: { backgroundColor: theme.primary },
+    categoryText: { color: theme.text },
+    categoryTextSelected: { color: '#FFF' },
+    flexPill: { backgroundColor: theme.lightGray },
+    flexPillSelected: { backgroundColor: theme.primary },
+    flexText: { color: theme.text },
+    flexTextSelected: { color: '#FFF' },
+    conditionPill: { backgroundColor: theme.lightGray },
+    conditionPillSelected: { backgroundColor: theme.primary },
+    conditionText: { color: theme.text },
+    conditionTextSelected: { color: '#FFF' },
+    disabledHint: { color: theme.textMuted },
+    buttonContainer: { 
+      backgroundColor: theme.background,
+      borderTopColor: theme.border,
+    },
+    postButtonText: { color: '#FFF' },
+    postButtonTextDisabled: { color: theme.textMuted },
+  };
+
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       enabled
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#222" />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isEditMode ? 'Edit Listing' : 'Post an Item'}</Text>
+        <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>{isEditMode ? 'Edit Listing' : 'Post an Item'}</Text>
         <View style={styles.backButton} />
       </View>
 
       <ScrollView 
         ref={scrollViewRef}
-        style={styles.scrollView}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: keyboardHeight > 0 ? keyboardHeight + 120 : 200 }
@@ -331,8 +375,8 @@ export default function PostItemScreen({ navigation, route }) {
         }}
       >
         {/* Upload Photos Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Upload Photos (max 5)</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Upload Photos (max 5)</Text>
           
           {/* Photo Preview Grid */}
           {photos.length > 0 && (
@@ -348,7 +392,7 @@ export default function PostItemScreen({ navigation, route }) {
                     style={styles.removePhotoButton}
                     onPress={() => removePhoto(photo.id)}
                   >
-                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                    <Ionicons name="close-circle" size={24} color={theme.error || '#EF4444'} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -358,32 +402,32 @@ export default function PostItemScreen({ navigation, route }) {
           {/* Add Photo Button */}
           {photos.length < 5 && (
             <Pressable 
-              style={styles.uploadButton}
+              style={[styles.uploadButton, dynamicStyles.pickerButton]}
               onPress={pickImage}
             >
-              <Ionicons name="add" size={24} color="#222" />
-              <Text style={styles.uploadButtonText}>
+              <Ionicons name="add" size={24} color={theme.text} />
+              <Text style={[styles.uploadButtonText, dynamicStyles.pickerButtonText]}>
                 {photos.length === 0 ? 'Add Photos' : `Add Photo (${5 - photos.length} remaining)`}
               </Text>
             </Pressable>
           )}
           
           {photos.length >= 5 && (
-            <Text style={styles.photoLimitText}>
+            <Text style={[styles.photoLimitText, { color: theme.textMuted }]}>
               Maximum 5 photos reached
             </Text>
           )}
         </View>
 
         {/* Title Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Title</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Title</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             placeholder="Enter item title"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.textMuted}
             returnKeyType="next"
             blurOnSubmit={false}
             onFocus={() => {
@@ -395,16 +439,16 @@ export default function PostItemScreen({ navigation, route }) {
         </View>
 
         {/* Price Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Price (₱)</Text>
-          <View style={styles.priceInputContainer}>
-            <Text style={styles.pesoSymbol}>₱</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Price (₱)</Text>
+          <View style={[styles.priceInputContainer, { backgroundColor: theme.mode === 'dark' ? '#333333' : '#F9FAFB', borderColor: theme.border }]}>
+            <Text style={[styles.pesoSymbol, { color: theme.text }]}>₱</Text>
             <TextInput
               value={price}
               onChangeText={setPrice}
-              style={styles.priceInput}
+              style={[styles.priceInput, dynamicStyles.input]}
               placeholder="0"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.textMuted}
               keyboardType="numeric"
               returnKeyType="next"
               blurOnSubmit={false}
@@ -418,14 +462,14 @@ export default function PostItemScreen({ navigation, route }) {
         </View>
 
         {/* Brand Section (Optional) */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Brand (Optional)</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Brand (Optional)</Text>
           <TextInput
             value={brand}
             onChangeText={setBrand}
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             placeholder="Enter brand name"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.textMuted}
             returnKeyType="next"
             blurOnSubmit={false}
             onFocus={() => {
@@ -437,15 +481,16 @@ export default function PostItemScreen({ navigation, route }) {
         </View>
 
         {/* Category Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Category</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Category</Text>
           <View style={styles.categoryGrid}>
             {categories.map((cat) => (
               <Pressable
                 key={cat}
                 style={[
                   styles.categoryPill,
-                  category === cat && styles.categoryPillSelected
+                  dynamicStyles.categoryPill,
+                  category === cat && [styles.categoryPillSelected, dynamicStyles.categoryPillSelected]
                 ]}
                 onPress={() => {
                   setCategory(cat);
@@ -459,7 +504,8 @@ export default function PostItemScreen({ navigation, route }) {
               >
                 <Text style={[
                   styles.categoryText,
-                  category === cat && styles.categoryTextSelected
+                  dynamicStyles.categoryText,
+                  category === cat && [styles.categoryTextSelected, dynamicStyles.categoryTextSelected]
                 ]}>
                   {cat}
                 </Text>
@@ -470,21 +516,23 @@ export default function PostItemScreen({ navigation, route }) {
 
         {/* Flex Section (conditional) */}
         {showFlexSection && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Flex</Text>
+          <View style={[styles.section, dynamicStyles.section]}>
+            <Text style={[styles.label, dynamicStyles.label]}>Flex</Text>
             <View style={styles.flexRow}>
               {flexOptions.map((flexOption) => (
                 <Pressable
                   key={flexOption}
                   style={[
                     styles.flexPill,
-                    flex === flexOption && styles.flexPillSelected
+                    dynamicStyles.flexPill,
+                    flex === flexOption && [styles.flexPillSelected, dynamicStyles.flexPillSelected]
                   ]}
                   onPress={() => setFlex(flexOption)}
                 >
                   <Text style={[
                     styles.flexText,
-                    flex === flexOption && styles.flexTextSelected
+                    dynamicStyles.flexText,
+                    flex === flexOption && [styles.flexTextSelected, dynamicStyles.flexTextSelected]
                   ]}>
                     {flexOption}
                   </Text>
@@ -496,21 +544,23 @@ export default function PostItemScreen({ navigation, route }) {
 
         {/* Hand Section (conditional) - Show when Driver/Woods/Iron/Putters is selected */}
         {showHandSection && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Hand</Text>
+          <View style={[styles.section, dynamicStyles.section]}>
+            <Text style={[styles.label, dynamicStyles.label]}>Hand</Text>
             <View style={styles.conditionRow}>
               {handOptions.map((handOption) => (
                 <Pressable
                   key={handOption}
                   style={[
                     styles.conditionPill,
-                    hand === handOption && styles.conditionPillSelected
+                    dynamicStyles.conditionPill,
+                    hand === handOption && [styles.conditionPillSelected, dynamicStyles.conditionPillSelected]
                   ]}
                   onPress={() => setHand(handOption)}
                 >
                   <Text style={[
                     styles.conditionText,
-                    hand === handOption && styles.conditionTextSelected
+                    dynamicStyles.conditionText,
+                    hand === handOption && [styles.conditionTextSelected, dynamicStyles.conditionTextSelected]
                   ]}>
                     {handOption}
                   </Text>
@@ -521,21 +571,23 @@ export default function PostItemScreen({ navigation, route }) {
         )}
 
         {/* Condition Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Condition</Text>
+        <View style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Condition</Text>
           <View style={styles.conditionRow}>
             {conditions.map((cond) => (
               <Pressable
                 key={cond}
                 style={[
                   styles.conditionPill,
-                  condition === cond && styles.conditionPillSelected
+                  dynamicStyles.conditionPill,
+                  condition === cond && [styles.conditionPillSelected, dynamicStyles.conditionPillSelected]
                 ]}
                 onPress={() => setCondition(cond)}
               >
                 <Text style={[
                   styles.conditionText,
-                  condition === cond && styles.conditionTextSelected
+                  dynamicStyles.conditionText,
+                  condition === cond && [styles.conditionTextSelected, dynamicStyles.conditionTextSelected]
                 ]}>
                   {cond}
                 </Text>
@@ -545,8 +597,8 @@ export default function PostItemScreen({ navigation, route }) {
         </View>
 
         {/* Description Section */}
-        <View ref={descriptionSectionRef} style={styles.section}>
-          <Text style={styles.label}>Description</Text>
+        <View ref={descriptionSectionRef} style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Description</Text>
           <TextInput
             value={description}
             onChangeText={(text) => {
@@ -554,9 +606,9 @@ export default function PostItemScreen({ navigation, route }) {
                 setDescription(text);
               }
             }}
-            style={styles.descriptionInput}
+            style={[styles.descriptionInput, dynamicStyles.textArea]}
             placeholder="Enter item description (max 300 characters)"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.textMuted}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -570,20 +622,20 @@ export default function PostItemScreen({ navigation, route }) {
             blurOnSubmit={false}
             returnKeyType="default"
           />
-          <Text style={styles.charCount}>{description.length}/300</Text>
+          <Text style={[styles.charCount, { color: theme.textMuted }]}>{description.length}/300</Text>
         </View>
 
         {/* Location Section (Optional - for future use) */}
-        <View ref={locationSectionRef} style={styles.section}>
-          <Text style={styles.label}>Location (Optional)</Text>
-          <View style={styles.locationInputContainer}>
-            <Ionicons name="location-outline" size={20} color="#666" style={styles.locationIcon} />
+        <View ref={locationSectionRef} style={[styles.section, dynamicStyles.section]}>
+          <Text style={[styles.label, dynamicStyles.label]}>Location (Optional)</Text>
+          <View style={[styles.locationInputContainer, { backgroundColor: theme.mode === 'dark' ? '#333333' : '#F9FAFB', borderColor: theme.border }]}>
+            <Ionicons name="location-outline" size={20} color={theme.textMuted} style={styles.locationIcon} />
             <TextInput
               value={location}
               onChangeText={setLocation}
-              style={styles.locationInput}
+              style={[styles.locationInput, dynamicStyles.input]}
               placeholder="Enter location (optional)"
-              placeholderTextColor="#999"
+              placeholderTextColor={theme.textMuted}
               onFocus={() => {
                 handleLocationFocus();
                 // Additional scroll after a delay to ensure keyboard is up
@@ -602,6 +654,7 @@ export default function PostItemScreen({ navigation, route }) {
       <View 
         style={[
           styles.buttonContainer,
+          dynamicStyles.buttonContainer,
           Platform.OS === 'android' && keyboardHeight > 0 && {
             paddingBottom: keyboardHeight > 0 ? 16 : 24,
           }
@@ -610,7 +663,8 @@ export default function PostItemScreen({ navigation, route }) {
         <TouchableOpacity
           style={[
             styles.postButton,
-            (!isFormValid || isSubmitting) && styles.postButtonDisabled
+            isFormValid && !isSubmitting && dynamicStyles.submitButton,
+            (!isFormValid || isSubmitting) && [styles.postButtonDisabled, dynamicStyles.submitButtonDisabled]
           ]}
           onPress={() => {
             Keyboard.dismiss();
@@ -620,18 +674,19 @@ export default function PostItemScreen({ navigation, route }) {
           activeOpacity={0.8}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color="#FFF" />
+            <ActivityIndicator size="small" color={theme.mode === 'dark' ? '#FFF' : '#FFF'} />
           ) : (
             <Text style={[
               styles.postButtonText,
-              (!isFormValid || isSubmitting) && styles.postButtonTextDisabled
+              dynamicStyles.postButtonText,
+              (!isFormValid || isSubmitting) && [styles.postButtonTextDisabled, dynamicStyles.postButtonTextDisabled]
             ]}>
               {isEditMode ? 'Update Listing' : 'Post Item'}
             </Text>
           )}
         </TouchableOpacity>
         {!isFormValid && !isSubmitting && (
-          <Text style={styles.disabledHint}>
+          <Text style={[styles.disabledHint, dynamicStyles.disabledHint]}>
             Please fill in all required fields
           </Text>
         )}

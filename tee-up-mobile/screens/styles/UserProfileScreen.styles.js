@@ -32,6 +32,7 @@ export default StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
     paddingTop: 60,
+    backgroundColor: 'transparent',
   },
   profileSection: {
     alignItems: 'center',
@@ -140,16 +141,11 @@ export default StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: 'transparent',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   searchIcon: {
     marginRight: 8,
@@ -166,17 +162,12 @@ export default StyleSheet.create({
   filterButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#FFF',
+    backgroundColor: 'transparent',
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   filterButtonText: {
     fontFamily: 'Exo_500Medium',
@@ -189,6 +180,7 @@ export default StyleSheet.create({
   reviewsSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
+    backgroundColor: 'transparent',
   },
   reviewsHeader: {
     flexDirection: 'row',

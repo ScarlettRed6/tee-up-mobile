@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import styles from './styles/EmailVerificationScreen.styles';
 import { verifyEmailVerificationOtp, sendVerificationOtp } from '../api/authApi';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 
 const RESEND_INTERVAL = 45;
 
@@ -13,6 +14,7 @@ export default function EmailVerificationScreen({ navigation, route }) {
   const fromLogin = params.fromLogin ?? false;
 
   const { login } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
 
   const [otp, setOtp] = useState('');
   const [submitting, setSubmitting] = useState(false);

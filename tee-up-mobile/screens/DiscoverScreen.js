@@ -7,6 +7,7 @@ import styles from './styles/DiscoverScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 import { getUserProfile } from '../api/userApi';
 import { CATEGORY_OPTIONS, extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
@@ -14,6 +15,7 @@ export default function DiscoverScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { listings, loading } = useContext(ListingsContext);
   const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
   const [userProfileImage, setUserProfileImage] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORY_OPTIONS[0]);
 
@@ -57,12 +59,31 @@ export default function DiscoverScreen({ navigation }) {
     );
   }
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
+    subtitle: { color: theme.textMuted },
+    sectionTitle: { color: theme.text },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    sellerName: { color: theme.textMuted },
+    categoryPill: { backgroundColor: theme.lightGray },
+    categoryPillActive: { backgroundColor: theme.primary },
+    categoryText: { color: theme.text },
+    categoryTextActive: { color: '#FFF' },
+    categoryHintText: { color: theme.textMuted },
+    emptyStateText: { color: theme.textMuted },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header Section */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <View style={styles.headerLeft}>
-          <Text style={styles.pageTitle}>Discover</Text>
+          <Text style={[styles.pageTitle, dynamicStyles.pageTitle]}>Discover</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity 
@@ -70,20 +91,20 @@ export default function DiscoverScreen({ navigation }) {
             activeOpacity={0.7}
             onPress={() => navigation.navigate('SearchFilter')}
           >
-            <Ionicons name="search-outline" size={24} color="#000" />
+            <Ionicons name="search-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
             activeOpacity={0.7}
           >
-            <Ionicons name="people-outline" size={24} color="#000" />
+            <Ionicons name="people-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('SavedListings')}
           >
-            <Ionicons name="heart-outline" size={24} color="#000" />
+            <Ionicons name="heart-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
@@ -97,7 +118,7 @@ export default function DiscoverScreen({ navigation }) {
               />
             ) : (
               <View style={styles.profileAvatar}>
-                <Ionicons name="person" size={18} color="#FF6B35" />
+                <Ionicons name="person" size={18} color={theme.primary} />
               </View>
             )}
           </TouchableOpacity>
@@ -111,12 +132,12 @@ export default function DiscoverScreen({ navigation }) {
       >
         {/* Subtitle */}
         <View style={styles.subtitleSection}>
-          <Text style={styles.subtitle}>Browse many golf products in the marketplace.</Text>
+          <Text style={[styles.subtitle, dynamicStyles.subtitle]}>Browse many golf products in the marketplace.</Text>
         </View>
 
         {/* Newly Added Listings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Newly Added Listings</Text>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Newly Added Listings</Text>
           {listings.length > 0 ? (
             <ScrollView
               horizontal
@@ -132,7 +153,7 @@ export default function DiscoverScreen({ navigation }) {
                   <TouchableOpacity
                     key={item.listing_id}
                     onPress={() => navigation.navigate("ProductDetail", { product: item })}
-                    style={[styles.productCard, { marginRight: 12 }]}
+                    style={[styles.productCard, dynamicStyles.productCard, { marginRight: 12 }]}
                     activeOpacity={0.8}
                   >
                     {firstPhoto ? (
@@ -147,16 +168,16 @@ export default function DiscoverScreen({ navigation }) {
                       />
                     ) : (
                       <View style={styles.productImagePlaceholder}>
-                        <Ionicons name="image-outline" size={24} color="#999" />
-                        <Text style={styles.imagePlaceholderText}>
+                        <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+                        <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
                           {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
                         </Text>
                       </View>
                     )}
-                    <Text style={styles.productName} numberOfLines={2}>
+                    <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>
                       {item.title}
                     </Text>
-                    <Text style={styles.productPrice}>{formatPriceLabel(item.price)}</Text>
+                    <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{formatPriceLabel(item.price)}</Text>
                     <View style={styles.sellerInfo}>
                       {item.seller_profile_image ? (
                         <Image 
@@ -165,10 +186,10 @@ export default function DiscoverScreen({ navigation }) {
                         />
                       ) : (
                         <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                          <Ionicons name="person" size={12} color="#FF6B35" />
+                          <Ionicons name="person" size={12} color={theme.primary} />
                         </View>
                       )}
-                      <Text style={styles.sellerName} numberOfLines={1}>{item.seller_name || 'Unknown'}</Text>
+                      <Text style={[styles.sellerName, dynamicStyles.sellerName]} numberOfLines={1}>{item.seller_name || 'Unknown'}</Text>
                     </View>
                   </TouchableOpacity>
                 );
@@ -176,66 +197,66 @@ export default function DiscoverScreen({ navigation }) {
               
               {/* View More Button at the end */}
               <TouchableOpacity
-                style={styles.viewMoreCard}
+                style={[styles.viewMoreCard, { backgroundColor: theme.card }]}
                 onPress={() => navigation.navigate('RecentListings')}
                 activeOpacity={0.8}
               >
                 <View style={styles.viewMoreContent}>
-                  <Ionicons name="arrow-forward-circle" size={32} color="#FF6B35" />
-                  <Text style={styles.viewMoreTitle}>View More</Text>
-                  <Text style={styles.viewMoreSubtitle}>See all recent listings</Text>
+                  <Ionicons name="arrow-forward-circle" size={32} color={theme.primary} />
+                  <Text style={[styles.viewMoreTitle, { color: theme.text }]}>View More</Text>
+                  <Text style={[styles.viewMoreSubtitle, { color: theme.textMuted }]}>See all recent listings</Text>
                 </View>
               </TouchableOpacity>
             </ScrollView>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No listings available</Text>
+              <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No listings available</Text>
             </View>
           )}
         </View>
 
         {/* Categories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Categories</Text>
           <View style={styles.categoriesRow}>
             {CATEGORY_OPTIONS.map((category) => {
               const isActive = selectedCategory === category;
               return (
                 <TouchableOpacity
                   key={category}
-                  style={[styles.categoryPill, isActive && styles.categoryPillActive]}
+                  style={[styles.categoryPill, dynamicStyles.categoryPill, isActive && styles.categoryPillActive]}
                   onPress={() => handleCategoryPress(category)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>{category}</Text>
+                  <Text style={[styles.categoryText, dynamicStyles.categoryText, isActive && styles.categoryTextActive]}>{category}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
-          <Text style={styles.categoryHintText}>Tap a category to instantly filter active listings.</Text>
+          <Text style={[styles.categoryHintText, dynamicStyles.categoryHintText]}>Tap a category to instantly filter active listings.</Text>
         </View>
 
         {/* Recommended For You */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recommended For You</Text>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Recommended For You</Text>
           <View style={styles.productRow}>
             {listings.length > 3 ? (
               listings.slice(3, 5).map(item => (
                 <TouchableOpacity
                   key={item.listing_id}
                   onPress={() => navigation.navigate("ProductDetail", { product: item })}
-                  style={[styles.productCard, { marginRight: 12 }]}
+                  style={[styles.productCard, dynamicStyles.productCard, { marginRight: 12 }]}
                   activeOpacity={0.8}
                 >
                   <View style={styles.productImagePlaceholder}>
-                    <Text style={styles.imagePlaceholderText}>
+                    <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
                       {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
                     </Text>
                   </View>
-                  <Text style={styles.productName} numberOfLines={2}>
+                  <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>
                     {item.title}
                   </Text>
-                  <Text style={styles.productPrice}>{formatPriceLabel(item.price)}</Text>
+                  <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{formatPriceLabel(item.price)}</Text>
                   <View style={styles.sellerInfo}>
                     {item.seller_profile_image ? (
                       <Image 
@@ -244,16 +265,16 @@ export default function DiscoverScreen({ navigation }) {
                       />
                     ) : (
                       <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                        <Ionicons name="person" size={12} color="#FF6B35" />
+                        <Ionicons name="person" size={12} color={theme.primary} />
                       </View>
                     )}
-                    <Text style={styles.sellerName}>{item.seller_name || 'Unknown'}</Text>
+                    <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{item.seller_name || 'Unknown'}</Text>
                   </View>
                 </TouchableOpacity>
               ))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>More listings coming soon</Text>
+                <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>More listings coming soon</Text>
               </View>
             )}
             {listings.length > 5 && (
@@ -261,8 +282,8 @@ export default function DiscoverScreen({ navigation }) {
                 style={styles.viewMoreArrow}
                 onPress={() => navigation.navigate('RecommendedForYou')}
               >
-                <Text style={styles.arrowSymbol}>→</Text>
-                <Text style={styles.viewMoreText}>Click to view more</Text>
+                <Text style={[styles.arrowSymbol, { color: theme.primary }]}>→</Text>
+                <Text style={[styles.viewMoreText, { color: theme.textMuted }]}>Click to view more</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -270,43 +291,43 @@ export default function DiscoverScreen({ navigation }) {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {
             // Already on Discover, do nothing
           }}
         >
-          <Ionicons name="home" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Home</Text>
+          <Ionicons name="home" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

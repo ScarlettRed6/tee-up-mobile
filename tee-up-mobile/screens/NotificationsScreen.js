@@ -6,6 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import styles from './styles/NotificationsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { NotificationsContext } from '../context/notificationsContext';
+import { ThemeContext } from '../context/themeContext';
 import { fetchListingById } from '../api/listingsApi';
 import { getConversations } from '../api/chatApi';
 
@@ -46,6 +47,7 @@ export default function NotificationsScreen({ navigation }) {
     markAllNotificationsAsRead,
     unreadCount,
   } = useContext(NotificationsContext);
+  const { theme } = useContext(ThemeContext);
   const [refreshing, setRefreshing] = useState(false);
   const [opening, setOpening] = useState(false);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
@@ -136,6 +138,26 @@ export default function NotificationsScreen({ navigation }) {
 
   const renderedNotifications = useMemo(() => notifications || [], [notifications]);
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
+    scrollView: { backgroundColor: theme.background },
+    notificationItem: { backgroundColor: theme.card },
+    notificationItemOdd: { backgroundColor: theme.backgroundAlt },
+    notificationItemEven: { backgroundColor: theme.card },
+    notificationItemUnread: { 
+      backgroundColor: theme.mode === 'dark' 
+        ? 'rgba(255, 107, 53, 0.15)' 
+        : '#FFF8F3' 
+    },
+    notificationMessage: { color: theme.text },
+    timestamp: { color: theme.textMuted },
+    emptyStateText: { color: theme.textMuted },
+    markAllText: { color: theme.text },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   const renderNotificationItem = (notification, index) => {
     const isOdd = index % 2 !== 0;
     const iconMeta = ICON_MAP[notification.type] || ICON_MAP.default;
@@ -148,8 +170,9 @@ export default function NotificationsScreen({ navigation }) {
         key={key}
         style={[
           styles.notificationItem,
-          isOdd ? styles.notificationItemOdd : styles.notificationItemEven,
-          isUnread && styles.notificationItemUnread,
+          dynamicStyles.notificationItem,
+          isOdd ? [styles.notificationItemOdd, dynamicStyles.notificationItemOdd] : [styles.notificationItemEven, dynamicStyles.notificationItemEven],
+          isUnread && [styles.notificationItemUnread, dynamicStyles.notificationItemUnread],
         ]}
         activeOpacity={0.7}
         onPress={() => handleNotificationPress(notification)}
@@ -162,34 +185,34 @@ export default function NotificationsScreen({ navigation }) {
         </View>
 
         <View style={styles.notificationContent}>
-          <Text style={styles.notificationMessage}>{notification.message}</Text>
-          {timestamp ? <Text style={styles.timestamp}>{timestamp}</Text> : null}
+          <Text style={[styles.notificationMessage, dynamicStyles.notificationMessage]}>{notification.message}</Text>
+          {timestamp ? <Text style={[styles.timestamp, dynamicStyles.timestamp]}>{timestamp}</Text> : null}
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header Section */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <View style={styles.headerTopRow}>
           <View style={styles.headerLeft}>
-            <Text style={styles.pageTitle}>Notification</Text>
+            <Text style={[styles.pageTitle, dynamicStyles.pageTitle]}>Notification</Text>
           </View>
           <View style={styles.headerIconRow}>
             <TouchableOpacity 
               style={styles.headerIcon}
               activeOpacity={0.7}
             >
-              <Ionicons name="people-outline" size={24} color="#000" />
+              <Ionicons name="people-outline" size={24} color={theme.text} />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerIcon}
               activeOpacity={0.7}
               onPress={() => navigation.navigate('SavedListings')}
             >
-              <Ionicons name="heart-outline" size={24} color="#000" />
+              <Ionicons name="heart-outline" size={24} color={theme.text} />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.headerIcon}
@@ -197,7 +220,7 @@ export default function NotificationsScreen({ navigation }) {
               onPress={() => navigateToBottomNav(navigation, 'Profile')}
             >
               <View style={styles.profileAvatar}>
-                <Ionicons name="person" size={18} color="#FF6B35" />
+                <Ionicons name="person" size={18} color={theme.primary} />
               </View>
             </TouchableOpacity>
           </View>
@@ -212,11 +235,12 @@ export default function NotificationsScreen({ navigation }) {
             <Ionicons
               name="checkmark-done-outline"
               size={18}
-              color={unreadCount ? '#FF6B35' : '#D1D5DB'}
+              color={unreadCount ? theme.primary : theme.textMuted}
             />
             <Text
               style={[
                 styles.markAllText,
+                dynamicStyles.markAllText,
                 !unreadCount && styles.markAllTextDisabled,
               ]}
             >
@@ -228,20 +252,20 @@ export default function NotificationsScreen({ navigation }) {
 
       {/* Notification List */}
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#FF6B35"
+            tintColor={theme.primary}
           />
         }
       >
         {notificationsLoading && renderedNotifications.length === 0 ? (
           <View style={styles.loadingState}>
-            <ActivityIndicator size="large" color="#FF6B35" />
+            <ActivityIndicator size="large" color={theme.primary} />
           </View>
         ) : renderedNotifications.length > 0 ? (
           renderedNotifications.map((notification, index) =>
@@ -249,32 +273,32 @@ export default function NotificationsScreen({ navigation }) {
           )
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="notifications-outline" size={64} color="#999" />
-            <Text style={styles.emptyStateText}>No notifications yet</Text>
+            <Ionicons name="notifications-outline" size={64} color={theme.textMuted} />
+            <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No notifications yet</Text>
           </View>
         )}
         {opening && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#FF6B35" />
+            <ActivityIndicator size="large" color={theme.primary} />
           </View>
         )}
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Ionicons name="home-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
           {inboxUnreadCount > 0 && (
             <View style={styles.badgeContainer}>
               <Text style={styles.badgeText}>
@@ -287,15 +311,15 @@ export default function NotificationsScreen({ navigation }) {
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {}}
         >
-          <Ionicons name="notifications" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Notifications</Text>
+          <Ionicons name="notifications" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Notifications</Text>
           {unreadCount > 0 && (
             <View style={styles.badgeContainer}>
               <Text style={styles.badgeText}>
@@ -308,8 +332,8 @@ export default function NotificationsScreen({ navigation }) {
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

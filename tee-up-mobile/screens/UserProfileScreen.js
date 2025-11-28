@@ -9,6 +9,7 @@ import { fetchUserListings } from '../api/listingsApi';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { followUser, unfollowUser, getFollowerCount, getFollowStatus } from '../api/followerApi';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -28,6 +29,7 @@ export default function UserProfileScreen({ navigation, route }) {
   const initialFilters = route?.params?.filters || {};
   
   const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [user, setUser] = useState(userFromParams || null);
   const [userListings, setUserListings] = useState([]);
@@ -69,7 +71,7 @@ export default function UserProfileScreen({ navigation, route }) {
           key={`profile-rating-star-${i}`}
           name={iconName}
           size={size}
-          color={iconName === 'star-outline' ? '#D1D5DB' : '#FFD700'}
+          color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
           style={{ marginRight: i === 5 ? 0 : 3 }}
         />
       );
@@ -310,6 +312,60 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
   const reviewCount = Number(ratingSummary?.total_raters || 0);
   const hasReviews = reviewCount > 0;
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    scrollView: { backgroundColor: theme.background },
+    scrollContent: { backgroundColor: 'transparent' },
+    profileSection: { 
+      backgroundColor: 'transparent',
+      borderRadius: 0,
+      borderWidth: 0,
+      borderColor: 'transparent',
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      shadowColor: 'transparent',
+      shadowOffset: { width: 0, height: 0 },
+      elevation: 0,
+    },
+    username: { color: theme.text },
+    statText: { color: theme.textMuted },
+    bioSection: { 
+      backgroundColor: 'transparent',
+      borderRadius: 0,
+      borderWidth: 0,
+      borderColor: 'transparent',
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      shadowColor: 'transparent',
+      shadowOffset: { width: 0, height: 0 },
+      elevation: 0,
+    },
+    bioText: { color: theme.text },
+    searchBar: { backgroundColor: 'transparent' },
+    searchInput: { color: theme.text },
+    filterButton: { backgroundColor: 'transparent' },
+    filterButtonText: { color: theme.text },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    sellerName: { color: theme.textMuted },
+    emptyStateText: { color: theme.textMuted },
+    reviewsSection: { backgroundColor: 'transparent' },
+    reviewsTitle: { color: theme.text },
+    reviewCard: { backgroundColor: theme.backgroundAlt },
+    reviewText: { color: theme.text },
+    reviewAuthor: { color: theme.text },
+    reviewDate: { color: theme.textMuted },
+    modalOverlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+    modalContent: { backgroundColor: theme.card },
+    modalTitle: { color: theme.text },
+    modalOption: { backgroundColor: theme.card },
+    modalOptionText: { color: theme.text },
+    modalOptionSelected: { backgroundColor: theme.backgroundAlt },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   // Filter and sort products
   const filteredAndSortedProducts = React.useMemo(() => {
     console.log('Filtering products - userListings length:', userListings.length);
@@ -413,7 +469,7 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     return (
       <TouchableOpacity
         key={item.id}
-        style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
+        style={[styles.productCard, dynamicStyles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
         onPress={() => navigation.navigate('ProductDetail', {
           product: {
             listing_id: item.id,
@@ -454,19 +510,19 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
           />
         ) : (
           <View style={styles.productImagePlaceholder}>
-            <Ionicons name="image-outline" size={24} color="#999" />
-            <Text style={styles.imagePlaceholderText}>
+            <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+            <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
               {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
             </Text>
           </View>
         )}
-        <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.productPrice}>{item.price}</Text>
+        <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>{item.name}</Text>
+        <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{item.price}</Text>
         <View style={styles.sellerInfo}>
           <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-            <Ionicons name="person" size={12} color={item.sellerColor || user?.avatarColor || '#FF6B35'} />
+            <Ionicons name="person" size={12} color={item.sellerColor || user?.avatarColor || theme.primary} />
           </View>
-          <Text style={styles.sellerName}>@{item.seller}</Text>
+          <Text style={[styles.sellerName, dynamicStyles.sellerName]}>@{item.seller}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -514,20 +570,24 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
   // Render stars based on rating
   // Show loading state
   if (loading) {
+    const loadingStyles = {
+      container: { backgroundColor: theme.background },
+      header: { backgroundColor: theme.background },
+    };
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View style={[styles.container, loadingStyles.container]}>
+        <View style={[styles.header, loadingStyles.header]}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#FF6B35" />
-          <Text style={{ marginTop: 16, color: '#666' }}>Loading profile...</Text>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={{ marginTop: 16, color: theme.textMuted }}>Loading profile...</Text>
         </View>
       </View>
     );
@@ -535,24 +595,28 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
 
   // Show error state
   if (error || !user) {
+    const errorStyles = {
+      container: { backgroundColor: theme.background },
+      header: { backgroundColor: theme.background },
+    };
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View style={[styles.container, errorStyles.container]}>
+        <View style={[styles.header, errorStyles.header]}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Ionicons name="alert-circle-outline" size={48} color="#FF6B35" />
-          <Text style={{ marginTop: 16, color: '#666', textAlign: 'center' }}>
+          <Ionicons name="alert-circle-outline" size={48} color={theme.primary} />
+          <Text style={{ marginTop: 16, color: theme.textMuted, textAlign: 'center' }}>
             {error || 'User not found'}
           </Text>
           <TouchableOpacity
-            style={{ marginTop: 20, padding: 12, backgroundColor: '#FF6B35', borderRadius: 8 }}
+            style={{ marginTop: 20, padding: 12, backgroundColor: theme.primary, borderRadius: 8 }}
             onPress={() => navigation.goBack()}
           >
             <Text style={{ color: '#FFF', fontWeight: '600' }}>Go Back</Text>
@@ -565,25 +629,25 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
   const isOwnProfile = currentUserId && user?.id && Number(currentUserId) === Number(user.id);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header with Back Button - No Settings Icon */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
+        contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Summary Card */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, dynamicStyles.profileSection, { backgroundColor: 'transparent' }]}>
           <View style={styles.profilePhotoContainer}>
             {user.profile_image ? (
               <Image 
@@ -602,12 +666,12 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
             )}
           </View>
           
-          <Text style={styles.username}>{user.username || user.name}</Text>
+          <Text style={[styles.username, dynamicStyles.username]}>{user.username || user.name}</Text>
           
           <View style={styles.statsContainer}>
-            <Text style={styles.statText}>Active Listings: {user.activeListings}</Text>
-            <Text style={styles.statText}>{followersCount} follower{followersCount === 1 ? '' : 's'}</Text>
-            <Text style={styles.statText}>{user.itemsSold} items sold</Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>Active Listings: {user.activeListings}</Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>{followersCount} follower{followersCount === 1 ? '' : 's'}</Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>{user.itemsSold} items sold</Text>
           </View>
 
           {!isOwnProfile && (
@@ -651,19 +715,19 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         </View>
 
         {recentRatings.length > 0 && (
-          <View style={styles.reviewsSection}>
+          <View style={[styles.reviewsSection, dynamicStyles.reviewsSection]}>
             <View style={styles.reviewsHeader}>
-              <Text style={styles.reviewsTitle}>Recent Reviews</Text>
+              <Text style={[styles.reviewsTitle, dynamicStyles.reviewsTitle]}>Recent Reviews</Text>
             </View>
             {recentRatings.map((rating, idx) => (
-              <View key={`${rating.created_at}-${idx}`} style={styles.reviewCard}>
+              <View key={`${rating.created_at}-${idx}`} style={[styles.reviewCard, dynamicStyles.reviewCard]}>
                 <View style={styles.reviewHeader}>
-                  <Ionicons name="person-circle" size={30} color="#FF6B35" />
+                  <Ionicons name="person-circle" size={30} color={theme.primary} />
                   <View style={{ marginLeft: 8, flex: 1 }}>
-                    <Text style={styles.reviewAuthor}>
+                    <Text style={[styles.reviewAuthor, dynamicStyles.reviewAuthor]}>
                       {rating.reviewer_name || `Buyer ${idx + 1}`}
                     </Text>
-                    <Text style={styles.reviewDate}>
+                    <Text style={[styles.reviewDate, dynamicStyles.reviewDate]}>
                       {rating.created_at ? new Date(rating.created_at).toLocaleDateString() : 'Recently'}
                     </Text>
                   </View>
@@ -673,35 +737,35 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
                   </View>
                 </View>
                 {rating.review ? (
-                  <Text style={styles.reviewText}>{rating.review}</Text>
+                  <Text style={[styles.reviewText, dynamicStyles.reviewText]}>{rating.review}</Text>
                 ) : (
-                  <Text style={styles.reviewTextMuted}>No written review provided.</Text>
+                  <Text style={[styles.reviewTextMuted, { color: theme.textMuted }]}>No written review provided.</Text>
                 )}
               </View>
             ))}
           </View>
         )}
         {recentRatings.length === 0 && (
-          <View style={styles.reviewsSection}>
-            <Text style={styles.reviewTextMuted}>No reviews yet for this seller.</Text>
+          <View style={[styles.reviewsSection, dynamicStyles.reviewsSection]}>
+            <Text style={[styles.reviewTextMuted, { color: theme.textMuted }]}>No reviews yet for this seller.</Text>
           </View>
         )}
 
         {/* Bio Section */}
-        <View style={styles.bioSection}>
-          <Text style={styles.bioText}>
+        <View style={[styles.bioSection, dynamicStyles.bioSection, { backgroundColor: 'transparent' }]}>
+          <Text style={[styles.bioText, dynamicStyles.bioText]}>
             {user.bio}
           </Text>
         </View>
 
         {/* Search and Filters */}
         <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={18} color="#666" style={styles.searchIcon} />
+          <View style={[styles.searchBar, dynamicStyles.searchBar]}>
+            <Ionicons name="search-outline" size={18} color={theme.textMuted} style={styles.searchIcon} />
             <TextInput
               placeholder="Search seller's listing."
-              placeholderTextColor="#999"
-              style={styles.searchInput}
+              placeholderTextColor={theme.textMuted}
+              style={[styles.searchInput, dynamicStyles.searchInput]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -709,17 +773,17 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
           
           <View style={styles.filterButtons}>
             <TouchableOpacity 
-              style={[styles.filterButton, { marginRight: 12 }]}
+              style={[styles.filterButton, dynamicStyles.filterButton, { marginRight: 12 }]}
               onPress={handleFilterPress}
             >
-              <Text style={styles.filterButtonText}>Filters</Text>
+              <Text style={[styles.filterButtonText, dynamicStyles.filterButtonText]}>Filters</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.filterButton}
+              style={[styles.filterButton, dynamicStyles.filterButton]}
               onPress={() => setShowSortModal(true)}
             >
-              <Text style={styles.filterButtonText}>Sort by</Text>
-              <Ionicons name="chevron-down" size={16} color="#000" style={{ marginLeft: 4 }} />
+              <Text style={[styles.filterButtonText, dynamicStyles.filterButtonText]}>Sort by</Text>
+              <Ionicons name="chevron-down" size={16} color={theme.text} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
         </View>
@@ -730,9 +794,9 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
             {filteredAndSortedProducts.length > 0 ? (
               filteredAndSortedProducts.map((product, index) => renderProductCard(product, index))
             ) : (
-              <View style={styles.emptyState}>
-                <Ionicons name="cube-outline" size={48} color="#999" style={{ marginBottom: 12 }} />
-                <Text style={styles.emptyStateText}>
+          <View style={styles.emptyState}>
+            <Ionicons name="cube-outline" size={48} color={theme.textMuted} style={{ marginBottom: 12 }} />
+            <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>
                   {loading ? 'Loading listings...' : 
                    searchQuery || selectedCategory !== 'All' || selectedCondition || selectedFlex || selectedHand
                      ? 'No products match your filters' 
@@ -753,76 +817,78 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         animationType="fade"
         onRequestClose={() => setShowSortModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable 
-            style={styles.modalOverlayBackdrop}
-            onPress={() => setShowSortModal(false)}
-          />
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sort by</Text>
-            {sortOptions.map((option) => (
-              <Pressable
-                key={option.value}
-                style={[
-                  styles.modalOption,
-                  sortBy === option.value && styles.modalOptionSelected
-                ]}
-                onPress={() => {
-                  setSortBy(option.value);
-                  setShowSortModal(false);
-                }}
-              >
-                <Text style={[
-                  styles.modalOptionText,
-                  sortBy === option.value && styles.modalOptionTextSelected
-                ]}>
-                  {option.label}
-                </Text>
-                {sortBy === option.value && (
-                  <Ionicons name="checkmark" size={20} color="#FF6B35" />
-                )}
-              </Pressable>
-            ))}
+          <View style={[styles.modalOverlay, dynamicStyles.modalOverlay]}>
+            <Pressable 
+              style={styles.modalOverlayBackdrop}
+              onPress={() => setShowSortModal(false)}
+            />
+            <View style={[styles.modalContent, dynamicStyles.modalContent]}>
+              <Text style={[styles.modalTitle, dynamicStyles.modalTitle]}>Sort by</Text>
+              {sortOptions.map((option) => (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.modalOption,
+                    dynamicStyles.modalOption,
+                    sortBy === option.value && styles.modalOptionSelected
+                  ]}
+                  onPress={() => {
+                    setSortBy(option.value);
+                    setShowSortModal(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.modalOptionText,
+                    dynamicStyles.modalOptionText,
+                    sortBy === option.value && styles.modalOptionTextSelected
+                  ]}>
+                    {option.label}
+                  </Text>
+                  {sortBy === option.value && (
+                    <Ionicons name="checkmark" size={20} color={theme.primary} />
+                  )}
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Ionicons name="home-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

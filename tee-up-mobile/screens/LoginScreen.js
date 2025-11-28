@@ -15,12 +15,14 @@ const GOOGLE_ANDROID_CLIENT_ID = ENV_ANDROID_ID || DEFAULT_CLIENT_ID;
 const GOOGLE_IOS_CLIENT_ID = ENV_IOS_ID || DEFAULT_CLIENT_ID;
 import styles from './styles/LoginScreen.styles';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 
 // Complete the OAuth flow
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }) {
   const { login, loginWithGoogle } = useContext(authContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
@@ -235,26 +237,75 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    heroCard: { backgroundColor: theme.primary },
+    formCard: { backgroundColor: theme.card },
+    label: { color: theme.text },
+    input: { 
+      borderColor: errors.email || errors.password ? theme.error : theme.border,
+      backgroundColor: errors.email || errors.password ? (theme.mode === 'dark' ? '#3A2A2A' : '#FFF6F2') : (theme.mode === 'dark' ? '#333333' : '#F9FAFB'),
+      color: theme.text,
+    },
+    inputError: {
+      borderColor: theme.error,
+      backgroundColor: theme.mode === 'dark' ? '#3A2A2A' : '#FFF6F2',
+    },
+    rememberText: { color: theme.text },
+    forgot: { color: theme.primary },
+    primaryButton: { backgroundColor: theme.mode === 'dark' ? theme.text : '#111827' },
+    primaryButtonText: { color: theme.mode === 'dark' ? theme.background : '#FFF' },
+    errorText: { color: theme.error },
+    errorContainer: {
+      backgroundColor: theme.mode === 'dark' ? '#3A2A2A' : '#FFF1ED',
+      borderColor: theme.mode === 'dark' ? '#5A3A3A' : '#FFB199',
+    },
+    dividerLine: { backgroundColor: theme.border },
+    dividerText: { color: theme.textMuted },
+    googleButton: { 
+      backgroundColor: theme.card,
+      borderColor: theme.border,
+    },
+    googleButtonText: { color: theme.text },
+    bottomMuted: { color: theme.textMuted },
+    bottomLink: { color: theme.primary },
+  };
+
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
+      {/* Theme Toggle Button */}
+      <View style={styles.themeToggleContainer}>
+        <TouchableOpacity
+          style={[styles.themeToggleButton, { backgroundColor: theme.card }]}
+          onPress={toggleTheme}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name={theme.mode === 'dark' ? 'sunny' : 'moon'} 
+            size={22} 
+            color={theme.primary} 
+          />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, dynamicStyles.heroCard]}>
           <Text style={styles.heroTitle}>Welcome back 👋</Text>
           <Text style={styles.heroSubtitle}>Sign in to keep trading gear with trusted golfers.</Text>
         </View>
 
-        <View style={styles.formCard}>
+        <View style={[styles.formCard, dynamicStyles.formCard]}>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email / Username</Text>
+            <Text style={[styles.label, dynamicStyles.label]}>Email / Username</Text>
             <TextInput
               value={email}
               onChangeText={(text) => {
@@ -264,20 +315,20 @@ export default function LoginScreen({ navigation }) {
                 }
               }}
               placeholder="name@email.com"
-              style={[styles.input, errors.email && styles.inputError]}
-              placeholderTextColor="#9CA3AF"
+              style={[styles.input, dynamicStyles.input, errors.email && styles.inputError]}
+              placeholderTextColor={theme.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
               returnKeyType="next"
               blurOnSubmit={false}
             />
             {errors.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.email}</Text>
             )}
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, dynamicStyles.label]}>Password</Text>
             <TextInput
               value={password}
               onChangeText={(text) => {
@@ -288,68 +339,68 @@ export default function LoginScreen({ navigation }) {
               }}
               placeholder="••••••••"
               secureTextEntry
-              style={[styles.input, errors.password && styles.inputError]}
-              placeholderTextColor="#9CA3AF"
+              style={[styles.input, dynamicStyles.input, errors.password && styles.inputError]}
+              placeholderTextColor={theme.textMuted}
               returnKeyType="done"
               onSubmitEditing={handleLogin}
             />
             {errors.password && (
-              <Text style={styles.errorText}>{errors.password}</Text>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.password}</Text>
             )}
           </View>
 
           {errors.general && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{errors.general}</Text>
+            <View style={[styles.errorContainer, dynamicStyles.errorContainer]}>
+              <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.general}</Text>
             </View>
           )}
 
           <View style={styles.rowBetween}>
             <View style={styles.rowLeft}>
-              <View style={styles.checkbox} />
-              <Text style={styles.rememberText}>Remember me</Text>
+              <View style={[styles.checkbox, { borderColor: theme.text }]} />
+              <Text style={[styles.rememberText, dynamicStyles.rememberText]}>Remember me</Text>
             </View>
             <Pressable onPress={() => {
               Keyboard.dismiss();
               navigation.navigate('ForgotPasswordRequest');
             }}>
-              <Text style={styles.forgot}>Forgot Password?</Text>
+              <Text style={[styles.forgot, dynamicStyles.forgot]}>Forgot Password?</Text>
             </Pressable>
           </View>
 
           <TouchableOpacity 
             activeOpacity={0.9} 
-            style={[styles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
+            style={[styles.primaryButton, dynamicStyles.primaryButton, (!isFormValid || isSubmitting) && styles.primaryButtonDisabled]}
             onPress={handleLogin}
             disabled={!isFormValid || isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator size="small" color="#FFF" />
+              <ActivityIndicator size="small" color={theme.mode === 'dark' ? theme.background : '#FFF'} />
             ) : (
-              <Text style={styles.primaryButtonText}>Log in</Text>
+              <Text style={[styles.primaryButtonText, dynamicStyles.primaryButtonText]}>Log in</Text>
             )}
           </TouchableOpacity>
 
           {isGoogleSignInAvailable && (
             <>
               <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
+                <Text style={[styles.dividerText, dynamicStyles.dividerText]}>or continue with</Text>
+                <View style={[styles.dividerLine, dynamicStyles.dividerLine]} />
               </View>
 
               <TouchableOpacity 
                 activeOpacity={0.8} 
-                style={[styles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
+                style={[styles.googleButton, dynamicStyles.googleButton, isGoogleLoading && styles.googleButtonDisabled]}
                 onPress={handleGooglePress}
                 disabled={isGoogleLoading}
               >
                 {isGoogleLoading ? (
-                  <ActivityIndicator size="small" color="#111" />
+                  <ActivityIndicator size="small" color={theme.text} />
                 ) : (
                   <>
-                    <Ionicons name="logo-google" size={20} color="#111" style={styles.googleIcon} />
-                    <Text style={styles.googleButtonText}>Continue with Google</Text>
+                    <Ionicons name="logo-google" size={20} color={theme.text} style={styles.googleIcon} />
+                    <Text style={[styles.googleButtonText, dynamicStyles.googleButtonText]}>Continue with Google</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -358,12 +409,12 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         <View style={styles.bottomRow}>
-          <Text style={styles.bottomMuted}>Don't have an account?</Text>
+          <Text style={[styles.bottomMuted, dynamicStyles.bottomMuted]}>Don't have an account?</Text>
           <Pressable onPress={() => {
             Keyboard.dismiss();
             navigation.replace('Signup');
           }}>
-            <Text style={styles.bottomLink}> Sign up</Text>
+            <Text style={[styles.bottomLink, dynamicStyles.bottomLink]}> Sign up</Text>
           </Pressable>
         </View>
       </ScrollView>

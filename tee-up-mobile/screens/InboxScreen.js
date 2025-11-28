@@ -8,11 +8,13 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { getConversations } from '../api/chatApi';
 import { authContext } from '../context/authContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { ThemeContext } from '../context/themeContext';
 
 export default function InboxScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
   const { unreadCount: notificationsUnreadCount } = useContext(NotificationsContext);
+  const { theme } = useContext(ThemeContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,38 +140,50 @@ export default function InboxScreen({ navigation, route }) {
     });
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    searchContainer: { backgroundColor: theme.background },
+    searchBar: { backgroundColor: theme.card },
+    searchInput: { color: theme.text },
+    scrollView: { backgroundColor: theme.background },
+    chatCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    userInfo: { color: theme.textMuted },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
+      <View style={[styles.container, dynamicStyles.container]}>
+        <View style={[styles.searchContainer, dynamicStyles.searchContainer]}>
+          <View style={[styles.searchBar, dynamicStyles.searchBar]}>
+            <Ionicons name="search-outline" size={20} color={theme.textMuted} style={styles.searchIcon} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, dynamicStyles.searchInput]}
               placeholder="Search user or listing"
-              placeholderTextColor="#888"
+              placeholderTextColor={theme.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#FF6B35" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
+      <View style={[styles.searchContainer, dynamicStyles.searchContainer]}>
+        <View style={[styles.searchBar, dynamicStyles.searchBar]}>
+          <Ionicons name="search-outline" size={20} color={theme.textMuted} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, dynamicStyles.searchInput]}
             placeholder="Search user or listing"
-            placeholderTextColor="#888"
+            placeholderTextColor={theme.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -178,22 +192,22 @@ export default function InboxScreen({ navigation, route }) {
 
       {/* Chat List */}
       <ScrollView 
-        style={styles.scrollView}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {error ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ color: '#FF6B35', marginBottom: 10 }}>{error}</Text>
+            <Text style={{ color: theme.primary, marginBottom: 10 }}>{error}</Text>
             <TouchableOpacity onPress={fetchConversations}>
-              <Text style={{ color: '#FF6B35' }}>Retry</Text>
+              <Text style={{ color: theme.primary }}>Retry</Text>
             </TouchableOpacity>
           </View>
         ) : filteredChats.length > 0 ? (
           filteredChats.map((chat) => (
             <TouchableOpacity
               key={chat.id}
-              style={styles.chatCard}
+              style={[styles.chatCard, dynamicStyles.chatCard]}
               onPress={() => handleChatPress(chat)}
               activeOpacity={0.7}
             >
@@ -212,20 +226,20 @@ export default function InboxScreen({ navigation, route }) {
                     }}
                   />
                 ) : (
-                  <Ionicons name="golf" size={24} color="#666" />
+                  <Ionicons name="golf" size={24} color={theme.textMuted} />
                 )}
               </View>
 
               {/* Chat Info */}
               <View style={styles.chatInfo}>
-                <Text style={styles.productName} numberOfLines={1}>
+                <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={1}>
                   {chat.productName}
                 </Text>
-                <Text style={styles.userInfo}>
+                <Text style={[styles.userInfo, dynamicStyles.userInfo]}>
                   {chat.username} - {chat.timestamp}
                 </Text>
                 {chat.lastMessage && (
-                  <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }} numberOfLines={1}>
+                  <Text style={{ fontSize: 12, color: theme.textMuted, marginTop: 4 }} numberOfLines={1}>
                     {chat.lastMessage}
                   </Text>
                 )}
@@ -234,31 +248,31 @@ export default function InboxScreen({ navigation, route }) {
           ))
         ) : (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <Ionicons name="chatbubbles-outline" size={48} color="#999" />
-            <Text style={{ color: '#999', marginTop: 12, fontSize: 16 }}>
+            <Ionicons name="chatbubbles-outline" size={48} color={theme.textMuted} />
+            <Text style={{ color: theme.textMuted, marginTop: 12, fontSize: 16 }}>
               No conversations yet
             </Text>
-            <Text style={{ color: '#999', marginTop: 4, fontSize: 14, textAlign: 'center' }}>
+            <Text style={{ color: theme.textMuted, marginTop: 4, fontSize: 14, textAlign: 'center' }}>
               Start a conversation by clicking the chat button on a listing
             </Text>
           </View>
         )}
       </ScrollView>
 
-      <View style={[styles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Ionicons name="home-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {}}
         >
-          <Ionicons name="chatbubble" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Inbox</Text>
+          <Ionicons name="chatbubble" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Inbox</Text>
           {inboxUnreadCount > 0 && (
             <View style={styles.badgeContainer}>
               <Text style={styles.badgeText}>
@@ -271,15 +285,15 @@ export default function InboxScreen({ navigation, route }) {
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
           {notificationsUnreadCount > 0 && (
             <View style={styles.badgeContainer}>
               <Text style={styles.badgeText}>
@@ -292,8 +306,8 @@ export default function InboxScreen({ navigation, route }) {
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

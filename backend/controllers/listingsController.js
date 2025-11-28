@@ -137,6 +137,20 @@ export async function updateListingItem(req, res) {
         
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
 
+        // Normalize status to lowercase to match database constraint
+        // Allowed values: "available", "pending", "sold"
+        if (status) {
+            status = status.toLowerCase();
+            const allowed = ["available", "pending", "sold"];
+            if (!allowed.includes(status)) {
+                // If invalid status, keep the existing status or default to "available"
+                status = listing.status || "available";
+            }
+        } else {
+            // If no status provided, keep the existing status
+            status = listing.status || "available";
+        }
+
         // Parse existingPhotos if it's a JSON string (from FormData)
         if (typeof existingPhotos === 'string') {
             try {

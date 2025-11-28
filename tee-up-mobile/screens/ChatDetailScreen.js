@@ -5,6 +5,7 @@ import styles from './styles/ChatDetailScreen.styles';
 import { getMessages, findOrCreateConversation, uploadChatImage } from '../api/chatApi';
 import { getSocket, disconnectSocket } from '../utils/socketClient';
 import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
 import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
 import { rateUser } from '../api/ratingApi';
@@ -14,6 +15,7 @@ const MIN_MESSAGES_FOR_RATING = 6;
 
 export default function ChatDetailScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [conversation, setConversation] = useState(null);
@@ -775,15 +777,15 @@ export default function ChatDetailScreen({ navigation, route }) {
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <View style={styles.topBarCenter}>
-            <Text style={styles.username}>Loading...</Text>
+            <Text style={[styles.username, { color: theme.text }]}>Loading...</Text>
           </View>
           <View style={styles.profileButton} />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#FF6B35" />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       </View>
     );
@@ -791,17 +793,17 @@ export default function ChatDetailScreen({ navigation, route }) {
 
   if (!conversation) {
     return (
-      <View style={styles.container}>
-        <View style={styles.topBar}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.topBar, { backgroundColor: theme.card }]}>
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={24} color="#000" />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <View style={styles.topBarCenter}>
-            <Text style={styles.username}>Error</Text>
+            <Text style={[styles.username, { color: theme.text }]}>Error</Text>
           </View>
           <View style={styles.profileButton} />
         </View>
@@ -814,23 +816,41 @@ export default function ChatDetailScreen({ navigation, route }) {
     );
   }
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    topBar: { backgroundColor: theme.card },
+    username: { color: theme.text },
+    productNameTop: { color: theme.text },
+    productPriceTop: { color: theme.primary },
+    messagesContainer: { backgroundColor: theme.background },
+    messageBubbleMe: { backgroundColor: theme.primary },
+    messageBubbleOther: { backgroundColor: theme.card },
+    messageText: { color: theme.mode === 'dark' ? '#FFF' : '#000' },
+    messageTimestamp: { color: theme.textMuted },
+    inputBar: { backgroundColor: theme.card },
+    input: { 
+      backgroundColor: theme.mode === 'dark' ? '#333333' : '#F9FAFB',
+      color: theme.text,
+    },
+  };
+
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, dynamicStyles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* Top Bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, dynamicStyles.topBar]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <View style={styles.topBarCenter}>
-          <Text style={styles.username} numberOfLines={1}>
+          <Text style={[styles.username, dynamicStyles.username]} numberOfLines={1}>
             {conversation.other_user_name || 'User'}
           </Text>
           <View style={styles.productInfoTop}>
@@ -845,14 +865,14 @@ export default function ChatDetailScreen({ navigation, route }) {
               />
             ) : (
               <View style={styles.productThumbnailTop}>
-                <Ionicons name="golf" size={20} color="#666" />
+                <Ionicons name="golf" size={20} color={theme.textMuted} />
               </View>
             )}
             <View style={styles.productTextContainer}>
-              <Text style={styles.productNameTop} numberOfLines={1}>
+              <Text style={[styles.productNameTop, dynamicStyles.productNameTop]} numberOfLines={1}>
                 {conversation.listing_title || 'Product'}
               </Text>
-              <Text style={styles.productPriceTop}>
+              <Text style={[styles.productPriceTop, dynamicStyles.productPriceTop]}>
                 {typeof conversation.listing_price === 'number' 
                   ? `₱${conversation.listing_price.toLocaleString()}` 
                   : conversation.listing_price || '₱0'}
@@ -874,14 +894,14 @@ export default function ChatDetailScreen({ navigation, route }) {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="flag-outline" size={22} color="#000" />
+          <Ionicons name="flag-outline" size={22} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       {/* Chat Messages */}
       <ScrollView 
         ref={scrollViewRef}
-        style={styles.messagesContainer}
+        style={[styles.messagesContainer, dynamicStyles.messagesContainer]}
         contentContainerStyle={styles.messagesContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -933,7 +953,7 @@ export default function ChatDetailScreen({ navigation, route }) {
                         style={styles.avatarImage}
                       />
                     ) : (
-                      <Ionicons name="person" size={16} color="#666" />
+                      <Ionicons name="person" size={16} color={theme.textMuted} />
                     )}
                   </View>
                 )}
@@ -945,6 +965,7 @@ export default function ChatDetailScreen({ navigation, route }) {
                 ]}>
                   <Text style={[
                     styles.messageTimestamp,
+                    dynamicStyles.messageTimestamp,
                     isMyMessage ? styles.messageTimestampRight : styles.messageTimestampLeft
                   ]}>
                     {msg.timestamp}
@@ -954,7 +975,7 @@ export default function ChatDetailScreen({ navigation, route }) {
                     onPress={hasImage ? () => openImagePreview(msg.imageUrl) : undefined}
                     style={[
                     styles.messageBubble,
-                    isMyMessage ? styles.messageBubbleMe : styles.messageBubbleOther
+                    isMyMessage ? [styles.messageBubbleMe, dynamicStyles.messageBubbleMe] : [styles.messageBubbleOther, dynamicStyles.messageBubbleOther]
                   ]}
                   >
                     {hasImage && (
@@ -965,7 +986,7 @@ export default function ChatDetailScreen({ navigation, route }) {
                       />
                     )}
                     {hasText && (
-                      <Text style={styles.messageText}>{msg.text}</Text>
+                      <Text style={[styles.messageText, dynamicStyles.messageText]}>{msg.text}</Text>
                     )}
                   </BubbleComponent>
                 </View>
@@ -979,7 +1000,7 @@ export default function ChatDetailScreen({ navigation, route }) {
                         style={styles.avatarImage}
                       />
                     ) : (
-                      <Ionicons name="person" size={16} color="#666" />
+                      <Ionicons name="person" size={16} color={theme.textMuted} />
                     )}
                   </View>
                 )}
@@ -988,8 +1009,8 @@ export default function ChatDetailScreen({ navigation, route }) {
           })
         ) : (
           <View style={{ padding: 20, alignItems: 'center', marginTop: 40 }}>
-            <Ionicons name="chatbubbles-outline" size={48} color="#999" />
-            <Text style={{ color: '#999', marginTop: 12, fontSize: 16, textAlign: 'center' }}>
+            <Ionicons name="chatbubbles-outline" size={48} color={theme.textMuted} />
+            <Text style={{ color: theme.textMuted, marginTop: 12, fontSize: 16, textAlign: 'center' }}>
               {isNewConversation 
                 ? 'Start the conversation by sending a message'
                 : 'No messages yet'}
@@ -1000,7 +1021,7 @@ export default function ChatDetailScreen({ navigation, route }) {
       </ScrollView>
 
       {/* Message Input Bar */}
-      <View style={styles.inputBar}>
+      <View style={[styles.inputBar, dynamicStyles.inputBar]}>
         <TouchableOpacity 
           style={[
             styles.inputIcon,
@@ -1011,9 +1032,9 @@ export default function ChatDetailScreen({ navigation, route }) {
           disabled={uploadingImage}
         >
           {uploadingImage ? (
-            <ActivityIndicator size="small" color="#000" />
+            <ActivityIndicator size="small" color={theme.text} />
           ) : (
-            <Ionicons name="images-outline" size={22} color="#000" />
+            <Ionicons name="images-outline" size={22} color={theme.text} />
           )}
         </TouchableOpacity>
         <TouchableOpacity 
@@ -1025,12 +1046,12 @@ export default function ChatDetailScreen({ navigation, route }) {
           onPress={handleTakePhoto}
           disabled={uploadingImage}
         >
-          <Ionicons name="camera-outline" size={22} color="#000" />
+          <Ionicons name="camera-outline" size={22} color={theme.text} />
         </TouchableOpacity>
         <TextInput
-          style={styles.textInput}
+          style={[styles.textInput, dynamicStyles.input]}
           placeholder="Type Your Message"
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.textMuted}
           value={message}
           onChangeText={(text) => {
             setMessage(text);
@@ -1051,12 +1072,12 @@ export default function ChatDetailScreen({ navigation, route }) {
           disabled={message.trim().length === 0 || sending}
         >
           {sending ? (
-            <ActivityIndicator size="small" color="#000" />
+            <ActivityIndicator size="small" color={theme.text} />
           ) : (
             <Ionicons 
               name="send" 
               size={20} 
-              color={message.trim().length > 0 ? "#000" : "#999"} 
+              color={message.trim().length > 0 ? theme.text : theme.textMuted} 
             />
           )}
         </TouchableOpacity>
