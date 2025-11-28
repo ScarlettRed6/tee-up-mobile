@@ -862,10 +862,19 @@ export default function ChatDetailScreen({ navigation, route }) {
         </View>
         <TouchableOpacity 
           style={styles.profileButton}
-          onPress={handleViewProfile}
+          onPress={() => {
+            const otherUserId = resolvedOtherUserId;
+            if (otherUserId) {
+              navigation.navigate('Report', {
+                reportType: 'user',
+                userId: otherUserId,
+                userName: conversation?.other_user_name || conversation?.seller_name || conversation?.buyer_name || 'User'
+              });
+            }
+          }}
           activeOpacity={0.7}
         >
-          <Ionicons name="person-outline" size={22} color="#000" />
+          <Ionicons name="flag-outline" size={22} color="#000" />
         </TouchableOpacity>
       </View>
 

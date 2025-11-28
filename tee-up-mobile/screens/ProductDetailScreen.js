@@ -272,9 +272,13 @@ export default function ProductDetailScreen({ navigation, route }) {
         <TouchableOpacity 
           style={styles.reportButton}
           onPress={() => {
-            // Handle report functionality
-            console.log('Report button pressed');
-            // You can add navigation to a report screen or show an alert here
+            if (product?.listing_id) {
+              navigation.navigate('Report', {
+                reportType: 'listing',
+                listingId: product.listing_id,
+                listingTitle: product.title
+              });
+            }
           }}
           activeOpacity={0.7}
         >

@@ -17,6 +17,7 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import SellerReviewsScreen from '../screens/SellerReviewsScreen';
 import CategoryListingsScreen from '../screens/CategoryListingsScreen';
+import ReportScreen from '../screens/ReportScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -82,6 +83,7 @@ export default function AppStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="SellerReviews" component={SellerReviewsScreen} />
       <Stack.Screen name="CategoryListings" component={CategoryListingsScreen} />
+      <Stack.Screen name="Report" component={ReportScreen} />
     </Stack.Navigator>
   );
 }

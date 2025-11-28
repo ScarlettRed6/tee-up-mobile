@@ -1,9 +1,10 @@
 import pool from "../config/db.js";
 
-export async function addReport(reporter_id, listing_id, reason){
+export async function addReport(reporter_id, listing_id, reported_user_id, reason, photo_url){
     const result = await pool.query(
-        `INSERT INTO reports (reporter_id, reported_listing_id, reason)
-        VALUES ($1, $2, $3) RETURNING *`, [reporter_id, listing_id, reason]
+        `INSERT INTO reports (reporter_id, reported_listing_id, reported_user_id, reason, photo_url)
+        VALUES ($1, $2, $3, $4, $5) RETURNING *`, 
+        [reporter_id, listing_id || null, reported_user_id || null, reason, photo_url || null]
     );
     return result.rows[0];
 }
