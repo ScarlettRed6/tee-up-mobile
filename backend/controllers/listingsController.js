@@ -19,7 +19,7 @@ export async function createListing(req, res) {
         return res.status(401).json({ error: "User ID not found in token. Please log in again." });
     }
 
-    const { title, description, category, brand, condition, price, status } = req.body;
+    const { title, description, category, brand, condition, price, status, location } = req.body;
     
     try{
 
@@ -36,7 +36,7 @@ export async function createListing(req, res) {
         console.log("Listing data:", { title, category, condition, price });
         console.log("Photos URLs to save:", photosUrls);
         
-        const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photosUrls);
+        const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photosUrls, location);
         
         // Ensure photos are parsed correctly
         if (newListing.photos && typeof newListing.photos === 'string') {
@@ -130,7 +130,7 @@ export async function updateListingItem(req, res) {
     try{
         const { id } = req.params;
         const userId = req.user.id;
-        let { title, description, category, brand, condition, price, status, existingPhotos  } = req.body;
+        let { title, description, category, brand, condition, price, status, existingPhotos, location  } = req.body;
 
         const listing = await getListingById(id);
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
@@ -175,7 +175,8 @@ export async function updateListingItem(req, res) {
             }
         }
 
-        const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photosUrls);
+        console.log(`Location: ${location}`);
+        const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photosUrls, location);
         
         // Ensure photos are parsed correctly
         if (updatedListing.photos && typeof updatedListing.photos === 'string') {

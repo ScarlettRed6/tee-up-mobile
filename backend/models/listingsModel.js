@@ -1,11 +1,11 @@
 import pool from "../config/db.js";
 
 //Create a new listing
-export async function insertListing(user_id, title, description, category, brand, condition, price, status, photos){
+export async function insertListing(user_id, title, description, category, brand, condition, price, status, photos, location){
    const newListing = await pool.query(
-        `INSERT INTO listings (user_id, title, description, category, brand, condition, price, status, photos)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-        [user_id, title, description, category, brand, condition, price, status, photos]
+        `INSERT INTO listings (user_id, title, description, category, brand, condition, price, status, photos, location)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        [user_id, title, description, category, brand, condition, price, status, photos, location]
    );
    return newListing.rows[0];
 }
@@ -113,11 +113,11 @@ export async function getListingById(id) {
 }
 
 //UPDATES
-export async function updateListing(id, title, description, category, brand, condition, price, status, photos) {
+export async function updateListing(id, title, description, category, brand, condition, price, status, photos, location) {
     const result = await pool.query(
-        `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, condition = $5, price = $6, status = $7, photos = $8
-        WHERE listing_id = $9 RETURNING *`,
-        [title, description, category, brand, condition, price, status, photos, id]
+        `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, condition = $5, price = $6, status = $7, photos = $8, location = $9
+        WHERE listing_id = $10 RETURNING *`,
+        [title, description, category, brand, condition, price, status, photos, location, id]
     );
     return result.rows[0];
 }
