@@ -33,6 +33,7 @@ export default function ChatDetailScreen({ navigation, route }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
   const [lastRatingPromptCount, setLastRatingPromptCount] = useState(0);
+  const [hasRatedUser, setHasRatedUser] = useState(false);
 
   // Get route params
   const conversationId = route?.params?.conversationId;
@@ -173,6 +174,7 @@ export default function ChatDetailScreen({ navigation, route }) {
   useEffect(() => {
     setLastRatingPromptCount(0);
     setShowRatingPrompt(false);
+    setHasRatedUser(false); // Reset when conversation changes
   }, [conversationIdentifier]);
 
   // Initialize conversation and messages
@@ -504,7 +506,7 @@ export default function ChatDetailScreen({ navigation, route }) {
   }, [scrollToBottom]);
 
   useEffect(() => {
-    if (!resolvedOtherUserId || !conversationIdentifier) {
+    if (!resolvedOtherUserId || !conversationIdentifier || hasRatedUser) {
       setShowRatingPrompt(false);
       return;
     }
@@ -512,7 +514,7 @@ export default function ChatDetailScreen({ navigation, route }) {
     if (!showRatingPrompt && totalMessages - lastRatingPromptCount >= ratingThreshold) {
       setShowRatingPrompt(true);
     }
-  }, [messages.length, resolvedOtherUserId, conversationIdentifier, ratingThreshold, lastRatingPromptCount, showRatingPrompt]);
+  }, [messages.length, resolvedOtherUserId, conversationIdentifier, ratingThreshold, lastRatingPromptCount, showRatingPrompt, hasRatedUser]);
 
   const handleSubmitRating = async () => {
     if (!resolvedOtherUserId) return;
@@ -528,6 +530,8 @@ export default function ChatDetailScreen({ navigation, route }) {
         review: ratingReview.trim() || undefined,
       });
 
+      // Mark as rated and hide the prompt permanently
+      setHasRatedUser(true);
       setLastRatingPromptCount(messages.length);
       setShowRatingPrompt(false);
       setRatingReview('');
@@ -711,7 +715,7 @@ export default function ChatDetailScreen({ navigation, route }) {
   };
 
   const renderRatingPrompt = () => {
-    if (!showRatingPrompt || !resolvedOtherUserId) return null;
+    if (!showRatingPrompt || !resolvedOtherUserId || hasRatedUser) return null;
     const otherName = conversation?.other_user_name || 'this user';
 
     return (
