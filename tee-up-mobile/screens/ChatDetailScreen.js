@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useContext, useMemo, useCallback } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Keyboard, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/ChatDetailScreen.styles';
 import { getMessages, findOrCreateConversation, uploadChatImage } from '../api/chatApi';
 import { getSocket, disconnectSocket } from '../utils/socketClient';
@@ -16,6 +17,7 @@ const MIN_MESSAGES_FOR_RATING = 6;
 export default function ChatDetailScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [conversation, setConversation] = useState(null);
@@ -841,7 +843,7 @@ export default function ChatDetailScreen({ navigation, route }) {
   return (
     <KeyboardAvoidingView 
       style={[styles.container, dynamicStyles.container]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* Top Bar */}
@@ -906,7 +908,10 @@ export default function ChatDetailScreen({ navigation, route }) {
       <ScrollView 
         ref={scrollViewRef}
         style={[styles.messagesContainer, dynamicStyles.messagesContainer]}
-        contentContainerStyle={styles.messagesContent}
+        contentContainerStyle={[
+          styles.messagesContent,
+          { paddingBottom: Platform.OS === 'android' ? 20 : 20 }
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -1025,7 +1030,11 @@ export default function ChatDetailScreen({ navigation, route }) {
       </ScrollView>
 
       {/* Message Input Bar */}
-      <View style={[styles.inputBar, dynamicStyles.inputBar]}>
+      <View style={[
+        styles.inputBar, 
+        dynamicStyles.inputBar,
+        { paddingBottom: Math.max(insets.bottom, 10) }
+      ]}>
         <TouchableOpacity 
           style={[
             styles.inputIcon,

@@ -175,9 +175,9 @@ export default StyleSheet.create({
   // Input Bar
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: '#FFF',
-    paddingVertical: 10,
+    paddingTop: 10,
     paddingHorizontal: 14,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
@@ -186,6 +186,7 @@ export default StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: -2 },
     elevation: 8,
+    minHeight: 60,
   },
   inputIcon: {
     padding: 6,
@@ -200,8 +201,10 @@ export default StyleSheet.create({
     fontSize: 15,
     color: '#000',
     maxHeight: 100,
+    minHeight: 40,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    marginVertical: 4,
   },
   sendButton: {
     padding: 6,
