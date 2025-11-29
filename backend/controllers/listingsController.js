@@ -175,7 +175,6 @@ export async function updateListingItem(req, res) {
             }
         }
 
-        console.log(`Location: ${location}`);
         const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photosUrls, location);
         
         // Ensure photos are parsed correctly

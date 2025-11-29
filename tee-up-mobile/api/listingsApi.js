@@ -15,6 +15,10 @@ export const createListing = async (listingData, photos = []) => {
         formData.append('brand', listingData.brand);
     }
     
+    if (listingData.location) {
+        formData.append('location', listingData.location);
+    }
+    
     // Add photos - photos should be file objects with uri, type, name
     photos.forEach((photo, index) => {
         // Skip if photo is already a URL (from existing listings)
@@ -77,6 +81,10 @@ export const updateListing = async (listingId, listingData, photos = []) => {
     
     if (listingData.brand) {
         formData.append('brand', listingData.brand);
+    }
+    
+    if (listingData.location) {
+        formData.append('location', listingData.location);
     }
     
     // Separate existing photos (URLs) from new photos (files)

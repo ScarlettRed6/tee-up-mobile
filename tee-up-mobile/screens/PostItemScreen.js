@@ -54,6 +54,7 @@ export default function PostItemScreen({ navigation, route }) {
       setHand(listingData.hand || null);
       setCondition(listingData.condition || null);
       setDescription(listingData.description || '');
+      setLocation(listingData.location || '');
       // Convert existing photo URLs to objects with uri property
       const existingPhotos = (listingData.photos || []).map((photoUrl, index) => ({
         uri: typeof photoUrl === 'string' ? photoUrl : photoUrl.uri || photoUrl,
@@ -149,6 +150,7 @@ export default function PostItemScreen({ navigation, route }) {
         condition: condition,
         price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
         status: isEditMode ? (listingData?.status || 'available') : 'available', // Keep existing status in edit mode
+        location: location.trim() || null, // Optional location field
       };
 
       console.log(isEditMode ? 'Updating listing with data:' : 'Posting listing with data:', listingDataToSubmit);

@@ -5,7 +5,7 @@ export async function insertListing(user_id, title, description, category, brand
    const newListing = await pool.query(
         `INSERT INTO listings (user_id, title, description, category, brand, condition, price, status, photos, location)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [user_id, title, description, category, brand, condition, price, status, photos, location]
+        [user_id, title, description, category, brand, condition, price, status, photos, location || null]
    );
    return newListing.rows[0];
 }
@@ -117,7 +117,7 @@ export async function updateListing(id, title, description, category, brand, con
     const result = await pool.query(
         `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, condition = $5, price = $6, status = $7, photos = $8, location = $9
         WHERE listing_id = $10 RETURNING *`,
-        [title, description, category, brand, condition, price, status, photos, location, id]
+        [title, description, category, brand, condition, price, status, photos, location || null, id]
     );
     return result.rows[0];
 }
