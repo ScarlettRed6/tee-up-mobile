@@ -139,10 +139,9 @@ export default function SearchFilterScreen({ navigation, route }) {
     if (isProfileFilter) {
       filters.status = selectedStatus;
     } else {
-      // Only include price and location for SearchResults
+      // Only include price for SearchResults
       if (minPrice) filters.minPrice = minPrice;
       if (maxPrice) filters.maxPrice = maxPrice;
-      filters.location = location;
     }
     
     console.log('Applying filters:', filters);
@@ -272,7 +271,6 @@ export default function SearchFilterScreen({ navigation, route }) {
                             maxPrice,
                             flex: selectedFlex,
                             hand: selectedHand,
-                            location,
                           }
                         });
                       }}
@@ -541,21 +539,6 @@ export default function SearchFilterScreen({ navigation, route }) {
             </View>
           )}
 
-          {/* Location Filter - Only show for SearchResults, not Profile */}
-          {!isProfileFilter && (
-            <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, dynamicStyles.filterLabel]}>Location</Text>
-              <Pressable 
-                style={[styles.locationPill, dynamicStyles.locationPill]}
-                onPress={() => {
-                  // Open location selector
-                  console.log('Opening location selector');
-                }}
-              >
-                <Text style={[styles.locationText, dynamicStyles.locationText]}>{location}</Text>
-              </Pressable>
-            </View>
-          )}
         </View>
 
         {/* Bottom Spacer for Apply Button */}
