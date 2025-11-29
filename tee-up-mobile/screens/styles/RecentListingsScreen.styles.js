@@ -74,6 +74,13 @@ export default StyleSheet.create({
   cardRight: {
     marginLeft: '2%',
   },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
+  },
   productImagePlaceholder: {
     width: '100%',
     height: 120,
@@ -88,6 +95,7 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',
@@ -118,6 +126,7 @@ export default StyleSheet.create({
     backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   sellerName: {
     fontFamily: 'Exo_400Regular',
@@ -159,6 +168,17 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#000',
     marginTop: 4,
+  },
+  emptyState: {
+    width: '100%',
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#999',
   },
 });
 

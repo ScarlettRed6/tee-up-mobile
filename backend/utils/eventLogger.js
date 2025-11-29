@@ -4,8 +4,6 @@ import { v4 as uuid } from "uuid";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
-import { deflate } from "zlib";
-
 
 //Create and initialize custom emitter class
 class MyEmitter extends EventEmitter {}

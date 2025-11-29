@@ -1,9 +1,10 @@
+import { CommonActions } from '@react-navigation/native';
+
 /**
- * Navigate to a bottom nav screen (Discover, Inbox, Profile)
- * Uses React Navigation's navigate() which provides smooth transitions:
- * - If screen exists in stack: pops to it with smooth animation
- * - If screen doesn't exist: pushes it with smooth animation
- * This ensures smooth transitions while React Navigation handles stack management
+ * Navigate to a bottom nav screen (Discover, Inbox, Notifications, Profile, PostItem)
+ * Resets the navigation stack to prevent stacking - no swipe back gesture
+ * Bottom nav screens act as independent tabs without stack history
+ * Uses replace action to ensure smooth transitions without stacking
  */
 export const navigateToBottomNav = (navigation, screenName) => {
   const state = navigation.getState();
@@ -14,11 +15,25 @@ export const navigateToBottomNav = (navigation, screenName) => {
     return;
   }
 
-  // Use navigate() which React Navigation handles intelligently:
-  // - Provides smooth transitions in all cases
-  // - Automatically pops to screen if it exists in stack
-  // - Pushes screen if it doesn't exist
-  // This gives us smooth animations while maintaining proper navigation behavior
-  navigation.navigate(screenName);
+  // Check if the screen exists in the stack
+  const existingRouteIndex = state?.routes.findIndex(route => route.name === screenName);
+  
+  if (existingRouteIndex !== -1 && existingRouteIndex < state.index) {
+    // Screen exists earlier in stack - reset to it (this prevents stacking)
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: screenName }],
+      })
+    );
+  } else {
+    // Screen doesn't exist or is ahead - use reset to replace current screen
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: screenName }],
+      })
+    );
+  }
 };
 

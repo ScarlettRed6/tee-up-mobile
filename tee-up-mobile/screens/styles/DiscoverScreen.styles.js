@@ -37,6 +37,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
   pageTitle: {
     fontFamily: 'Exo_700Bold',
@@ -47,8 +48,8 @@ export default StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
     paddingTop: 8,
+    paddingBottom: 16,
   },
   subtitleSection: {
     paddingHorizontal: 20,
@@ -74,6 +75,13 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
+  horizontalScrollView: {
+    marginHorizontal: -20, // Offset the section padding
+  },
+  horizontalScrollContent: {
+    paddingHorizontal: 20, // Restore padding for content
+    paddingRight: 20,
+  },
   productCard: {
     backgroundColor: '#FFF',
     borderRadius: 16,
@@ -84,6 +92,13 @@ export default StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+  },
+  productImage: {
+    width: '100%',
+    height: 100,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
   },
   productImagePlaceholder: {
     width: '100%',
@@ -99,6 +114,7 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',
@@ -123,6 +139,7 @@ export default StyleSheet.create({
     backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   sellerName: {
     fontFamily: 'Exo_400Regular',
@@ -143,6 +160,43 @@ export default StyleSheet.create({
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
     color: '#999',
+    textAlign: 'center',
+  },
+  viewMoreCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 12,
+    width: 140,
+    minHeight: 200,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+    borderStyle: 'dashed',
+    marginRight: 20,
+  },
+  viewMoreContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1,
+  },
+  viewMoreTitle: {
+    fontFamily: 'Exo_700Bold',
+    fontSize: 14,
+    color: '#FF6B35',
+    marginTop: 12,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  viewMoreSubtitle: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 10,
+    color: '#666',
     textAlign: 'center',
   },
   categoriesRow: {
@@ -167,6 +221,41 @@ export default StyleSheet.create({
     fontFamily: 'Exo_500Medium',
     fontSize: 13,
     color: '#000',
+  },
+  categoryPillActive: {
+    backgroundColor: '#FF6B35',
+    shadowOpacity: 0.2,
+  },
+  categoryTextActive: {
+    color: '#FFF',
+  },
+  categoryHintText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  categoryHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  categoryCountChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#FFE6DB',
+    borderRadius: 12,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  categoryCountText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 12,
+    color: '#FF6B35',
+  },
+  categoryScroll: {
+    marginTop: -8,
   },
   bottomNav: {
     position: 'absolute',
@@ -203,6 +292,16 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#000',
     marginTop: 4,
+  },
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#999',
   },
 });
 

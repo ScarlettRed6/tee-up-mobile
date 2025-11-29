@@ -59,6 +59,25 @@ export default StyleSheet.create({
   filterButton: {
     padding: 4,
   },
+  resultMetaRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  resultCountText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 13,
+    color: '#4B5563',
+    marginHorizontal: 4,
+  },
+  activeFilterText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    marginHorizontal: 4,
+  },
   productGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -81,6 +100,13 @@ export default StyleSheet.create({
   },
   cardRight: {
     marginLeft: '2%',
+  },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
   },
   productImagePlaceholder: {
     width: '100%',
@@ -127,10 +153,71 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sellerAvatarImage: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#F0F0F0',
+  },
   sellerName: {
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
     color: '#666',
+  },
+  statusChip: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    backgroundColor: '#FFE6DB',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusChipText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 11,
+    color: '#C2410C',
+  },
+  loadingState: {
+    paddingVertical: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  errorState: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    marginTop: 8,
+    fontFamily: 'Exo_500Medium',
+    fontSize: 14,
+    color: '#C2410C',
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyState: {
+    paddingVertical: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateTitle: {
+    marginTop: 12,
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  emptyStateSubtitle: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   bottomNav: {
     position: 'absolute',

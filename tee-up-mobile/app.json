@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dreadcarl.teeupmobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,6 +24,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.dreadcarl.teeupmobile"
     },
+    "scheme": "com.dreadcarl.teeupmobile",
     "web": {
       "favicon": "./assets/favicon.png"
     },

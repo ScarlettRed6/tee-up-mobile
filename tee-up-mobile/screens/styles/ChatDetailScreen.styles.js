@@ -52,6 +52,7 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
+    overflow: 'hidden',
   },
   productTextContainer: {
     flex: 1,
@@ -79,20 +80,23 @@ export default StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingTop: 12,
-    paddingBottom: 100,
+    paddingBottom: 20, // Reduced padding, keyboard will handle spacing
   },
   messageWrapper: {
     flexDirection: 'row',
     marginBottom: 10,
     alignItems: 'flex-end',
+    width: '100%',
   },
   messageWrapperLeft: {
     justifyContent: 'flex-start',
+    alignSelf: 'flex-start',
   },
   messageWrapperRight: {
     justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
   },
   avatar: {
     width: 32,
@@ -101,12 +105,20 @@ export default StyleSheet.create({
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 8,
+    marginHorizontal: 6,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    flexShrink: 0, // Prevent avatar from shrinking
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   messageBubbleContainer: {
     maxWidth: '70%',
+    minWidth: 60,
   },
   messageBubbleContainerLeft: {
     alignItems: 'flex-start',
@@ -138,11 +150,11 @@ export default StyleSheet.create({
     elevation: 2,
   },
   messageBubbleOther: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#F9F0E5', // Colored box for responder (other user)
     borderTopLeftRadius: 4,
   },
   messageBubbleMe: {
-    backgroundColor: '#F9F0E5',
+    backgroundColor: '#FFF', // White box for POV user (logged-in user)
     borderTopRightRadius: 4,
   },
   messageText: {
@@ -151,12 +163,21 @@ export default StyleSheet.create({
     color: '#000',
     lineHeight: 20,
   },
+  messageImage: {
+    width: 180,
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#F0F0F0',
+  },
+  messageImageWithText: {
+    marginBottom: 8,
+  },
   // Input Bar
   inputBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: '#FFF',
-    paddingVertical: 10,
+    paddingTop: 10,
     paddingHorizontal: 14,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
@@ -165,10 +186,14 @@ export default StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: -2 },
     elevation: 8,
+    minHeight: 60,
   },
   inputIcon: {
     padding: 6,
     marginRight: 8,
+  },
+  inputIconDisabled: {
+    opacity: 0.4,
   },
   textInput: {
     flex: 1,
@@ -176,12 +201,106 @@ export default StyleSheet.create({
     fontSize: 15,
     color: '#000',
     maxHeight: 100,
+    minHeight: 40,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    marginVertical: 4,
   },
   sendButton: {
     padding: 6,
     marginLeft: 8,
+  },
+  ratingCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  ratingTitle: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#111827',
+    marginBottom: 6,
+  },
+  ratingSubtitle: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 14,
+  },
+  ratingStars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ratingStarButton: {
+    marginRight: 6,
+  },
+  ratingReviewInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    color: '#111827',
+    marginBottom: 12,
+  },
+  ratingSubmitButton: {
+    backgroundColor: '#FF6B35',
+    paddingVertical: 12,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  ratingSubmitButtonDisabled: {
+    backgroundColor: '#F9A885',
+  },
+  ratingSubmitButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+  },
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  previewContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '90%',
+    height: '80%',
+  },
+  previewCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
 });
 

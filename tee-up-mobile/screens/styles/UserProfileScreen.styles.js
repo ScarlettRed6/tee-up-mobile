@@ -31,7 +31,8 @@ export default StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
-    paddingTop: 60,
+    paddingTop: 120,
+    backgroundColor: 'transparent',
   },
   profileSection: {
     alignItems: 'center',
@@ -55,6 +56,7 @@ export default StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    overflow: 'hidden',
   },
   username: {
     fontFamily: 'Exo_700Bold',
@@ -72,6 +74,28 @@ export default StyleSheet.create({
     color: '#666',
     marginBottom: 4,
   },
+  followButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    backgroundColor: '#FF6B35',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  followButtonActive: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  followButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  followButtonTextActive: {
+    color: '#111827',
+  },
   reputationContainer: {
     alignItems: 'center',
     marginTop: 8,
@@ -85,6 +109,12 @@ export default StyleSheet.create({
   starsContainer: {
     flexDirection: 'row',
   },
+  reputationSubtext: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#888',
+    marginTop: 6,
+  },
   bioSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -96,6 +126,10 @@ export default StyleSheet.create({
     color: '#333',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  bioPlaceholderText: {
+    fontFamily: 'Exo_400Regular',
+    color: '#888',
   },
   searchSection: {
     paddingHorizontal: 20,
@@ -150,6 +184,79 @@ export default StyleSheet.create({
   listingsSection: {
     paddingHorizontal: 20,
   },
+  reviewsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    backgroundColor: 'transparent',
+  },
+  reviewsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewsTitle: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 16,
+    color: '#111',
+  },
+  reviewsLink: {
+    fontFamily: 'Exo_500Medium',
+    color: '#FF6B35',
+    fontSize: 14,
+  },
+  reviewCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  reviewAuthor: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+    color: '#111',
+  },
+  reviewDate: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  reviewRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  reviewRatingText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 12,
+    marginLeft: 4,
+    color: '#92400E',
+  },
+  reviewText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 20,
+  },
+  reviewTextMuted: {
+    fontFamily: 'Exo_400Regular_Italic',
+    fontSize: 13,
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
   productGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -173,6 +280,13 @@ export default StyleSheet.create({
   cardRight: {
     marginLeft: '2%',
   },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
+  },
   productImagePlaceholder: {
     width: '100%',
     height: 120,
@@ -187,6 +301,7 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',

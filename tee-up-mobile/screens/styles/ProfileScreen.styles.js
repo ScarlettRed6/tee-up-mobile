@@ -57,6 +57,7 @@ export default StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
+    overflow: 'hidden',
   },
   username: {
     fontFamily: 'Exo_700Bold',
@@ -87,6 +88,12 @@ export default StyleSheet.create({
   starsContainer: {
     flexDirection: 'row',
   },
+  reputationSubtext: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#888',
+    marginTop: 6,
+  },
   bioSection: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -98,6 +105,27 @@ export default StyleSheet.create({
     color: '#333',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  bioPlaceholderText: {
+    fontFamily: 'Exo_400Regular',
+    color: '#888',
+  },
+  editBioButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  editBioButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 13,
+    color: '#FF6B35',
   },
   searchSection: {
     paddingHorizontal: 20,
@@ -178,6 +206,20 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  productImageContainer: {
+    width: '100%',
+    height: 120,
+    marginBottom: 10,
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+  },
   productImagePlaceholder: {
     width: '100%',
     height: 120,
@@ -185,7 +227,6 @@ export default StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
     position: 'relative',
   },
   soldBadge: {
@@ -308,6 +349,7 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   productName: {
     fontFamily: 'Exo_600SemiBold',
@@ -320,6 +362,25 @@ export default StyleSheet.create({
     fontSize: 14,
     color: '#000',
     marginBottom: 8,
+  },
+  statusBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  statusBadgeSold: {
+    backgroundColor: '#FF6B35',
+  },
+  statusBadgePending: {
+    backgroundColor: '#FBBF24',
+  },
+  statusBadgeText: {
+    fontFamily: 'Exo_700Bold',
+    fontSize: 10,
+    color: '#FFF',
   },
   sellerInfo: {
     flexDirection: 'row',

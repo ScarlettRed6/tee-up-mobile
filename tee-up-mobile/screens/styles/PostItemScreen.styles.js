@@ -31,9 +31,9 @@ export default StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 200,
     paddingTop: 8,
     flexGrow: 1,
+    // paddingBottom is now set dynamically based on keyboard height
   },
   section: {
     paddingHorizontal: 20,
@@ -249,6 +249,12 @@ export default StyleSheet.create({
     paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
+    // Shadow/elevation for better visibility
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 5,
   },
   postButton: {
     backgroundColor: '#FFF',
@@ -275,6 +281,46 @@ export default StyleSheet.create({
     color: '#999',
   },
   disabledHint: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+    marginHorizontal: -6,
+  },
+  photoContainer: {
+    width: '48%',
+    aspectRatio: 4 / 3,
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F5F5F5',
+    marginHorizontal: '1%',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  photoPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 2,
+  },
+  photoLimitText: {
     fontFamily: 'Exo_400Regular',
     fontSize: 12,
     color: '#999',

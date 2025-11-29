@@ -1,11 +1,147 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/ProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
+import { authContext } from '../context/authContext';
+import { ListingsContext } from '../context/listingsContext';
+import { ThemeContext } from '../context/themeContext';
+import { getUserProfile } from '../api/userApi';
+import { fetchUserRatingSummary } from '../api/ratingApi';
+import { fetchUserListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
+import jwtDecode from 'jwt-decode';
+
+const normalizeListingStatus = (statusValue = 'available') => {
+  const lower = (statusValue || '').toString().toLowerCase();
+  if (lower === 'sold') return 'Sold';
+  if (lower === 'pending') return 'Pending';
+  return 'Available';
+};
 
 export default function ProfileScreen({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const { accessToken } = useContext(authContext);
+  const { refreshListings } = useContext(ListingsContext);
+  const { theme } = useContext(ThemeContext);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [ratingSummary, setRatingSummary] = useState({
+    average_rating: 0,
+    total_raters: 0,
+  });
+
+  const fetchProfile = useCallback(async () => {
+    if(!accessToken) return;
+
+    try{
+      const data = await getUserProfile();
+      setUser(data);
+    }catch(err){
+      console.log("Profile error:", err);
+    }finally{
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const fetchUserRatingSummaryData = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const decoded = jwtDecode(accessToken);
+      const userId = decoded?.id;
+      if (!userId) return;
+
+      const summary = await fetchUserRatingSummary(userId);
+      setRatingSummary({
+        average_rating: Number(summary?.average_rating || 0),
+        total_raters: Number(summary?.total_raters || 0),
+      });
+    } catch (err) {
+      console.log('Error fetching rating summary:', err);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchUserRatingSummaryData();
+  }, [fetchUserRatingSummaryData]);
+
+  const handleEditProfile = useCallback(() => {
+    navigation.navigate('EditProfile', {
+      onProfileUpdated: fetchProfile,
+    });
+  }, [navigation, fetchProfile]);
+
+  // Refresh profile when screen comes into focus (e.g., returning from EditProfile)
+  useFocusEffect(
+    useCallback(() => {
+      if (accessToken) {
+        fetchProfile();
+      }
+    }, [accessToken, fetchProfile])
+  );
+
+  // Fetch user's own listings
+  const fetchUserOwnListings = useCallback(async () => {
+    if(!accessToken) return;
+
+    try {
+      setListingsLoading(true);
+      // Get user ID from JWT token
+      const decoded = jwtDecode(accessToken);
+      const userId = decoded.id;
+
+      if (userId) {
+        const userListings = await fetchUserListings(userId);
+        
+        // Transform backend listing data to match ProfileScreen format
+        const transformedListings = userListings.map(listing => {
+          const normalizedStatus = normalizeListingStatus(listing.status);
+          return {
+            id: listing.listing_id,
+            name: listing.title,
+            price: `₱${typeof listing.price === 'number' ? listing.price.toLocaleString() : listing.price}`,
+            priceValue: typeof listing.price === 'number' ? listing.price : parseFloat(listing.price) || 0,
+            seller: listing.seller_name || user?.name || 'Unknown',
+            sellerColor: '#FF6B35',
+            category: listing.category,
+            condition: listing.condition,
+            flex: listing.flex || null,
+            hand: listing.hand || null,
+            listedDate: listing.date_posted ? new Date(listing.date_posted) : new Date(),
+            status: normalizedStatus,
+            listingData: { ...listing, status: normalizedStatus },
+          };
+        });
+
+        setAllProducts(transformedListings);
+      }
+    } catch (err) {
+      console.log("Error fetching user listings:", err);
+    } finally {
+      setListingsLoading(false);
+    }
+  }, [accessToken, user]);
+
+  useEffect(() => {
+    fetchUserOwnListings();
+  }, [fetchUserOwnListings]);
+
+  // Refresh listings when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (accessToken && user) {
+        fetchUserOwnListings();
+      }
+    }, [accessToken, user, fetchUserOwnListings])
+  );
+
   // Get filters from route params if navigating from filter screen
   const initialFilters = route?.params?.filters || {};
   
@@ -14,12 +150,16 @@ export default function ProfileScreen({ navigation, route }) {
   const [selectedCondition, setSelectedCondition] = useState(initialFilters.condition || null);
   const [selectedFlex, setSelectedFlex] = useState(initialFilters.flex || null);
   const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); // Right Hand, Left Hand
-  const [selectedStatus, setSelectedStatus] = useState(initialFilters.status || 'Available'); // Available, Sold
+  const [selectedStatus, setSelectedStatus] = useState(
+    initialFilters.status ? normalizeListingStatus(initialFilters.status) : 'All'
+  ); // All, Available, Sold
   const [sortBy, setSortBy] = useState('recentlyListed'); // recentlyListed, oldestListing, mostExpensive, cheapest
   const [showSortModal, setShowSortModal] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null); // Track which product's dropdown is open
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // Confirmation modal for marking as sold
+  const [showConfirmModal, setShowConfirmModal] = useState(false); // Confirmation modal for marking status change
   const [productToUpdate, setProductToUpdate] = useState(null); // Product ID to update
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
+  const [pendingStatusAction, setPendingStatusAction] = useState(null); // 'sold' | 'pending'
 
   // All products data with listing dates and status
   const [allProducts, setAllProducts] = useState([
@@ -110,6 +250,14 @@ export default function ProfileScreen({ navigation, route }) {
   ]);
 
   // Filter and sort products
+  const getStatusPriority = useCallback((statusValue) => {
+    const normalized = normalizeListingStatus(statusValue);
+    if (normalized === 'Available') return 0;
+    if (normalized === 'Pending') return 1;
+    if (normalized === 'Sold') return 2;
+    return 3;
+  }, []);
+
   const filteredAndSortedProducts = React.useMemo(() => {
     let filtered = [...allProducts];
 
@@ -142,67 +290,125 @@ export default function ProfileScreen({ navigation, route }) {
       filtered = filtered.filter(product => product.hand === selectedHand);
     }
 
-    // Status filter (Available/Sold)
-    if (selectedStatus) {
-      filtered = filtered.filter(product => product.status === selectedStatus);
+    // Status filter (Available/Sold) - skip when "All" is selected
+    if (selectedStatus && selectedStatus !== 'All') {
+      const normalizedSelected = normalizeListingStatus(selectedStatus);
+      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
     }
 
-    // Sort
-    switch (sortBy) {
-      case 'recentlyListed':
-        // Sort by most recent listing date first (newest first)
-        filtered.sort((a, b) => b.listedDate - a.listedDate);
-        break;
-      case 'oldestListing':
-        // Sort by oldest listing date first
-        filtered.sort((a, b) => a.listedDate - b.listedDate);
-        break;
-      case 'mostExpensive':
-        filtered.sort((a, b) => b.priceValue - a.priceValue);
-        break;
-      case 'cheapest':
-        filtered.sort((a, b) => a.priceValue - b.priceValue);
-        break;
-      default:
-        // Default to recently listed
-        filtered.sort((a, b) => b.listedDate - a.listedDate);
-        break;
+    const compareBySort = (a, b) => {
+      if (!selectedStatus || selectedStatus === 'All') {
+        const statusDiff = getStatusPriority(a.status) - getStatusPriority(b.status);
+        if (statusDiff !== 0) {
+          return statusDiff;
+        }
+      }
+
+      switch (sortBy) {
+        case 'recentlyListed':
+          return b.listedDate - a.listedDate;
+        case 'oldestListing':
+          return a.listedDate - b.listedDate;
+        case 'mostExpensive':
+          return b.priceValue - a.priceValue;
+        case 'cheapest':
+          return a.priceValue - b.priceValue;
+        default:
+          return b.listedDate - a.listedDate;
+      }
+    };
+
+    return filtered.sort(compareBySort);
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts, getStatusPriority]);
+
+  const renderRatingStars = (ratingValue = 0) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i += 1) {
+      let iconName = 'star-outline';
+      if (ratingValue >= i) {
+        iconName = 'star';
+      } else if (ratingValue >= i - 0.5) {
+        iconName = 'star-half';
+      }
+      stars.push(
+        <Ionicons
+          key={`rating-star-${i}`}
+          name={iconName}
+          size={18}
+          color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
+          style={{ marginRight: i === 5 ? 0 : 4 }}
+        />
+      );
     }
-
-    return filtered;
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts]);
-
-  const handleMarkAsSold = (productId) => {
-    // Show confirmation modal
-    setProductToUpdate(productId);
-    setShowConfirmModal(true);
-    setOpenDropdownId(null); // Close dropdown
+    return stars;
   };
+
+  const handleStatusChangeWithConfirm = (productId, action) => {
+    setProductToUpdate(productId);
+    setPendingStatusAction(action);
+    setShowConfirmModal(true);
+    setOpenDropdownId(null);
+  };
+
+  const updateActiveListingCount = useCallback((listingsArray) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const activeCount = listingsArray.filter(
+        product => normalizeListingStatus(product.status) === 'Available'
+      ).length;
+      return { ...prev, activeListings: activeCount };
+    });
+  }, []);
+
+  const applyLocalStatusChange = useCallback((listingId, nextStatusValue) => {
+    setAllProducts(prevProducts => {
+      const normalizedStatus = normalizeListingStatus(nextStatusValue);
+      const updated = prevProducts.map(product => {
+        if (product.id === listingId) {
+          return {
+            ...product,
+            status: normalizedStatus,
+            listingData: product.listingData
+              ? { ...product.listingData, status: normalizedStatus }
+              : product.listingData,
+          };
+        }
+        return product;
+      });
+      updateActiveListingCount(updated);
+      return updated;
+    });
+  }, [updateActiveListingCount]);
+
+  const performStatusUpdate = useCallback(async (listingId, nextStatusValue) => {
+    if (!listingId) return;
+    setStatusUpdatingId(listingId);
+    try {
+      await updateListingStatusApi(listingId, nextStatusValue.toLowerCase());
+      applyLocalStatusChange(listingId, nextStatusValue);
+      if (typeof refreshListings === 'function') {
+        refreshListings();
+      }
+    } catch (error) {
+      console.log('Failed to update listing status:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to update listing status.');
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  }, [applyLocalStatusChange, refreshListings]);
 
   const handleMarkAsAvailable = (productId) => {
-    // Mark as available immediately (no confirmation needed)
-    setAllProducts(prevProducts =>
-      prevProducts.map(product =>
-        product.id === productId
-          ? { ...product, status: 'Available' }
-          : product
-      )
-    );
     setOpenDropdownId(null); // Close dropdown
+    performStatusUpdate(productId, 'available');
   };
 
-  const confirmMarkAsSold = () => {
-    if (productToUpdate) {
-      setAllProducts(prevProducts =>
-        prevProducts.map(product =>
-          product.id === productToUpdate
-            ? { ...product, status: 'Sold' }
-            : product
-        )
-      );
+  const confirmStatusChange = async () => {
+    if (productToUpdate && pendingStatusAction) {
+      await performStatusUpdate(productToUpdate, pendingStatusAction);
     }
     setShowConfirmModal(false);
     setProductToUpdate(null);
+    setPendingStatusAction(null);
   };
 
   const cancelMarkAsSold = () => {
@@ -217,56 +423,104 @@ export default function ProfileScreen({ navigation, route }) {
     // TODO: Navigate to analytics screen when implemented
   };
 
+  const handleEditListing = (item) => {
+    // Navigate to PostItemScreen with listing data for editing
+    setOpenDropdownId(null); // Close dropdown
+    
+    // Prepare listing data for editing
+    const listingData = item.listingData || {
+      listing_id: item.id,
+      title: item.name,
+      description: item.listingData?.description || '',
+      category: item.category,
+      brand: item.listingData?.brand || '',
+      condition: item.condition,
+      price: item.priceValue || parseFloat(item.price.replace('₱', '').replace(/,/g, '')) || 0,
+      status: item.status,
+      photos: item.listingData?.photos || [],
+      flex: item.flex,
+      hand: item.hand,
+    };
+    
+    navigation.navigate('PostItem', { 
+      editMode: true,
+      listingData: listingData 
+    });
+  };
+
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
     const isDropdownOpen = openDropdownId === item.id;
+    const isStatusUpdating = statusUpdatingId === item.id;
+    const statusLabel = item.status;
+    
+    // Get first photo from listing data
+    const listingPhotos = item.listingData?.photos || [];
+    const firstPhoto = Array.isArray(listingPhotos) && listingPhotos.length > 0 
+      ? listingPhotos[0] 
+      : null;
     
     return (
       <View key={item.id} style={[styles.productCardWrapper, isLeft ? styles.cardLeft : styles.cardRight]}>
         <TouchableOpacity
-          style={styles.productCard}
-          onPress={() => navigation.navigate('ProductDetail', {
-            product: {
-              id: item.id,
+          style={[styles.productCard, { backgroundColor: theme.card }]}
+          onPress={() => {
+            // Use listingData if available (from API), otherwise construct from item
+            const productData = item.listingData || {
+              listing_id: item.id,
               title: item.name,
-              price: item.price.replace('₱', '').replace(',', ''),
-              location: 'Quezon City',
-              postedDate: 'October 20, 2025',
-              description: 'Excellent condition. Perfect for players looking to upgrade.',
+              price: item.priceValue || parseFloat(item.price.replace('₱', '').replace(/,/g, '')) || 0,
+              location: 'Location not specified',
+              date_posted: item.listedDate,
+              description: item.listingData?.description || 'No description provided.',
               category: item.category,
               condition: item.condition,
-              seller: {
-                name: item.seller,
-                rating: 4.9,
-                reviewCount: 120,
-              },
-              images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-              reviews: [],
-            }
-          })}
+              brand: item.listingData?.brand || null,
+              status: item.status,
+              seller_name: item.seller,
+              photos: listingPhotos,
+            };
+            navigation.navigate('ProductDetail', { product: productData });
+          }}
           activeOpacity={0.8}
         >
-          <View style={styles.productImagePlaceholder}>
-            <Text style={styles.imagePlaceholderText}>
-              {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
-               item.name.includes('PING') ? 'PING G30' :
-               item.name.includes('AP2') ? 'Titleist AP2' : 
-               item.name.includes('TSR3') ? 'Titleist TSR3' :
-               item.name.includes('Callaway') ? 'Callaway Epic' : 'TaylorMade SIM'}
-            </Text>
-            {item.status === 'Sold' && (
-              <View style={styles.soldBadge}>
-                <Text style={styles.soldBadgeText}>SOLD</Text>
+          <View style={styles.productImageContainer}>
+            {firstPhoto ? (
+              <Image 
+                source={{ uri: firstPhoto }}
+                style={styles.productImage}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error('Image load error for listing:', item.id, error.nativeEvent.error);
+                  console.error('Failed URL:', firstPhoto);
+                }}
+              />
+            ) : (
+              <View style={styles.productImagePlaceholder}>
+                <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+                <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
+                  {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
+                </Text>
+              </View>
+            )}
+            {item.status !== 'Available' && (
+              <View style={[
+                styles.statusBadge,
+                item.status === 'Sold' ? styles.statusBadgeSold : styles.statusBadgePending
+              ]}>
+                <Text style={styles.statusBadgeText}>
+                  {item.status.toUpperCase()}
+                </Text>
               </View>
             )}
           </View>
-          <Text style={styles.productName}>{item.name}</Text>
-          <Text style={styles.productPrice}>{item.price}</Text>
+          <Text style={[styles.productName, dynamicStyles.productName]}>{item.name}</Text>
+          <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{item.price}</Text>
           <View style={styles.sellerInfo}>
             <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-              <Ionicons name="person" size={12} color={item.sellerColor} />
+              <Ionicons name="person" size={12} color={item.sellerColor || theme.primary} />
             </View>
-            <Text style={styles.sellerName}>@{item.seller}</Text>
+            <Text style={[styles.sellerName, { color: theme.textMuted }]}>@{item.seller}</Text>
           </View>
         </TouchableOpacity>
         
@@ -276,37 +530,86 @@ export default function ProfileScreen({ navigation, route }) {
           onPress={() => setOpenDropdownId(isDropdownOpen ? null : item.id)}
           activeOpacity={0.7}
         >
-          <Ionicons name="ellipsis-vertical" size={18} color="#666" />
+          <Ionicons name="ellipsis-vertical" size={18} color={theme.textMuted} />
         </TouchableOpacity>
         
         {/* Dropdown menu */}
         {isDropdownOpen && (
-          <View style={styles.dropdownMenu}>
+          <View style={[styles.dropdownMenu, dynamicStyles.dropdownMenu]}>
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => handleEditListing(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="create-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+              <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>Edit Listing</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.dropdownItem}
               onPress={() => handleViewAnalytics(item.id)}
               activeOpacity={0.7}
             >
-              <Ionicons name="analytics-outline" size={18} color="#000" style={styles.dropdownIcon} />
-              <Text style={styles.dropdownText}>View Analytics</Text>
+              <Ionicons name="analytics-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+              <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>View Analytics</Text>
             </TouchableOpacity>
-            {item.status === 'Available' ? (
+            {item.status === 'Available' && (
+              <>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleStatusChangeWithConfirm(item.id, 'pending')}
+                  activeOpacity={0.7}
+                  disabled={isStatusUpdating}
+                >
+                  {isStatusUpdating ? (
+                    <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
+                  ) : (
+                    <Ionicons name="time-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+                  )}
+                  <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as pending'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => handleStatusChangeWithConfirm(item.id, 'sold')}
+                  activeOpacity={0.7}
+                  disabled={isStatusUpdating}
+                >
+                  {isStatusUpdating ? (
+                    <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
+                  ) : (
+                    <Ionicons name="checkmark-circle-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+                  )}
+                  <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {item.status === 'Pending' && (
               <TouchableOpacity
                 style={styles.dropdownItem}
-                onPress={() => handleMarkAsSold(item.id)}
+                onPress={() => handleStatusChangeWithConfirm(item.id, 'sold')}
                 activeOpacity={0.7}
+                disabled={isStatusUpdating}
               >
-                <Ionicons name="checkmark-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
-                <Text style={styles.dropdownText}>Mark as sold</Text>
+                {isStatusUpdating ? (
+                  <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
+                ) : (
+                  <Ionicons name="checkmark-circle-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+                )}
+                <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as sold'}</Text>
               </TouchableOpacity>
-            ) : (
+            )}
+            {item.status !== 'Available' && (
               <TouchableOpacity
                 style={styles.dropdownItem}
                 onPress={() => handleMarkAsAvailable(item.id)}
                 activeOpacity={0.7}
+                disabled={isStatusUpdating}
               >
-                <Ionicons name="refresh-circle-outline" size={18} color="#000" style={styles.dropdownIcon} />
-                <Text style={styles.dropdownText}>Mark as available</Text>
+                {isStatusUpdating ? (
+                  <ActivityIndicator size="small" color={theme.text} style={{ marginRight: 12 }} />
+                ) : (
+                  <Ionicons name="refresh-circle-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
+                )}
+                <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>{isStatusUpdating ? 'Updating...' : 'Mark as available'}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -314,6 +617,21 @@ export default function ProfileScreen({ navigation, route }) {
       </View>
     );
   };
+
+  const statusModalCopy =
+    pendingStatusAction === 'pending'
+      ? {
+          title: 'Mark as Pending?',
+          message:
+            "Are you sure you want to mark this item as pending? It will be hidden from Discover and Search until it's marked available again.",
+          confirmLabel: 'Mark as Pending',
+        }
+      : {
+          title: 'Mark as Sold?',
+          message:
+            "Are you sure you want to mark this item as sold? This action will update the item's status and it will be moved to your sold listings.",
+          confirmLabel: 'Mark as Sold',
+        };
 
   const handleFilterPress = () => {
     // Navigate to SearchFilterScreen with current filters
@@ -336,7 +654,11 @@ export default function ProfileScreen({ navigation, route }) {
     setSelectedCondition(filters.condition || null);
     setSelectedFlex(filters.flex || null);
     setSelectedHand(filters.hand || null);
-    setSelectedStatus(filters.status || 'Available');
+    if (filters.status && filters.status !== 'All') {
+      setSelectedStatus(normalizeListingStatus(filters.status));
+    } else {
+      setSelectedStatus('All');
+    }
     setSearchQuery(filters.searchQuery || '');
   };
 
@@ -354,8 +676,50 @@ export default function ProfileScreen({ navigation, route }) {
     { value: 'cheapest', label: 'Cheapest' },
   ];
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    scrollView: { backgroundColor: theme.background },
+    profileSection: { backgroundColor: 'transparent' },
+    username: { color: theme.text },
+    statText: { color: theme.textSecondary },
+    reputationText: { color: theme.text },
+    reputationSubtext: { color: theme.textMuted },
+    bioSection: { backgroundColor: 'transparent' },
+    bioText: { color: theme.text },
+    bioPlaceholderText: { color: theme.textMuted },
+    searchBar: { backgroundColor: theme.card },
+    searchInput: { color: theme.text },
+    filterButton: { backgroundColor: theme.lightGray },
+    filterButtonText: { color: theme.text },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    emptyStateText: { color: theme.textMuted },
+    modalOverlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+    modalContent: { backgroundColor: theme.card },
+    modalTitle: { color: theme.text },
+    modalOption: { backgroundColor: theme.card },
+    modalOptionText: { color: theme.text },
+    modalOptionSelected: { backgroundColor: theme.backgroundAlt },
+    confirmModalContent: { backgroundColor: theme.card },
+    confirmModalTitle: { color: theme.text },
+    confirmModalMessage: { color: theme.textSecondary },
+    bottomNav: { backgroundColor: theme.card },
+    dropdownMenu: { backgroundColor: theme.card },
+    dropdownText: { color: theme.text },
+  };
+
+  if(loading || listingsLoading) {
+    return (
+      <View style={[styles.container, dynamicStyles.container, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+  if(!user) return <Text style={{ color: theme.text }}>No Profile found!</Text>;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
         {/* Header Icons - Top Right */}
         <View style={styles.headerIcons}>
           <View style={styles.headerIconsRight}>
@@ -368,61 +732,101 @@ export default function ProfileScreen({ navigation, route }) {
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="settings-outline" size={20} color="#000" />
+              <Ionicons name="settings-outline" size={20} color={theme.text} />
             </TouchableOpacity>
           </View>
         </View>
 
         <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          style={[styles.scrollView, dynamicStyles.scrollView]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
           onScrollBeginDrag={() => setOpenDropdownId(null)}
           scrollEventThrottle={16}
         >
         {/* Profile Summary Card */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
           <View style={styles.profilePhotoContainer}>
-            <View style={styles.profilePhoto}>
-              <Ionicons name="person" size={50} color="#FF6B35" />
-            </View>
+            {user.profile_image ? (
+              <Image 
+                source={{ uri: user.profile_image }}
+                style={styles.profilePhoto}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.error('Profile image load error:', error.nativeEvent.error);
+                  console.error('Failed URL:', user.profile_image);
+                }}
+              />
+            ) : (
+              <View style={styles.profilePhoto}>
+                <Ionicons name="person" size={50} color={theme.primary} />
+              </View>
+            )}
           </View>
           
-          <Text style={styles.username}>hockeyops</Text>
+          <Text style={[styles.username, dynamicStyles.username]}>{user.name}</Text>
           
           <View style={styles.statsContainer}>
-            <Text style={styles.statText}>Active Listings: 10</Text>
-            <Text style={styles.statText}>5.5K followers</Text>
-            <Text style={styles.statText}>3.2K items sold</Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
+              Active Listings: {allProducts.filter(p => p.status === 'Available').length}
+            </Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
+              Total Listings: {allProducts.length}
+            </Text>
+            <Text style={[styles.statText, dynamicStyles.statText]}>
+              Sold: {allProducts.filter(p => p.status === 'Sold').length}
+            </Text>
           </View>
           
-          <View style={styles.reputationContainer}>
-            <Text style={styles.reputationText}>User Reputation: 5.0</Text>
-            <View style={styles.starsContainer}>
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" style={{ marginRight: 4 }} />
-              <Ionicons name="star" size={18} color="#FFD700" />
-            </View>
+        <View style={styles.reputationContainer}>
+          <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
+            {ratingSummary.total_raters > 0
+              ? `User Reputation: ${Number(ratingSummary.average_rating || 0).toFixed(2)}`
+              : 'No ratings yet'}
+          </Text>
+          <View style={styles.starsContainer}>
+            {renderRatingStars(Number(ratingSummary.average_rating || 0))}
           </View>
+          <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
+            {ratingSummary.total_raters > 0
+              ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
+              : 'You have not received any reviews yet.'}
+          </Text>
+        </View>
         </View>
 
         {/* Bio Section */}
-        <View style={styles.bioSection}>
-          <Text style={styles.bioText}>
-            I buy/sell/trade golf clubs! Feel free to offer on any of my listings!
+        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
+          <Text
+            style={[
+              styles.bioText,
+              dynamicStyles.bioText,
+              !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
+            ]}
+          >
+            {user.bio && user.bio.trim().length
+              ? user.bio.trim()
+              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
           </Text>
+          {!(user.bio && user.bio.trim().length) && (
+            <TouchableOpacity
+              style={styles.editBioButton}
+              onPress={handleEditProfile}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.editBioButtonText}>Add bio</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Search and Filters */}
         <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={18} color="#666" style={styles.searchIcon} />
+          <View style={[styles.searchBar, dynamicStyles.searchBar]}>
+            <Ionicons name="search-outline" size={18} color={theme.textMuted} style={styles.searchIcon} />
             <TextInput
               placeholder="Search seller's listing."
-              placeholderTextColor="#999"
-              style={styles.searchInput}
+              placeholderTextColor={theme.textMuted}
+              style={[styles.searchInput, dynamicStyles.searchInput]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -430,17 +834,17 @@ export default function ProfileScreen({ navigation, route }) {
           
           <View style={styles.filterButtons}>
             <TouchableOpacity 
-              style={[styles.filterButton, { marginRight: 12 }]}
+              style={[styles.filterButton, dynamicStyles.filterButton, { marginRight: 12 }]}
               onPress={handleFilterPress}
             >
-              <Text style={styles.filterButtonText}>Filters</Text>
+              <Text style={[styles.filterButtonText, dynamicStyles.filterButtonText]}>Filters</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={styles.filterButton}
+              style={[styles.filterButton, dynamicStyles.filterButton]}
               onPress={() => setShowSortModal(true)}
             >
-              <Text style={styles.filterButtonText}>Sort by</Text>
-              <Ionicons name="chevron-down" size={16} color="#000" style={{ marginLeft: 4 }} />
+              <Text style={[styles.filterButtonText, dynamicStyles.filterButtonText]}>Sort by</Text>
+              <Ionicons name="chevron-down" size={16} color={theme.text} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
         </View>
@@ -452,7 +856,7 @@ export default function ProfileScreen({ navigation, route }) {
               filteredAndSortedProducts.map((product, index) => renderProductCard(product, index))
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No products found</Text>
+                <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No products found</Text>
               </View>
             )}
           </View>
@@ -466,18 +870,19 @@ export default function ProfileScreen({ navigation, route }) {
         animationType="fade"
         onRequestClose={() => setShowSortModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, dynamicStyles.modalOverlay]}>
           <Pressable 
             style={styles.modalOverlayBackdrop}
             onPress={() => setShowSortModal(false)}
           />
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sort by</Text>
+          <View style={[styles.modalContent, dynamicStyles.modalContent]}>
+            <Text style={[styles.modalTitle, dynamicStyles.modalTitle]}>Sort by</Text>
             {sortOptions.map((option) => (
               <Pressable
                 key={option.value}
                 style={[
                   styles.modalOption,
+                  dynamicStyles.modalOption,
                   sortBy === option.value && styles.modalOptionSelected
                 ]}
                 onPress={() => {
@@ -487,12 +892,13 @@ export default function ProfileScreen({ navigation, route }) {
               >
                 <Text style={[
                   styles.modalOptionText,
+                  dynamicStyles.modalOptionText,
                   sortBy === option.value && styles.modalOptionTextSelected
                 ]}>
                   {option.label}
                 </Text>
                 {sortBy === option.value && (
-                  <Ionicons name="checkmark" size={20} color="#FF6B35" />
+                  <Ionicons name="checkmark" size={20} color={theme.primary} />
                 )}
               </Pressable>
             ))}
@@ -507,33 +913,40 @@ export default function ProfileScreen({ navigation, route }) {
         animationType="fade"
         onRequestClose={cancelMarkAsSold}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, dynamicStyles.modalOverlay]}>
           <Pressable 
             style={styles.modalOverlayBackdrop}
             onPress={cancelMarkAsSold}
           />
-          <View style={styles.confirmModalContent}>
+          <View style={[styles.confirmModalContent, dynamicStyles.confirmModalContent]}>
             <View style={styles.confirmModalIcon}>
-              <Ionicons name="warning-outline" size={48} color="#FF6B35" />
+              <Ionicons name="warning-outline" size={48} color={theme.primary} />
             </View>
-            <Text style={styles.confirmModalTitle}>Mark as Sold?</Text>
-            <Text style={styles.confirmModalMessage}>
-              Are you sure you want to mark this item as sold? This action will update the item's status and it will be moved to your sold listings.
+            <Text style={[styles.confirmModalTitle, dynamicStyles.confirmModalTitle]}>{statusModalCopy.title}</Text>
+            <Text style={[styles.confirmModalMessage, dynamicStyles.confirmModalMessage]}>
+              {statusModalCopy.message}
             </Text>
             <View style={styles.confirmModalButtons}>
               <TouchableOpacity
-                style={[styles.confirmModalButton, styles.cancelButton, { marginRight: 6 }]}
+                style={[styles.confirmModalButton, styles.cancelButton, { marginRight: 6, backgroundColor: theme.lightGray }]}
                 onPress={cancelMarkAsSold}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6 }]}
-                onPress={confirmMarkAsSold}
+                style={[styles.confirmModalButton, styles.confirmButton, { marginLeft: 6, backgroundColor: theme.primary }]}
+                onPress={confirmStatusChange}
                 activeOpacity={0.7}
+                disabled={statusUpdatingId === productToUpdate}
               >
-                <Text style={styles.confirmButtonText}>Mark as Sold</Text>
+                {statusUpdatingId === productToUpdate ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.confirmButtonText}>
+                    {statusModalCopy.confirmLabel}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -541,34 +954,34 @@ export default function ProfileScreen({ navigation, route }) {
       </Modal>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Home</Text>
+          <Ionicons name="home-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -576,8 +989,8 @@ export default function ProfileScreen({ navigation, route }) {
             // Already on Profile, do nothing
           }}
         >
-          <Ionicons name="person-outline" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

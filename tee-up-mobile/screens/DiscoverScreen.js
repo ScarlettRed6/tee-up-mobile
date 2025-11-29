@@ -1,21 +1,89 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/DiscoverScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
+import { ListingsContext } from '../context/listingsContext';
+import { authContext } from '../context/authContext';
+import { ThemeContext } from '../context/themeContext';
+import { getUserProfile } from '../api/userApi';
+import { CATEGORY_OPTIONS, extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function DiscoverScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+  const { listings, loading } = useContext(ListingsContext);
+  const { accessToken } = useContext(authContext);
+  const { theme } = useContext(ThemeContext);
+  const [userProfileImage, setUserProfileImage] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(CATEGORY_OPTIONS[0]);
+
   // Helper function to navigate to product detail
   const navigateToProductDetail = (productData) => {
     navigation.navigate('ProductDetail', { product: productData });
   };
 
+  // Fetch current user's profile image
+  const fetchUserProfile = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const userData = await getUserProfile();
+      setUserProfileImage(userData.profile_image || null);
+    } catch (err) {
+      console.log('Error fetching user profile in DiscoverScreen:', err);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  // Refresh profile image when screen comes into focus (e.g., after updating profile)
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+    }, [fetchUserProfile])
+  );
+
+  const handleCategoryPress = (category) => {
+    setSelectedCategory(category);
+    navigation.navigate('CategoryListings', { category });
+  };
+
+  if(loading){
+    return (
+       <View style={{ flex:1, justifyContent:'center', alignItems:'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
+    subtitle: { color: theme.textMuted },
+    sectionTitle: { color: theme.text },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    sellerName: { color: theme.textMuted },
+    categoryPill: { backgroundColor: theme.lightGray },
+    categoryPillActive: { backgroundColor: theme.primary },
+    categoryText: { color: theme.text },
+    categoryTextActive: { color: '#FFF' },
+    categoryHintText: { color: theme.textMuted },
+    emptyStateText: { color: theme.textMuted },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header Section */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <View style={styles.headerLeft}>
-          <Text style={styles.pageTitle}>Discover</Text>
+          <Text style={[styles.pageTitle, dynamicStyles.pageTitle]}>Discover</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity 
@@ -23,304 +91,243 @@ export default function DiscoverScreen({ navigation }) {
             activeOpacity={0.7}
             onPress={() => navigation.navigate('SearchFilter')}
           >
-            <Ionicons name="search-outline" size={24} color="#000" />
+            <Ionicons name="search-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
             activeOpacity={0.7}
           >
-            <Ionicons name="people-outline" size={24} color="#000" />
+            <Ionicons name="people-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('SavedListings')}
           >
-            <Ionicons name="heart-outline" size={24} color="#000" />
+            <Ionicons name="heart-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
             activeOpacity={0.7}
             onPress={() => navigateToBottomNav(navigation, 'Profile')}
           >
-            <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={18} color="#FF6B35" />
-            </View>
+            {userProfileImage ? (
+              <Image 
+                source={{ uri: userProfileImage }}
+                style={styles.profileAvatar}
+              />
+            ) : (
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={18} color={theme.primary} />
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Subtitle */}
         <View style={styles.subtitleSection}>
-          <Text style={styles.subtitle}>Browse many golf products in the marketplace.</Text>
+          <Text style={[styles.subtitle, dynamicStyles.subtitle]}>Browse many golf products in the marketplace.</Text>
         </View>
 
         {/* Newly Added Listings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Newly Added Listings</Text>
-          <View style={styles.productRow}>
-            <TouchableOpacity 
-              style={[styles.productCard, { marginRight: 12 }]}
-              onPress={() => navigateToProductDetail({
-                id: 1,
-                title: 'Srixon ZXi5 Iron set 5-P',
-                price: '26,500',
-                location: 'Quezon City',
-                postedDate: 'October 20, 2025',
-                description: 'Excellent condition iron set. Perfect for intermediate players looking to upgrade.',
-                category: 'Iron',
-                condition: 'Slightly Used',
-                seller: {
-                  name: 'hockeyops',
-                  rating: 4.9,
-                  reviewCount: 120,
-                },
-                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
-                reviews: [
-                  {
-                    id: 1,
-                    heading: 'Great Quality!',
-                    text: 'The seller is very trustworthy and the clubs are in excellent condition.',
-                    reviewer: { name: 'hockeyops' },
-                  },
-                ],
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Newly Added Listings</Text>
+          {listings.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScrollContent}
+              style={styles.horizontalScrollView}
+            >
+              {listings.slice(0, 6).map(item => {
+                const photos = extractPhotos(item.photos);
+                const firstPhoto = photos.length > 0 ? photos[0] : null;
+                
+                return (
+                  <TouchableOpacity
+                    key={item.listing_id}
+                    onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                    style={[styles.productCard, dynamicStyles.productCard, { marginRight: 12 }]}
+                    activeOpacity={0.8}
+                  >
+                    {firstPhoto ? (
+                      <Image 
+                        source={{ uri: firstPhoto }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                        onError={(error) => {
+                          console.error('Image load error for listing:', item.listing_id, error.nativeEvent.error);
+                          console.error('Failed URL:', firstPhoto);
+                        }}
+                      />
+                    ) : (
+                      <View style={styles.productImagePlaceholder}>
+                        <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+                        <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
+                          {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                    <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{formatPriceLabel(item.price)}</Text>
+                    <View style={styles.sellerInfo}>
+                      {item.seller_profile_image ? (
+                        <Image 
+                          source={{ uri: item.seller_profile_image }}
+                          style={[styles.sellerAvatar, { marginRight: 6 }]}
+                        />
+                      ) : (
+                        <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                          <Ionicons name="person" size={12} color={theme.primary} />
+                        </View>
+                      )}
+                      <Text style={[styles.sellerName, dynamicStyles.sellerName]} numberOfLines={1}>{item.seller_name || 'Unknown'}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
               })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.productImagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Srixon ZXi5</Text>
-              </View>
-              <Text style={styles.productName}>Srixon ZXi5 Iron set 5-P</Text>
-              <Text style={styles.productPrice}>₱26,500</Text>
-              <View style={styles.sellerInfo}>
-                <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                  <Ionicons name="person" size={12} color="#FF0000" />
+              
+              {/* View More Button at the end */}
+              <TouchableOpacity
+                style={[styles.viewMoreCard, { backgroundColor: theme.card }]}
+                onPress={() => navigation.navigate('RecentListings')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.viewMoreContent}>
+                  <Ionicons name="arrow-forward-circle" size={32} color={theme.primary} />
+                  <Text style={[styles.viewMoreTitle, { color: theme.text }]}>View More</Text>
+                  <Text style={[styles.viewMoreSubtitle, { color: theme.textMuted }]}>See all recent listings</Text>
                 </View>
-                <Text style={styles.sellerName}>hockeyops</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.productCard, { marginRight: 12 }]}
-              onPress={() => navigateToProductDetail({
-                id: 2,
-                title: 'PING G30 9.5 Slightly Used',
-                price: '7,500',
-                location: 'Manila',
-                postedDate: 'October 18, 2025',
-                description: 'Used lightly. Excellent condition. Perfect for new players.',
-                category: 'Driver',
-                condition: 'Slightly Used',
-                seller: {
-                  name: 'issa123',
-                  rating: 4.7,
-                  reviewCount: 85,
-                },
-                images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-                reviews: [
-                  {
-                    id: 1,
-                    heading: 'Loved It!',
-                    text: 'The seller is very trustworthy and...',
-                    reviewer: { name: 'issa123' },
-                  },
-                ],
-              })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.productImagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>PING G30</Text>
-              </View>
-              <Text style={styles.productName}>PING G30 9.5 Slightly Used</Text>
-              <Text style={styles.productPrice}>₱7,500</Text>
-              <View style={styles.sellerInfo}>
-                <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                  <Ionicons name="person" size={12} color="#333" />
-                </View>
-                <Text style={styles.sellerName}>issa123</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.viewMoreArrow}
-              onPress={() => navigation.navigate('RecentListings')}
-            >
-              <Text style={styles.arrowSymbol}>→</Text>
-              <Text style={styles.viewMoreText}>Click to view more</Text>
-            </TouchableOpacity>
-          </View>
+              </TouchableOpacity>
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No listings available</Text>
+            </View>
+          )}
         </View>
 
         {/* Categories */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Categories</Text>
           <View style={styles.categoriesRow}>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Driver</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Iron</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Putters</Text>
-            </TouchableOpacity>
+            {CATEGORY_OPTIONS.map((category) => {
+              const isActive = selectedCategory === category;
+              return (
+                <TouchableOpacity
+                  key={category}
+                  style={[styles.categoryPill, dynamicStyles.categoryPill, isActive && styles.categoryPillActive]}
+                  onPress={() => handleCategoryPress(category)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.categoryText, dynamicStyles.categoryText, isActive && styles.categoryTextActive]}>{category}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-          <View style={styles.categoriesRow}>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Apparel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Others</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.categoryPill}>
-              <Text style={styles.categoryText}>Accessories</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.categoryHintText, dynamicStyles.categoryHintText]}>Tap a category to instantly filter active listings.</Text>
         </View>
 
         {/* Recommended For You */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recommended For You</Text>
+          <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Recommended For You</Text>
           <View style={styles.productRow}>
-            <TouchableOpacity 
-              style={[styles.productCard, { marginRight: 12 }]}
-              onPress={() => navigateToProductDetail({
-                id: 3,
-                title: 'Titleist AP2 Forged 5-PW',
-                price: '9,000',
-                location: 'Makati',
-                postedDate: 'October 15, 2025',
-                description: 'Professional grade forged irons. Well maintained and ready to play.',
-                category: 'Iron',
-                condition: 'Well Used',
-                seller: {
-                  name: 'hockeyops',
-                  rating: 4.9,
-                  reviewCount: 120,
-                },
-                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
-                reviews: [
-                  {
-                    id: 1,
-                    heading: 'Excellent!',
-                    text: 'The seller is very trustworthy and the clubs exceeded expectations.',
-                    reviewer: { name: 'hockeyops' },
-                  },
-                ],
-              })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.productImagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Titleist AP2</Text>
+            {listings.length > 3 ? (
+              listings.slice(3, 5).map(item => (
+                <TouchableOpacity
+                  key={item.listing_id}
+                  onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                  style={[styles.productCard, dynamicStyles.productCard, { marginRight: 12 }]}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.productImagePlaceholder}>
+                    <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
+                      {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+                    </Text>
+                  </View>
+                  <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{formatPriceLabel(item.price)}</Text>
+                  <View style={styles.sellerInfo}>
+                    {item.seller_profile_image ? (
+                      <Image 
+                        source={{ uri: item.seller_profile_image }}
+                        style={[styles.sellerAvatar, { marginRight: 6 }]}
+                      />
+                    ) : (
+                      <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                        <Ionicons name="person" size={12} color={theme.primary} />
+                      </View>
+                    )}
+                    <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{item.seller_name || 'Unknown'}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>More listings coming soon</Text>
               </View>
-              <Text style={styles.productName}>Titleist AP2 Forged 5-PW</Text>
-              <Text style={styles.productPrice}>₱9,000</Text>
-              <View style={styles.sellerInfo}>
-                <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                  <Ionicons name="person" size={12} color="#FF0000" />
-                </View>
-                <Text style={styles.sellerName}>hockeyops</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.productCard, { marginRight: 12 }]}
-              onPress={() => navigateToProductDetail({
-                id: 4,
-                title: 'Titleist TSR3 9.10 BNEW',
-                price: '26,500',
-                location: 'Quezon City',
-                postedDate: 'October 10, 2025',
-                description: 'Brand new in box. Never used. Still has original packaging.',
-                category: 'Driver',
-                condition: 'New',
-                seller: {
-                  name: 'hockeyops',
-                  rating: 4.9,
-                  reviewCount: 120,
-                },
-                images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }],
-                reviews: [
-                  {
-                    id: 1,
-                    heading: 'Perfect!',
-                    text: 'The seller is very trustworthy and delivered exactly as described.',
-                    reviewer: { name: 'hockeyops' },
-                  },
-                ],
-              })}
-              activeOpacity={0.8}
-            >
-              <View style={styles.productImagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>Titleist TSR3</Text>
-              </View>
-              <Text style={styles.productName}>Titleist TSR3 9.10 BNEW</Text>
-              <Text style={styles.productPrice}>₱26,500</Text>
-              <View style={styles.sellerInfo}>
-                <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                  <Ionicons name="person" size={12} color="#FF0000" />
-                </View>
-                <Text style={styles.sellerName}>hockeyops</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.viewMoreArrow}
-              onPress={() => navigation.navigate('RecommendedForYou')}
-            >
-              <Text style={styles.arrowSymbol}>→</Text>
-              <Text style={styles.viewMoreText}>Click to view more</Text>
-            </TouchableOpacity>
+            )}
+            {listings.length > 5 && (
+              <TouchableOpacity 
+                style={styles.viewMoreArrow}
+                onPress={() => navigation.navigate('RecommendedForYou')}
+              >
+                <Text style={[styles.arrowSymbol, { color: theme.primary }]}>→</Text>
+                <Text style={[styles.viewMoreText, { color: theme.textMuted }]}>Click to view more</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {
             // Already on Discover, do nothing
           }}
         >
-          <Ionicons name="home" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Home</Text>
+          <Ionicons name="home" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Inbox')}
         >
-          <Ionicons name="chatbubble-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Inbox</Text>
+          <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('PostItem')}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Sell</Text>
+          <Ionicons name="add-circle-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Sell</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Notifications')}
         >
-          <Ionicons name="notifications-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Notifications</Text>
+          <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Profile')}
         >
-          <Ionicons name="person-outline" size={22} color="#999" />
-          <Text style={styles.navLabel}>Profile</Text>
+          <Ionicons name="person-outline" size={22} color={theme.textMuted} />
+          <Text style={[styles.navLabel, { color: theme.textMuted }]}>Profile</Text>
         </TouchableOpacity>
       </View>
     </View>

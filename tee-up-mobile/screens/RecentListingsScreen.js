@@ -1,63 +1,113 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/RecentListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
+import { ListingsContext } from '../context/listingsContext';
+import { ThemeContext } from '../context/themeContext';
 
 export default function RecentListingsScreen({ navigation }) {
-  const products = [
-    { name: 'Srixon ZXi5 Iron set 5-P', condition: 'Iron set 5-P', price: '₱26,500', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'PING G30 9.5', condition: 'Slightly Used', price: '₱7,500', seller: 'issa123', sellerColor: '#333' },
-    { name: 'Titleist AP2', condition: 'Forged 5-PW', price: '₱9,000', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'Titleist TSR3 9.0', condition: 'BNEW', price: '₱26,500', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'Srixon ZXi5 Iron set 5-P', condition: 'Iron set 5-P', price: '₱26,500', seller: 'hockeyops', sellerColor: '#FF0000' },
-    { name: 'PING G30 9.5', condition: 'Slightly Used', price: '₱7,500', seller: 'issa123', sellerColor: '#333' },
-  ];
+  const insets = useSafeAreaInsets();
+  const { listings, loading } = useContext(ListingsContext);
+  const { theme } = useContext(ThemeContext);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
+    const firstPhoto = item.photos && Array.isArray(item.photos) && item.photos.length > 0 
+      ? item.photos[0] 
+      : null;
+    
     return (
-      <View key={index} style={[styles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}>
-        <View style={styles.productImagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>
-            {item.name.includes('Srixon') ? 'Srixon ZXi5' : 
-             item.name.includes('PING') ? 'PING G30' :
-             item.name.includes('AP2') ? 'Titleist AP2' : 'Titleist TSR3'}
-          </Text>
-        </View>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productCondition}>{item.condition}</Text>
-        <Text style={styles.productPrice}>{item.price}</Text>
-        <View style={styles.sellerInfo}>
-          <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-            <Ionicons name="person" size={12} color={item.sellerColor} />
+      <TouchableOpacity
+        key={item.listing_id}
+        style={[styles.productCard, dynamicStyles.productCard, isLeft ? styles.cardLeft : styles.cardRight]}
+        onPress={() => navigation.navigate('ProductDetail', { product: item })}
+        activeOpacity={0.8}
+      >
+        {firstPhoto ? (
+          <Image 
+            source={{ uri: firstPhoto }}
+            style={styles.productImage}
+            resizeMode="cover"
+            onError={(error) => {
+              console.error('Image load error for listing:', item.listing_id, error.nativeEvent.error);
+              console.error('Failed URL:', firstPhoto);
+            }}
+          />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+            <Text style={[styles.imagePlaceholderText, dynamicStyles.imagePlaceholderText]}>
+              {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
+            </Text>
           </View>
-          <Text style={styles.sellerName}>@{item.seller}</Text>
+        )}
+        <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[styles.productCondition, dynamicStyles.productCondition]}>{item.condition}</Text>
+        <Text style={[styles.productPrice, dynamicStyles.productPrice]}>
+          ₱{typeof item.price === 'number' ? item.price.toLocaleString() : item.price}
+        </Text>
+        <View style={styles.sellerInfo}>
+          {item.seller_profile_image ? (
+            <Image 
+              source={{ uri: item.seller_profile_image }}
+              style={[styles.sellerAvatar, { marginRight: 6 }]}
+            />
+          ) : (
+            <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+              <Ionicons name="person" size={12} color={theme.primary} />
+            </View>
+          )}
+          <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{item.seller_name || 'Unknown'}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
+    scrollView: { backgroundColor: theme.background },
+    productCard: { backgroundColor: theme.card },
+    productName: { color: theme.text },
+    productPrice: { color: theme.primary },
+    sellerName: { color: theme.textMuted },
+    productCondition: { color: theme.textMuted },
+    imagePlaceholderText: { color: theme.textMuted },
+    emptyStateText: { color: theme.textMuted },
+    bottomNav: { backgroundColor: theme.card },
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, dynamicStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       {/* Header Section */}
-      <View style={styles.header}>
+      <View style={[styles.header, dynamicStyles.header]}>
         <View style={styles.headerLeft}>
-          <Text style={styles.pageTitle}>Recent Listings</Text>
+          <Text style={[styles.pageTitle, dynamicStyles.pageTitle]}>Recent Listings</Text>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity 
             style={styles.headerIcon}
             activeOpacity={0.7}
           >
-            <Ionicons name="people-outline" size={24} color="#000" />
+            <Ionicons name="people-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('SavedListings')}
           >
-            <Ionicons name="heart-outline" size={24} color="#000" />
+            <Ionicons name="heart-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
@@ -72,25 +122,31 @@ export default function RecentListingsScreen({ navigation }) {
       </View>
 
       <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.scrollView, dynamicStyles.scrollView]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
 
         {/* Product Grid */}
         <View style={styles.productGrid}>
-          {products.map((product, index) => renderProductCard(product, index))}
+          {listings.length > 0 ? (
+            listings.map((product, index) => renderProductCard(product, index))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>No listings available</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, dynamicStyles.bottomNav, { paddingBottom: 16 + insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigateToBottomNav(navigation, 'Discover')}
         >
-          <Ionicons name="home" size={22} color="#000" />
-          <Text style={styles.navLabelActive}>Home</Text>
+          <Ionicons name="home" size={22} color={theme.primary} />
+          <Text style={[styles.navLabelActive, { color: theme.primary }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
