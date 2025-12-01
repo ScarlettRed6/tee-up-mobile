@@ -11,26 +11,30 @@ export default StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
     paddingHorizontal: 20,
-    paddingTop: 110,
+    paddingTop: 8,
   },
-  headerIcons: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+  // Header Section
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 50,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     backgroundColor: '#F6EDE2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D9CC',
-    zIndex: 10,
   },
-  iconButton: {
-    padding: 4,
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileAvatar: {
     width: 32,
@@ -41,29 +45,17 @@ export default StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
-  titleSection: {
-    marginBottom: 32,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
+  pageTitle: {
     fontFamily: 'Exo_700Bold',
-    fontSize: 28,
+    fontSize: 26,
     color: '#000',
-    marginRight: 12,
-  },
-  filterButton: {
-    padding: 4,
   },
   resultMetaRow: {
-    marginTop: 8,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     flexWrap: 'wrap',
   },
   resultCountText: {

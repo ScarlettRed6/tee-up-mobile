@@ -10,6 +10,7 @@ import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
 import { authContext } from '../context/authContext';
 import { getConversations } from '../api/chatApi';
+import { getUserProfile } from '../api/userApi';
 import { extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function SearchResultsScreen({ navigation, route }) {
@@ -18,6 +19,7 @@ export default function SearchResultsScreen({ navigation, route }) {
   const { unreadCount } = useContext(NotificationsContext);
   const { accessToken } = useContext(authContext);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [userProfileImage, setUserProfileImage] = useState(null);
   const filtersFromRoute = route?.params?.filters || {};
   const filtersKey = JSON.stringify(filtersFromRoute || {});
   const appliedFilters = useMemo(() => {
@@ -181,12 +183,42 @@ export default function SearchResultsScreen({ navigation, route }) {
     });
   };
 
+  // Fetch user profile image
+  const fetchUserProfile = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const profile = await getUserProfile();
+      setUserProfileImage(profile?.profile_image || null);
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      setUserProfileImage(null);
+    }
+  }, [accessToken]);
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+      loadInboxUnread();
+    }, [fetchUserProfile, loadInboxUnread])
+  );
+
   const dynamicStyles = {
     container: { backgroundColor: theme.background },
-    headerIcons: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
     scrollView: { backgroundColor: theme.background },
-    titleSection: { backgroundColor: theme.background },
-    title: { color: theme.text },
     resultCountText: { color: theme.textMuted },
     activeFilterText: { color: theme.textMuted },
     loadingText: { color: theme.textMuted },
@@ -202,52 +234,12 @@ export default function SearchResultsScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
-      {/* Floating Header Icons */}
-      <View style={[styles.headerIcons, dynamicStyles.headerIcons]}>
-        <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => navigation.navigate('SearchFilter')}
-        >
-          <Ionicons name="search-outline" size={22} color={theme.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="people-outline" size={22} color={theme.text} />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigation.navigate('SavedListings')}
-        >
-          <Ionicons name="heart-outline" size={22} color={theme.text} />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigateToBottomNav(navigation, 'Profile')}
-        >
-          <View style={styles.profileAvatar}>
-            <Ionicons name="person" size={16} color={theme.primary} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView 
-        style={[styles.scrollView, dynamicStyles.scrollView]}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Page Title with Filter Icon */}
-        <View style={[styles.titleSection, dynamicStyles.titleSection]}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
-              {trimmedQuery.length ? `'${displayQuery}'` : displayQuery}
-            </Text>
-            <TouchableOpacity 
-              style={styles.filterButton}
-              onPress={handleFilterPress}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="options-outline" size={22} color={theme.text} />
-            </TouchableOpacity>
-          </View>
+      {/* Header Section */}
+      <View style={[styles.header, dynamicStyles.header]}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.pageTitle, dynamicStyles.pageTitle]} numberOfLines={1}>
+            {trimmedQuery.length ? `'${displayQuery}'` : displayQuery}
+          </Text>
           <View style={styles.resultMetaRow}>
             <Text style={[styles.resultCountText, dynamicStyles.resultCountText]}>
               {results.length} result{results.length === 1 ? '' : 's'}
@@ -257,6 +249,48 @@ export default function SearchResultsScreen({ navigation, route }) {
             )}
           </View>
         </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.headerIcon}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SearchFilter', { 
+              returnTo: 'SearchResults',
+              filters: {}
+            })}
+          >
+            <Ionicons name="search-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerIcon, { marginLeft: 16 }]}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SavedListings')}
+          >
+            <Ionicons name="heart-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerIcon, { marginLeft: 16 }]}
+            activeOpacity={0.7}
+            onPress={() => navigateToBottomNav(navigation, 'Profile')}
+          >
+            {userProfileImage ? (
+              <Image
+                source={{ uri: userProfileImage }}
+                style={styles.profileAvatar}
+              />
+            ) : (
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={16} color={theme.primary} />
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView 
+        style={[styles.scrollView, dynamicStyles.scrollView]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
 
         {resultsLoading ? (
           <View style={styles.loadingState}>
