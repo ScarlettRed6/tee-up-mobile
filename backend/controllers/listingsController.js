@@ -19,7 +19,7 @@ export async function createListing(req, res) {
         return res.status(401).json({ error: "User ID not found in token. Please log in again." });
     }
 
-    const { title, description, category, brand, condition, price, status, location } = req.body;
+    const { title, description, category, brand, flex, hand, condition, price, status, location } = req.body;
     
     try{
 
@@ -36,7 +36,7 @@ export async function createListing(req, res) {
         console.log("Listing data:", { title, category, condition, price });
         console.log("Photos URLs to save:", photosUrls);
         
-        const newListing = await insertListing(user_id, title, description, category, brand, condition, price, status, photosUrls, location);
+        const newListing = await insertListing(user_id, title, description, category, brand, flex, hand, condition, price, status, photosUrls, location);
         
         // Ensure photos are parsed correctly
         if (newListing.photos && typeof newListing.photos === 'string') {
@@ -90,7 +90,7 @@ export async function createListing(req, res) {
 
 export async function getAllListingItems(req, res) {
     try{
-        const { category, user_id, sort, status, search, min_price, max_price, condition } = req.query;
+        const { category, user_id, sort, status, search, min_price, max_price, condition, flex, hand, } = req.query;
 
         console.log('Received query params:', { category, search, min_price, max_price, condition, status });
         
@@ -103,6 +103,8 @@ export async function getAllListingItems(req, res) {
         if (status) filters.status = status;
         if (condition) filters.condition = condition;
         if (search) filters.search = search;
+        if (flex) filters.search = flex;
+        if (hand) filters.search = hand;
 
         if (min_price !== undefined && min_price !== null && min_price !== '') {
             const parsedMin = parseFloat(min_price);
@@ -140,7 +142,7 @@ export async function updateListingItem(req, res) {
     try{
         const { id } = req.params;
         const userId = req.user.id;
-        let { title, description, category, brand, condition, price, status, existingPhotos, location  } = req.body;
+        let { title, description, category, brand, flex, hand, condition, price, status, existingPhotos, location  } = req.body;
 
         const listing = await getListingById(id);
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
@@ -185,7 +187,7 @@ export async function updateListingItem(req, res) {
             }
         }
 
-        const updatedListing = await updateListing(id, title, description, category, brand, condition, price, status, photosUrls, location);
+        const updatedListing = await updateListing(id, title, description, category, brand, flex, hand, condition, price, status, photosUrls, location);
         
         // Ensure photos are parsed correctly
         if (updatedListing.photos && typeof updatedListing.photos === 'string') {
