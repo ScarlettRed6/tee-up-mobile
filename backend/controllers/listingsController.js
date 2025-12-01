@@ -1,6 +1,6 @@
 import { uploadToCloudinary } from "../config/cloudinary.js";
 import { getUsersWhoFavorited } from "../models/favoritesModel.js";
-import { insertListing, getAllListings, getListingById, updateListing, deleteListing, updateListingStatus } 
+import { insertListing, getAllListings, getListingById, updateListing, deleteListing, updateListingStatus, getAllListingsExceptOwn } 
 from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";
@@ -273,6 +273,42 @@ export async function deleteListingItem(req, res) {
     }catch(err){
         res.status(500).json({ error: err.message });
     }
-}
+}//End of deleteListingItem function
+
+export async function getRecommendations(req, res) {
+    const userId = req.user.id;
+    const { preferredCategory, preferredBrand, preferredPrice } = req.query;
+
+    try{
+        const listings = await getAllListingsExceptOwn(userId);
+
+        const scoredListings = listings.map((listing) => {
+            let score = 0;
+
+            if (listing.category === preferredCategory){
+                score += 3;
+            }
+
+            if (listing.brand === preferredBrand){
+                score += 2;
+            }
+
+            if (preferredPrice){
+                const diff = Math.abs(Number(listing.price) - Number(preferredPrice));
+                if (diff < 500) score += 2;
+                else if (diff < 1000) score += 1;
+            }
+
+            return { ...listing, score};
+        });
+
+        scoredListings.sort((a, b) => b.score - a.score);
+
+        res.json({ success: true, recommendations: scoredListings.slice(0, 10) });
+    }catch(err){
+        console.log(`getRecommendations error: ${err}`);
+        res.status(500).json({ error: `SERVER ERROR GENERATING RECOMMENDATIONS ${err.message}` });
+    }
+}//End of getRecommendations function
 
 

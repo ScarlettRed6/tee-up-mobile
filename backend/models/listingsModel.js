@@ -164,3 +164,13 @@ export async function deleteListing(id) {
     const result = await pool.query(`DELETE FROM listings WHERE listing_id = $1 RETURNING *`, [id]);
     return result.rows[0];
 }
+
+//For recommendations
+export async function getAllListingsExceptOwn(userId) {
+    const result = await pool.query(
+        `SELECT * FROM listings WHERE user_id != $1`,
+        [userId]
+    );
+    return result.rows;
+}
+
