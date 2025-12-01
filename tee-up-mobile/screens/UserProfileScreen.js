@@ -10,6 +10,7 @@ import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { followUser, unfollowUser, getFollowerCount, getFollowStatus } from '../api/followerApi';
 import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -30,6 +31,7 @@ export default function UserProfileScreen({ navigation, route }) {
   
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [user, setUser] = useState(userFromParams || null);
   const [userListings, setUserListings] = useState([]);
@@ -916,6 +918,13 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

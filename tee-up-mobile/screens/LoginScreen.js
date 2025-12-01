@@ -25,6 +25,7 @@ export default function LoginScreen({ navigation }) {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -328,21 +329,34 @@ export default function LoginScreen({ navigation }) {
 
           <View style={styles.fieldGroup}>
             <Text style={[styles.label, dynamicStyles.label]}>Password</Text>
-            <TextInput
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (errors.password) {
-                  setErrors(prev => ({ ...prev, password: null }));
-                }
-              }}
-              placeholder="••••••••"
-              secureTextEntry
-              style={[styles.input, dynamicStyles.input, errors.password && styles.inputError]}
-              placeholderTextColor={theme.textMuted}
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) {
+                    setErrors(prev => ({ ...prev, password: null }));
+                  }
+                }}
+                placeholder="••••••••"
+                secureTextEntry={!showPassword}
+                style={[styles.input, styles.passwordInput, dynamicStyles.input, errors.password && styles.inputError]}
+                placeholderTextColor={theme.textMuted}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+              />
+              <TouchableOpacity
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword(!showPassword)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
             {errors.password && (
               <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.password}</Text>
             )}

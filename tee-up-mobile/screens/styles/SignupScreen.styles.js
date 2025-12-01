@@ -64,6 +64,18 @@ export default StyleSheet.create({
     backgroundColor: '#F9FAFB',
     color: '#111',
   },
+  passwordInputContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 45,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    padding: 4,
+  },
   primaryButton: {
     marginTop: 24,
     backgroundColor: '#111827',

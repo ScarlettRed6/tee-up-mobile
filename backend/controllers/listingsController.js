@@ -92,7 +92,7 @@ export async function getAllListingItems(req, res) {
     try{
         const { category, user_id, sort, status, search, min_price, max_price, condition, flex, hand, } = req.query;
 
-        console.log('Received query params:', { category, search, min_price, max_price, condition, status });
+        console.log('Received query params:', { category, search, min_price, max_price, condition, flex, hand, status });
         
         const filters = {};
         if (category) {
