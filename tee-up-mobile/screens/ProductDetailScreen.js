@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator, Modal, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { authContext } from '../context/authContext';
 import { favoritesContext } from '../context/favoritesContext';
 import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { getConversations } from '../api/chatApi';
 import jwtDecode from 'jwt-decode';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -21,6 +23,7 @@ export default function ProductDetailScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
   const { unreadCount } = useContext(NotificationsContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const routeProduct = route?.params?.product;
@@ -212,6 +215,24 @@ export default function ProductDetailScreen({ navigation, route }) {
     const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
     setFullscreenIndex(index);
   };
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInboxUnread();
+    }, [loadInboxUnread])
+  );
 
   // Effect to scroll to correct position when fullscreen opens
   useEffect(() => {
@@ -752,6 +773,13 @@ export default function ProductDetailScreen({ navigation, route }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

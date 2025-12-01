@@ -1,4 +1,5 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +8,8 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { favoritesContext } from '../context/favoritesContext';
 import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { authContext } from '../context/authContext';
+import { getConversations } from '../api/chatApi';
 
 const normalizeListingStatus = (statusValue = 'available') => {
   const lower = (statusValue || '').toString().toLowerCase();
@@ -38,6 +41,26 @@ export default function SavedListingsScreen({ navigation }) {
   const { favorites, favoritesLoading, refreshFavorites } = useContext(favoritesContext);
   const { theme } = useContext(ThemeContext);
   const { unreadCount } = useContext(NotificationsContext);
+  const { accessToken } = useContext(authContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInboxUnread();
+    }, [loadInboxUnread])
+  );
 
   const savedProducts = useMemo(() => {
     return favorites.map((item) => {
@@ -215,6 +238,13 @@ export default function SavedListingsScreen({ navigation }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

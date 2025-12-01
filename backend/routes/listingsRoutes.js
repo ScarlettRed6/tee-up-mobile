@@ -6,6 +6,7 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+router.get("/recommendations", verifyToken, getRecommendations);
 router.get("/", getAllListingItems);
 router.get("/:id", getListingItemById);
 
@@ -14,6 +15,5 @@ router.post("/", verifyToken, upload.array("photos", 5), createListing);
 router.put("/:id", verifyToken, upload.array("photos", 5), updateListingItem);
 router.delete("/:id", verifyToken, deleteListingItem);
 router.patch("/:listing_id/status", verifyToken, changeListingStatus);
-router.get("/", verifyToken, getRecommendations);
 
 export default router;

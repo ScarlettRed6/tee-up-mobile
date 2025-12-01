@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { getUserById } from '../api/userApi';
-import { fetchUserListings } from '../api/listingsApi';
+import { fetchListings } from '../api/listingsApi';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { followUser, unfollowUser, getFollowerCount, getFollowStatus } from '../api/followerApi';
 import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { getConversations } from '../api/chatApi';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -32,6 +34,7 @@ export default function UserProfileScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
   const { unreadCount } = useContext(NotificationsContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [user, setUser] = useState(userFromParams || null);
   const [userListings, setUserListings] = useState([]);
@@ -116,6 +119,24 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
   const [sortBy, setSortBy] = useState('recentlyListed');
   const [showSortModal, setShowSortModal] = useState(false);
 
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInboxUnread();
+    }, [loadInboxUnread])
+  );
+
   // Fetch user data and listings
   useEffect(() => {
     const fetchUserData = async () => {
@@ -193,7 +214,8 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         }
 
         if (targetUserId) {
-            await fetchRatingsAndListings(targetUserId, userData);
+            // Initial fetch - will be refetched when filters change via useEffect
+            await fetchUserListingsWithFilters(targetUserId, userData);
             await fetchFollowerInfo(targetUserId);
           } else {
             console.warn('No targetUserId available, cannot fetch listings');
@@ -225,13 +247,57 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     }
   }, [user?.id, fetchFollowerInfo]);
 
-  const fetchRatingsAndListings = async (targetUserId, userData) => {
+  // Fetch user listings with filters
+  const fetchUserListingsWithFilters = useCallback(async (targetUserId, userData) => {
+    if (!targetUserId) return;
+
     try {
       setRatingsLoading(true);
+      
+      // Build filters object for backend
+      const filters = {
+        user_id: targetUserId,
+      };
+
+      // Add search filter
+      if (searchQuery.trim().length > 0) {
+        filters.search = searchQuery.trim();
+      }
+
+      // Add category filter
+      if (selectedCategory && selectedCategory !== 'All') {
+        filters.category = selectedCategory.trim();
+      }
+
+      // Add condition filter
+      if (selectedCondition) {
+        filters.condition = selectedCondition;
+      }
+
+      // Add flex filter
+      if (selectedFlex) {
+        filters.flex = selectedFlex;
+      }
+
+      // Add hand filter
+      if (selectedHand) {
+        filters.hand = selectedHand;
+      }
+
+      // Add status filter
+      if (selectedStatus && selectedStatus !== 'All') {
+        const statusMap = {
+          'Available': 'available',
+          'Sold': 'sold',
+          'Pending': 'pending',
+        };
+        filters.status = statusMap[selectedStatus] || selectedStatus.toLowerCase();
+      }
+
       const [summaryRes, ratingsRes, listings] = await Promise.all([
         fetchUserRatingSummary(targetUserId),
         fetchUserRatings(targetUserId),
-        fetchUserListings(targetUserId)
+        fetchListings(filters)
       ]);
 
       setRatingSummary({
@@ -282,7 +348,17 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     } finally {
       setRatingsLoading(false);
     }
-  };
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus]);
+
+  // Refetch listings when filters change
+  useEffect(() => {
+    if (user?.id) {
+      const targetUserId = userIdFromParams || userFromParams?.id || user?.id;
+      if (targetUserId) {
+        fetchUserListingsWithFilters(targetUserId, user);
+      }
+    }
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, user?.id, userIdFromParams, userFromParams?.id, fetchUserListingsWithFilters]);
 
   const handleFollowToggle = useCallback(async () => {
     if (!user?.id || followLoading) return;
@@ -356,84 +432,42 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
   };
 
   // Filter and sort products
+  // Sort products (filtering is now done on backend)
   const filteredAndSortedProducts = React.useMemo(() => {
-    console.log('Filtering products - userListings length:', userListings.length);
-    console.log('Filtering products - userListings:', userListings);
-    console.log('Current filters:', { searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy });
-    
-    let filtered = [...userListings];
-
-    // Search filter
-    if (searchQuery.trim().length > 0) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      console.log('After search filter:', filtered.length);
-    }
-
-    // Category filter
-    if (selectedCategory && selectedCategory !== 'All') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-      console.log('After category filter:', filtered.length, 'category:', selectedCategory);
-    }
-
-    // Condition filter
-    if (selectedCondition) {
-      filtered = filtered.filter(product => product.condition === selectedCondition);
-      console.log('After condition filter:', filtered.length);
-    }
-
-    // Flex filter
-    if (selectedFlex) {
-      filtered = filtered.filter(product => product.flex === selectedFlex);
-      console.log('After flex filter:', filtered.length);
-    }
-
-    // Hand filter
-    if (selectedHand) {
-      filtered = filtered.filter(product => product.hand === selectedHand);
-      console.log('After hand filter:', filtered.length);
-    }
-
-    // Status filter
-    if (selectedStatus) {
-      const normalizedSelected = normalizeListingStatus(selectedStatus);
-      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
-      console.log('After status filter:', filtered.length);
-    }
+    let sorted = [...userListings];
 
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
           const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
           return dateB - dateA;
         });
         break;
       case 'oldestListing':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
           const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
           return dateA - dateB;
         });
         break;
       case 'mostExpensive':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const priceA = typeof a.priceValue === 'number' ? a.priceValue : parseFloat(a.priceValue) || 0;
           const priceB = typeof b.priceValue === 'number' ? b.priceValue : parseFloat(b.priceValue) || 0;
           return priceB - priceA;
         });
         break;
       case 'cheapest':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const priceA = typeof a.priceValue === 'number' ? a.priceValue : parseFloat(a.priceValue) || 0;
           const priceB = typeof b.priceValue === 'number' ? b.priceValue : parseFloat(b.priceValue) || 0;
           return priceA - priceB;
         });
         break;
       default:
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
           const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
           return dateB - dateA;
@@ -441,10 +475,8 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         break;
     }
 
-    console.log('Final filtered products:', filtered.length);
-    console.log('Final filtered products data:', filtered);
-    return filtered;
-  }, [userListings, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy]);
+    return sorted;
+  }, [userListings, sortBy]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -904,6 +936,13 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

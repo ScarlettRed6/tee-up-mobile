@@ -10,9 +10,10 @@ import { authContext } from '../context/authContext';
 import { ListingsContext } from '../context/listingsContext';
 import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { getConversations } from '../api/chatApi';
 import { getUserProfile } from '../api/userApi';
 import { fetchUserRatingSummary } from '../api/ratingApi';
-import { fetchUserListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
+import { fetchListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -31,6 +32,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [ratingSummary, setRatingSummary] = useState({
     average_rating: 0,
     total_raters: 0,
@@ -80,16 +82,29 @@ export default function ProfileScreen({ navigation, route }) {
     });
   }, [navigation, fetchProfile]);
 
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
   // Refresh profile when screen comes into focus (e.g., returning from EditProfile)
   useFocusEffect(
     useCallback(() => {
       if (accessToken) {
         fetchProfile();
+        loadInboxUnread();
       }
-    }, [accessToken, fetchProfile])
+    }, [accessToken, fetchProfile, loadInboxUnread])
   );
 
-  // Fetch user's own listings
+  // Fetch user's own listings with filters
   const fetchUserOwnListings = useCallback(async () => {
     if(!accessToken) return;
 
@@ -100,7 +115,47 @@ export default function ProfileScreen({ navigation, route }) {
       const userId = decoded.id;
 
       if (userId) {
-        const userListings = await fetchUserListings(userId);
+        // Build filters object for backend
+        const filters = {
+          user_id: userId,
+        };
+
+        // Add search filter
+        if (searchQuery.trim().length > 0) {
+          filters.search = searchQuery.trim();
+        }
+
+        // Add category filter
+        if (selectedCategory && selectedCategory !== 'All') {
+          filters.category = selectedCategory.trim();
+        }
+
+        // Add condition filter
+        if (selectedCondition) {
+          filters.condition = selectedCondition;
+        }
+
+        // Add flex filter
+        if (selectedFlex) {
+          filters.flex = selectedFlex;
+        }
+
+        // Add hand filter
+        if (selectedHand) {
+          filters.hand = selectedHand;
+        }
+
+        // Add status filter
+        if (selectedStatus && selectedStatus !== 'All') {
+          const statusMap = {
+            'Available': 'available',
+            'Sold': 'sold',
+            'Pending': 'pending',
+          };
+          filters.status = statusMap[selectedStatus] || selectedStatus.toLowerCase();
+        }
+
+        const userListings = await fetchListings(filters);
         
         // Transform backend listing data to match ProfileScreen format
         const transformedListings = userListings.map(listing => {
@@ -129,8 +184,9 @@ export default function ProfileScreen({ navigation, route }) {
     } finally {
       setListingsLoading(false);
     }
-  }, [accessToken, user]);
+  }, [accessToken, user, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus]);
 
+  // Fetch listings when filters change
   useEffect(() => {
     fetchUserOwnListings();
   }, [fetchUserOwnListings]);
@@ -260,43 +316,9 @@ export default function ProfileScreen({ navigation, route }) {
     return 3;
   }, []);
 
+  // Sort products (filtering is now done on backend)
   const filteredAndSortedProducts = React.useMemo(() => {
-    let filtered = [...allProducts];
-
-    // Search filter
-    if (searchQuery.trim().length > 0) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Category filter
-    if (selectedCategory && selectedCategory !== 'All') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    // Condition filter
-    if (selectedCondition) {
-      filtered = filtered.filter(product => product.condition === selectedCondition);
-    }
-
-    // Price filter - removed for Profile page (only used in SearchResults)
-
-    // Flex filter
-    if (selectedFlex) {
-      filtered = filtered.filter(product => product.flex === selectedFlex);
-    }
-
-    // Hand filter
-    if (selectedHand) {
-      filtered = filtered.filter(product => product.hand === selectedHand);
-    }
-
-    // Status filter (Available/Sold) - skip when "All" is selected
-    if (selectedStatus && selectedStatus !== 'All') {
-      const normalizedSelected = normalizeListingStatus(selectedStatus);
-      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
-    }
+    let sorted = [...allProducts];
 
     const compareBySort = (a, b) => {
       if (!selectedStatus || selectedStatus === 'All') {
@@ -320,8 +342,8 @@ export default function ProfileScreen({ navigation, route }) {
       }
     };
 
-    return filtered.sort(compareBySort);
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts, getStatusPriority]);
+    return sorted.sort(compareBySort);
+  }, [sortBy, allProducts, selectedStatus, getStatusPriority]);
 
   const renderRatingStars = (ratingValue = 0) => {
     const stars = [];
@@ -416,13 +438,6 @@ export default function ProfileScreen({ navigation, route }) {
   const cancelMarkAsSold = () => {
     setShowConfirmModal(false);
     setProductToUpdate(null);
-  };
-
-  const handleViewAnalytics = (productId) => {
-    // Navigate to analytics screen or show analytics modal
-    console.log('View Analytics for product:', productId);
-    setOpenDropdownId(null); // Close dropdown
-    // TODO: Navigate to analytics screen when implemented
   };
 
   const handleEditListing = (item) => {
@@ -545,14 +560,6 @@ export default function ProfileScreen({ navigation, route }) {
             >
               <Ionicons name="create-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
               <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>Edit Listing</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.dropdownItem}
-              onPress={() => handleViewAnalytics(item.id)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="analytics-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
-              <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>View Analytics</Text>
             </TouchableOpacity>
             {item.status === 'Available' && (
               <>
@@ -1005,6 +1012,13 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

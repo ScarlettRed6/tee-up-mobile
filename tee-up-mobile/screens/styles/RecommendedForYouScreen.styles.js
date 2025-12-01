@@ -74,6 +74,13 @@ export default StyleSheet.create({
   cardRight: {
     marginLeft: '2%',
   },
+  productImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 10,
+    backgroundColor: '#F5F5F5',
+  },
   productImagePlaceholder: {
     width: '100%',
     height: 120,
@@ -118,11 +125,59 @@ export default StyleSheet.create({
     backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 6,
+  },
+  sellerAvatarImage: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 6,
+    backgroundColor: '#F0F0F0',
   },
   sellerName: {
     fontFamily: 'Exo_400Regular',
     fontSize: 10,
     color: '#666',
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+  },
+  loadingText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
+    paddingHorizontal: 20,
+  },
+  emptyStateText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 16,
+    color: '#666',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  retryButtonText: {
+    fontFamily: 'Exo_600SemiBold',
+    fontSize: 14,
+    color: '#FFF',
   },
   bottomNav: {
     position: 'absolute',

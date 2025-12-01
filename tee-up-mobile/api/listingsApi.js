@@ -15,6 +15,14 @@ export const createListing = async (listingData, photos = []) => {
         formData.append('brand', listingData.brand);
     }
     
+    if (listingData.flex) {
+        formData.append('flex', listingData.flex);
+    }
+    
+    if (listingData.hand) {
+        formData.append('hand', listingData.hand);
+    }
+    
     if (listingData.location) {
         formData.append('location', listingData.location);
     }
@@ -90,6 +98,14 @@ export const updateListing = async (listingId, listingData, photos = []) => {
         formData.append('brand', listingData.brand);
     }
     
+    if (listingData.flex) {
+        formData.append('flex', listingData.flex);
+    }
+    
+    if (listingData.hand) {
+        formData.append('hand', listingData.hand);
+    }
+    
     if (listingData.location) {
         formData.append('location', listingData.location);
     }
@@ -127,3 +143,36 @@ export const updateListing = async (listingId, listingData, photos = []) => {
     });
     return res.data.listing;
 };
+
+/**
+ * Fetch personalized recommendations for the current user
+ * @param {Object} preferences - User preferences for recommendations
+ * @param {string} preferences.preferredCategory - Preferred category (optional)
+ * @param {string} preferences.preferredBrand - Preferred brand (optional)
+ * @param {number} preferences.preferredPrice - Preferred price range (optional)
+ * @returns {Promise<Array>} Array of recommended listings
+ */
+export async function fetchRecommendations(preferences = {}) {
+    const params = new URLSearchParams();
+    
+    if (preferences.preferredCategory) {
+        params.append('preferredCategory', preferences.preferredCategory);
+    }
+    if (preferences.preferredBrand) {
+        params.append('preferredBrand', preferences.preferredBrand);
+    }
+    if (preferences.preferredPrice) {
+        params.append('preferredPrice', preferences.preferredPrice.toString());
+    }
+    
+    const queryString = params.toString();
+    const endpoint = queryString 
+        ? `/listings/recommendations?${queryString}` 
+        : '/listings/recommendations';
+    
+    console.log('Fetching recommendations with preferences:', preferences);
+    console.log('API endpoint:', endpoint);
+    
+    const response = await api.get(endpoint);
+    return response.data.recommendations || [];
+}

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useContext } from 'react';
+import React, { useEffect, useMemo, useState, useContext, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,12 +8,16 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { fetchListings } from '../api/listingsApi';
 import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { authContext } from '../context/authContext';
+import { getConversations } from '../api/chatApi';
 import { extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function SearchResultsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { theme } = useContext(ThemeContext);
   const { unreadCount } = useContext(NotificationsContext);
+  const { accessToken } = useContext(authContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const filtersFromRoute = route?.params?.filters || {};
   const filtersKey = JSON.stringify(filtersFromRoute || {});
   const appliedFilters = useMemo(() => {
@@ -54,6 +59,12 @@ export default function SearchResultsScreen({ navigation, route }) {
     }
     if (parsedFilters.condition) {
       payload.condition = parsedFilters.condition;
+    }
+    if (parsedFilters.flex) {
+      payload.flex = parsedFilters.flex;
+    }
+    if (parsedFilters.hand) {
+      payload.hand = parsedFilters.hand;
     }
     // Search results ALWAYS show only available items (never sold or pending)
     payload.status = 'available';
@@ -287,6 +298,13 @@ export default function SearchResultsScreen({ navigation, route }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

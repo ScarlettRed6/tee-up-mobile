@@ -147,6 +147,8 @@ export default function PostItemScreen({ navigation, route }) {
         description: description.trim(),
         category: category,
         brand: brand.trim() || null, // Optional field
+        flex: flex || null, // Optional field
+        hand: hand || null, // Optional field
         condition: condition,
         price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
         status: isEditMode ? (listingData?.status || 'available') : 'available', // Keep existing status in edit mode

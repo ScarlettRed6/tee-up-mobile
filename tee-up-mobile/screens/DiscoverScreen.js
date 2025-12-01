@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback } from 'react';
+import React, { useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,10 @@ import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
 import { NotificationsContext } from '../context/notificationsContext';
+import { favoritesContext } from '../context/favoritesContext';
+import { getConversations } from '../api/chatApi';
 import { getUserProfile } from '../api/userApi';
+import { fetchRecommendations } from '../api/listingsApi';
 import { CATEGORY_OPTIONS, extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function DiscoverScreen({ navigation }) {
@@ -18,8 +21,12 @@ export default function DiscoverScreen({ navigation }) {
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
   const { unreadCount } = useContext(NotificationsContext);
+  const { favorites } = useContext(favoritesContext);
   const [userProfileImage, setUserProfileImage] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORY_OPTIONS[0]);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
   // Helper function to navigate to product detail
   const navigateToProductDetail = (productData) => {
@@ -41,11 +48,96 @@ export default function DiscoverScreen({ navigation }) {
     fetchUserProfile();
   }, [fetchUserProfile]);
 
+  // Derive user preferences from favorites for recommendations
+  const userPreferences = useMemo(() => {
+    if (!favorites || favorites.length === 0) {
+      return {};
+    }
+
+    const categoryCounts = {};
+    const brandCounts = {};
+    let totalPrice = 0;
+    let priceCount = 0;
+
+    favorites.forEach((fav) => {
+      if (fav.category) {
+        categoryCounts[fav.category] = (categoryCounts[fav.category] || 0) + 1;
+      }
+      if (fav.brand) {
+        brandCounts[fav.brand] = (brandCounts[fav.brand] || 0) + 1;
+      }
+      if (fav.price) {
+        const priceNum = typeof fav.price === 'number' ? fav.price : parseFloat(fav.price);
+        if (!isNaN(priceNum) && priceNum > 0) {
+          totalPrice += priceNum;
+          priceCount++;
+        }
+      }
+    });
+
+    const preferredCategory = Object.keys(categoryCounts).reduce((a, b) =>
+      categoryCounts[a] > categoryCounts[b] ? a : b, Object.keys(categoryCounts)[0]
+    );
+
+    const preferredBrand = Object.keys(brandCounts).reduce((a, b) =>
+      brandCounts[a] > brandCounts[b] ? a : b, Object.keys(brandCounts)[0]
+    );
+
+    const preferredPrice = priceCount > 0 ? Math.round(totalPrice / priceCount) : null;
+
+    return {
+      preferredCategory: preferredCategory || undefined,
+      preferredBrand: preferredBrand || undefined,
+      preferredPrice: preferredPrice || undefined,
+    };
+  }, [favorites]);
+
+  // Load recommendations
+  const loadRecommendations = useCallback(async () => {
+    if (!accessToken) {
+      setRecommendations([]);
+      return;
+    }
+
+    setRecommendationsLoading(true);
+    try {
+      const data = await fetchRecommendations(userPreferences);
+      const transformedRecommendations = (data || []).map((item) => {
+        const photos = extractPhotos(item.photos);
+        return {
+          ...item,
+          listing_id: item.listing_id || item.id,
+          photos: photos,
+        };
+      });
+      setRecommendations(transformedRecommendations);
+    } catch (err) {
+      console.error('Error fetching recommendations in DiscoverScreen:', err);
+      setRecommendations([]);
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  }, [accessToken, userPreferences]);
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
   // Refresh profile image when screen comes into focus (e.g., after updating profile)
   useFocusEffect(
     useCallback(() => {
       fetchUserProfile();
-    }, [fetchUserProfile])
+      loadInboxUnread();
+      loadRecommendations();
+    }, [fetchUserProfile, loadInboxUnread, loadRecommendations])
   );
 
   const handleCategoryPress = (category) => {
@@ -97,12 +189,6 @@ export default function DiscoverScreen({ navigation }) {
             })}
           >
             <Ionicons name="search-outline" size={24} color={theme.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.headerIcon, { marginLeft: 16 }]}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="people-outline" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.headerIcon, { marginLeft: 16 }]}
@@ -244,54 +330,93 @@ export default function DiscoverScreen({ navigation }) {
         {/* Recommended For You */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, dynamicStyles.sectionTitle]}>Recommended For You</Text>
-          <View style={styles.productRow}>
-            {listings.length > 3 ? (
-              listings.slice(3, 5).map(item => (
-                <TouchableOpacity
-                  key={item.listing_id}
-                  onPress={() => navigation.navigate("ProductDetail", { product: item })}
-                  style={[styles.productCard, dynamicStyles.productCard, { marginRight: 12 }]}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.productImagePlaceholder}>
-                    <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
-                      {item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title}
-                    </Text>
-                  </View>
-                  <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <Text style={[styles.productPrice, dynamicStyles.productPrice]}>{formatPriceLabel(item.price)}</Text>
-                  <View style={styles.sellerInfo}>
-                    {item.seller_profile_image ? (
+          {recommendationsLoading ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText, { marginTop: 8 }]}>
+                Finding recommendations...
+              </Text>
+            </View>
+          ) : recommendations.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScrollContent}
+              style={styles.horizontalScrollView}
+            >
+              {recommendations.slice(0, 6).map(item => {
+                const photos = extractPhotos(item.photos);
+                const firstPhoto = photos.length > 0 ? photos[0] : null;
+                
+                return (
+                  <TouchableOpacity
+                    key={item.listing_id || item.id}
+                    onPress={() => navigation.navigate("ProductDetail", { product: item })}
+                    style={[styles.productCard, dynamicStyles.productCard, { marginRight: 12 }]}
+                    activeOpacity={0.8}
+                  >
+                    {firstPhoto ? (
                       <Image 
-                        source={{ uri: item.seller_profile_image }}
-                        style={[styles.sellerAvatar, { marginRight: 6 }]}
+                        source={{ uri: firstPhoto }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                        onError={(error) => {
+                          console.error('Image load error for recommendation:', item.listing_id, error.nativeEvent.error);
+                        }}
                       />
                     ) : (
-                      <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
-                        <Ionicons name="person" size={12} color={theme.primary} />
+                      <View style={styles.productImagePlaceholder}>
+                        <Ionicons name="image-outline" size={24} color={theme.textMuted} />
+                        <Text style={[styles.imagePlaceholderText, { color: theme.textMuted }]}>
+                          {item.title && item.title.length > 15 ? item.title.substring(0, 15) + '...' : item.title || 'No image'}
+                        </Text>
                       </View>
                     )}
-                    <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{item.seller_name || 'Unknown'}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>More listings coming soon</Text>
-              </View>
-            )}
-            {listings.length > 5 && (
-              <TouchableOpacity 
-                style={styles.viewMoreArrow}
+                    <Text style={[styles.productName, dynamicStyles.productName]} numberOfLines={2}>
+                      {item.title || 'Untitled Listing'}
+                    </Text>
+                    <Text style={[styles.productPrice, dynamicStyles.productPrice]}>
+                      {formatPriceLabel(item.price)}
+                    </Text>
+                    <View style={styles.sellerInfo}>
+                      {item.seller_profile_image ? (
+                        <Image 
+                          source={{ uri: item.seller_profile_image }}
+                          style={[styles.sellerAvatar, { marginRight: 6 }]}
+                        />
+                      ) : (
+                        <View style={[styles.sellerAvatar, { marginRight: 6 }]}>
+                          <Ionicons name="person" size={12} color={theme.primary} />
+                        </View>
+                      )}
+                      <Text style={[styles.sellerName, dynamicStyles.sellerName]} numberOfLines={1}>
+                        {item.seller_name || item.seller || 'Unknown'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+              
+              {/* View More Button at the end */}
+              <TouchableOpacity
+                style={[styles.viewMoreCard, { backgroundColor: theme.card }]}
                 onPress={() => navigation.navigate('RecommendedForYou')}
+                activeOpacity={0.8}
               >
-                <Text style={[styles.arrowSymbol, { color: theme.primary }]}>→</Text>
-                <Text style={[styles.viewMoreText, { color: theme.textMuted }]}>Click to view more</Text>
+                <View style={styles.viewMoreContent}>
+                  <Ionicons name="arrow-forward-circle" size={32} color={theme.primary} />
+                  <Text style={[styles.viewMoreTitle, { color: theme.text }]}>View More</Text>
+                  <Text style={[styles.viewMoreSubtitle, { color: theme.textMuted }]}>See all recommendations</Text>
+                </View>
               </TouchableOpacity>
-            )}
-          </View>
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, dynamicStyles.emptyStateText]}>
+                {accessToken ? 'Save some listings to get personalized recommendations!' : 'More listings coming soon'}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -312,6 +437,13 @@ export default function DiscoverScreen({ navigation }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

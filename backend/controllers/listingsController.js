@@ -103,8 +103,8 @@ export async function getAllListingItems(req, res) {
         if (status) filters.status = status;
         if (condition) filters.condition = condition;
         if (search) filters.search = search;
-        if (flex) filters.search = flex;
-        if (hand) filters.search = hand;
+        if (flex) filters.flex = flex;
+        if (hand) filters.hand = hand;
 
         if (min_price !== undefined && min_price !== null && min_price !== '') {
             const parsedMin = parseFloat(min_price);
