@@ -195,8 +195,7 @@ export default function LoginScreen({ navigation }) {
       await login(email.trim(), password);
       console.log("Logged in!");
     }catch(err){
-      console.log("Login failed:", err);
-      
+      // Silently handle login errors - user will see appropriate error message in UI
       const status = err.response?.status;
       const serverMessage = err.response?.data?.message;
       const normalizedMessage = serverMessage?.toLowerCase() || '';

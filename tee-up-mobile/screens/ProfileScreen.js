@@ -9,6 +9,7 @@ import { isCurrentUser } from '../utils/userConstants';
 import { authContext } from '../context/authContext';
 import { ListingsContext } from '../context/listingsContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
 import { getUserProfile } from '../api/userApi';
 import { fetchUserRatingSummary } from '../api/ratingApi';
 import { fetchUserListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
@@ -26,6 +27,7 @@ export default function ProfileScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const { refreshListings } = useContext(ListingsContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -334,7 +336,7 @@ export default function ProfileScreen({ navigation, route }) {
         <Ionicons
           key={`rating-star-${i}`}
           name={iconName}
-          size={18}
+          size={20}
           color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
           style={{ marginRight: i === 5 ? 0 : 4 }}
         />
@@ -679,14 +681,20 @@ export default function ProfileScreen({ navigation, route }) {
   const dynamicStyles = {
     container: { backgroundColor: theme.background },
     scrollView: { backgroundColor: theme.background },
-    profileSection: { backgroundColor: 'transparent' },
+    profileHeaderCard: { backgroundColor: theme.card },
     username: { color: theme.text },
-    statText: { color: theme.textSecondary },
-    reputationText: { color: theme.text },
-    reputationSubtext: { color: theme.textMuted },
-    bioSection: { backgroundColor: 'transparent' },
+    statCard: { backgroundColor: theme.backgroundAlt },
+    statValue: { color: theme.text },
+    statLabel: { color: theme.textMuted },
+    reputationTitle: { color: theme.text },
+    ratingValue: { color: theme.text },
+    reviewCount: { color: theme.textMuted },
+    bioCard: { borderTopColor: theme.border },
+    bioTitle: { color: theme.text },
     bioText: { color: theme.text },
     bioPlaceholderText: { color: theme.textMuted },
+    editBioButton: { backgroundColor: theme.backgroundAlt, borderColor: theme.primary },
+    editBioButtonText: { color: theme.primary },
     searchBar: { backgroundColor: theme.card },
     searchInput: { color: theme.text },
     filterButton: { backgroundColor: theme.lightGray },
@@ -744,79 +752,108 @@ export default function ProfileScreen({ navigation, route }) {
           onScrollBeginDrag={() => setOpenDropdownId(null)}
           scrollEventThrottle={16}
         >
-        {/* Profile Summary Card */}
-        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
-          <View style={styles.profilePhotoContainer}>
-            {user.profile_image ? (
-              <Image 
-                source={{ uri: user.profile_image }}
-                style={styles.profilePhoto}
-                resizeMode="cover"
-                onError={(error) => {
-                  console.error('Profile image load error:', error.nativeEvent.error);
-                  console.error('Failed URL:', user.profile_image);
-                }}
-              />
-            ) : (
-              <View style={styles.profilePhoto}>
-                <Ionicons name="person" size={50} color={theme.primary} />
+        {/* Profile Header Card */}
+        <View style={[styles.profileHeaderCard, dynamicStyles.profileHeaderCard]}>
+          {/* Profile Photo and Name */}
+          <View style={styles.profileHeaderTop}>
+            <View style={styles.profilePhotoContainer}>
+              {user.profile_image ? (
+                <Image 
+                  source={{ uri: user.profile_image }}
+                  style={styles.profilePhoto}
+                  resizeMode="cover"
+                  onError={(error) => {
+                    console.error('Profile image load error:', error.nativeEvent.error);
+                    console.error('Failed URL:', user.profile_image);
+                  }}
+                />
+              ) : (
+                <View style={styles.profilePhoto}>
+                  <Ionicons name="person" size={50} color={theme.primary} />
+                </View>
+              )}
+            </View>
+            <Text style={[styles.username, dynamicStyles.username]}>{user.name}</Text>
+          </View>
+
+          {/* Stats Cards Row */}
+          <View style={styles.statsCardsRow}>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="cube-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {allProducts.filter(p => p.status === 'Available').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Active</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="list-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {allProducts.length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Total</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {allProducts.filter(p => p.status === 'Sold').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Sold</Text>
+            </View>
+          </View>
+
+          {/* Reputation Section */}
+          <View style={styles.reputationSection}>
+            <View style={styles.reputationHeader}>
+              <Ionicons name="star" size={20} color="#FFD700" />
+              <Text style={[styles.reputationTitle, dynamicStyles.reputationTitle]}>Reputation</Text>
+            </View>
+            <View style={styles.reputationContent}>
+              <View style={styles.ratingDisplay}>
+                <Text style={[styles.ratingValue, dynamicStyles.ratingValue]}>
+                  {ratingSummary.total_raters > 0
+                    ? Number(ratingSummary.average_rating || 0).toFixed(1)
+                    : '0.0'}
+                </Text>
+                <View style={styles.starsContainer}>
+                  {renderRatingStars(Number(ratingSummary.average_rating || 0))}
+                </View>
               </View>
+              <Text style={[styles.reviewCount, dynamicStyles.reviewCount]}>
+                {ratingSummary.total_raters > 0
+                  ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
+                  : 'No reviews yet'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Bio Section */}
+          <View style={[styles.bioCard, dynamicStyles.bioCard]}>
+            <View style={styles.bioHeader}>
+              <Ionicons name="document-text-outline" size={18} color={theme.textMuted} />
+              <Text style={[styles.bioTitle, dynamicStyles.bioTitle]}>About</Text>
+            </View>
+            <Text
+              style={[
+                styles.bioText,
+                dynamicStyles.bioText,
+                !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
+              ]}
+            >
+              {user.bio && user.bio.trim().length
+                ? user.bio.trim()
+                : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
+            </Text>
+            {!(user.bio && user.bio.trim().length) && (
+              <TouchableOpacity
+                style={[styles.editBioButton, dynamicStyles.editBioButton]}
+                onPress={handleEditProfile}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="create-outline" size={16} color={theme.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.editBioButtonText, dynamicStyles.editBioButtonText]}>Add bio</Text>
+              </TouchableOpacity>
             )}
           </View>
-          
-          <Text style={[styles.username, dynamicStyles.username]}>{user.name}</Text>
-          
-          <View style={styles.statsContainer}>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Active Listings: {allProducts.filter(p => p.status === 'Available').length}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Total Listings: {allProducts.length}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Sold: {allProducts.filter(p => p.status === 'Sold').length}
-            </Text>
-          </View>
-          
-        <View style={styles.reputationContainer}>
-          <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
-            {ratingSummary.total_raters > 0
-              ? `User Reputation: ${Number(ratingSummary.average_rating || 0).toFixed(2)}`
-              : 'No ratings yet'}
-          </Text>
-          <View style={styles.starsContainer}>
-            {renderRatingStars(Number(ratingSummary.average_rating || 0))}
-          </View>
-          <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
-            {ratingSummary.total_raters > 0
-              ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
-              : 'You have not received any reviews yet.'}
-          </Text>
-        </View>
-        </View>
-
-        {/* Bio Section */}
-        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
-          <Text
-            style={[
-              styles.bioText,
-              dynamicStyles.bioText,
-              !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
-            ]}
-          >
-            {user.bio && user.bio.trim().length
-              ? user.bio.trim()
-              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
-          </Text>
-          {!(user.bio && user.bio.trim().length) && (
-            <TouchableOpacity
-              style={styles.editBioButton}
-              onPress={handleEditProfile}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.editBioButtonText}>Add bio</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Search and Filters */}
@@ -982,6 +1019,13 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

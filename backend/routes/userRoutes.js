@@ -5,13 +5,12 @@ import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
-//User routes
+//User routes - specific routes must come before parameterized routes
 router.get("/profile", verifyToken, getUserProfile);
-
-//For the public route
-router.get("/:id", getUserById);
-
 router.put("/update", verifyToken, upload.single("profile_image"), updateUserProfile);
+
+//For the public route - must be last to avoid catching other routes
+router.get("/:id", getUserById);
 
 
 export default router;

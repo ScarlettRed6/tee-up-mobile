@@ -6,11 +6,13 @@ import styles from './styles/SearchResultsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { fetchListings } from '../api/listingsApi';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
 import { extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
 export default function SearchResultsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
   const filtersFromRoute = route?.params?.filters || {};
   const filtersKey = JSON.stringify(filtersFromRoute || {});
   const appliedFilters = useMemo(() => {
@@ -25,7 +27,12 @@ export default function SearchResultsScreen({ navigation, route }) {
     ? route.params.searchQuery
     : '';
   const trimmedQuery = rawSearchParam.trim();
-  const displayQuery = trimmedQuery.length ? trimmedQuery : 'All listings';
+  
+  // Determine display query - show category if no search query but category is selected
+  const hasCategory = appliedFilters.category && appliedFilters.category !== 'All';
+  const displayQuery = trimmedQuery.length 
+    ? trimmedQuery 
+    : (hasCategory ? `${appliedFilters.category} listings` : 'All listings');
 
   const backendFilters = useMemo(() => {
     let parsedFilters = {};
@@ -35,26 +42,42 @@ export default function SearchResultsScreen({ navigation, route }) {
       parsedFilters = {};
     }
     const payload = {};
+    // Only add search if there's actually a search query
     if (trimmedQuery.length) {
       payload.search = trimmedQuery;
     }
-    if (parsedFilters.category && parsedFilters.category !== 'All') {
-      payload.category = parsedFilters.category;
+    // Category filter - ensure it's not 'All' and is a valid category
+    // This should work even when search query is empty
+    if (parsedFilters.category && parsedFilters.category !== 'All' && parsedFilters.category.trim() !== '') {
+      payload.category = parsedFilters.category.trim();
+      console.log('✅ Category filter applied:', payload.category);
     }
     if (parsedFilters.condition) {
       payload.condition = parsedFilters.condition;
     }
-    if (parsedFilters.status) {
-      payload.status = parsedFilters.status.toString().toLowerCase();
-    } else {
-      payload.status = 'available';
-    }
+    // Search results ALWAYS show only available items (never sold or pending)
+    payload.status = 'available';
+    // Price filters - convert to numbers and ensure they're valid
     if (parsedFilters.minPrice) {
-      payload.min_price = parsedFilters.minPrice;
+      const minPriceStr = parsedFilters.minPrice.toString().trim();
+      if (minPriceStr !== '') {
+        const minPriceNum = parseFloat(minPriceStr);
+        if (!Number.isNaN(minPriceNum) && minPriceNum >= 0) {
+          payload.min_price = minPriceNum;
+        }
+      }
     }
     if (parsedFilters.maxPrice) {
-      payload.max_price = parsedFilters.maxPrice;
+      const maxPriceStr = parsedFilters.maxPrice.toString().trim();
+      if (maxPriceStr !== '') {
+        const maxPriceNum = parseFloat(maxPriceStr);
+        if (!Number.isNaN(maxPriceNum) && maxPriceNum >= 0) {
+          payload.max_price = maxPriceNum;
+        }
+      }
     }
+    // Log for debugging
+    console.log('Backend filters payload:', payload);
     return payload;
   }, [trimmedQuery, filtersKey]);
 
@@ -98,10 +121,6 @@ export default function SearchResultsScreen({ navigation, route }) {
     const sellerName = item.seller_name || 'Unknown';
     const priceLabel = formatPriceLabel(item.price);
     const cardKey = item.listing_id || item.id || index;
-    const statusLabel = item.status
-      ? item.status.charAt(0).toUpperCase() + item.status.slice(1)
-      : null;
-
     return (
       <TouchableOpacity
         key={cardKey}
@@ -139,11 +158,6 @@ export default function SearchResultsScreen({ navigation, route }) {
           )}
           <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{sellerName}</Text>
         </View>
-        {statusLabel && (
-          <View style={styles.statusChip}>
-            <Text style={styles.statusChipText}>{statusLabel}</Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
@@ -213,7 +227,7 @@ export default function SearchResultsScreen({ navigation, route }) {
         <View style={[styles.titleSection, dynamicStyles.titleSection]}>
           <View style={styles.titleRow}>
             <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
-              {trimmedQuery.length ? `'${displayQuery}'` : 'All Listings'}
+              {trimmedQuery.length ? `'${displayQuery}'` : displayQuery}
             </Text>
             <TouchableOpacity 
               style={styles.filterButton}
@@ -287,6 +301,13 @@ export default function SearchResultsScreen({ navigation, route }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

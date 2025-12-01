@@ -23,8 +23,14 @@ export async function getAllListings(filters = {}, sort = "newest"){
     const whereClauses = [];
 
     if(filters.category){
-        values.push(filters.category);
-        whereClauses.push(`l.category = $${values.length}`);
+        // Normalize category - trim and handle case sensitivity
+        const normalizedCategory = filters.category.trim();
+        values.push(normalizedCategory);
+        // Use case-insensitive comparison to handle any casing differences
+        // Note: PostgreSQL parameterized queries use $1, $2, etc.
+        whereClauses.push(`LOWER(TRIM(l.category)) = LOWER(TRIM($${values.length}))`);
+        console.log('🔍 [Backend Model] Filtering by category:', normalizedCategory);
+        console.log('🔍 [Backend Model] SQL will be: LOWER(TRIM(l.category)) = LOWER(TRIM($' + values.length + '))');
     }
 
     if(filters.user_id){
@@ -42,14 +48,22 @@ export async function getAllListings(filters = {}, sort = "newest"){
         whereClauses.push(`l.condition = $${values.length}`);
     }
 
-    if(typeof filters.min_price === 'number'){
-        values.push(filters.min_price);
-        whereClauses.push(`l.price >= $${values.length}`);
+    // Handle min_price - can be number or string that can be parsed
+    if(filters.min_price !== undefined && filters.min_price !== null && filters.min_price !== ''){
+        const minPriceNum = typeof filters.min_price === 'number' ? filters.min_price : parseFloat(filters.min_price);
+        if(!Number.isNaN(minPriceNum) && minPriceNum >= 0){
+            values.push(minPriceNum);
+            whereClauses.push(`l.price >= $${values.length}`);
+        }
     }
 
-    if(typeof filters.max_price === 'number'){
-        values.push(filters.max_price);
-        whereClauses.push(`l.price <= $${values.length}`);
+    // Handle max_price - can be number or string that can be parsed
+    if(filters.max_price !== undefined && filters.max_price !== null && filters.max_price !== ''){
+        const maxPriceNum = typeof filters.max_price === 'number' ? filters.max_price : parseFloat(filters.max_price);
+        if(!Number.isNaN(maxPriceNum) && maxPriceNum >= 0){
+            values.push(maxPriceNum);
+            whereClauses.push(`l.price <= $${values.length}`);
+        }
     }
 
     if(filters.search){
@@ -76,6 +90,10 @@ export async function getAllListings(filters = {}, sort = "newest"){
         query += ` ORDER BY l.price DESC`;
     }
 
+    // Debug logging
+    console.log('🔍 [Backend Model] Final SQL query:', query);
+    console.log('🔍 [Backend Model] Query values:', values);
+    
     const result = await pool.query(query, values);
     // Ensure photos are parsed as arrays if they're JSON/JSONB
     return result.rows.map(row => ({

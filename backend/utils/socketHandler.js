@@ -31,7 +31,7 @@ export function initSocketHandlers(io){
     io.on("connection", (socket) => {
         console.log("User connected: ", socket.userId);
 
-        socket.join("user_", socket.userId);
+        socket.join("user_" + socket.userId);
 
         socket.on("join_conversation", ({ conversationId }) => {
             socket.join("room_" + conversationId);

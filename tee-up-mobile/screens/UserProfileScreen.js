@@ -56,7 +56,7 @@ export default function UserProfileScreen({ navigation, route }) {
     }
   }, [accessToken]);
 
-  const renderRatingStars = (ratingValue = 0, size = 18) => {
+  const renderRatingStars = (ratingValue = 0) => {
     const value = Number(ratingValue || 0);
     const stars = [];
     for (let i = 1; i <= 5; i += 1) {
@@ -70,9 +70,9 @@ export default function UserProfileScreen({ navigation, route }) {
         <Ionicons
           key={`profile-rating-star-${i}`}
           name={iconName}
-          size={size}
+          size={16}
           color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
-          style={{ marginRight: i === 5 ? 0 : 3 }}
+          style={{ marginRight: i === 5 ? 0 : 2 }}
         />
       );
     }
@@ -317,12 +317,16 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     header: { backgroundColor: theme.background },
     scrollView: { backgroundColor: theme.background },
     scrollContent: { backgroundColor: 'transparent' },
-    profileSection: { backgroundColor: 'transparent' },
+    profileHeaderCard: { backgroundColor: theme.card },
     username: { color: theme.text },
-    statText: { color: theme.textSecondary },
-    reputationText: { color: theme.text },
-    reputationSubtext: { color: theme.textMuted },
-    bioSection: { backgroundColor: 'transparent' },
+    statCard: { backgroundColor: theme.backgroundAlt || '#F6EDE2' },
+    statValue: { color: theme.text },
+    statLabel: { color: theme.textMuted },
+    reputationTitle: { color: theme.text },
+    ratingValue: { color: theme.text },
+    reviewCount: { color: theme.textMuted },
+    bioCard: { backgroundColor: theme.card },
+    bioTitle: { color: theme.text },
     bioText: { color: theme.text },
     bioPlaceholderText: { color: theme.textMuted },
     searchBar: { backgroundColor: theme.card },
@@ -629,84 +633,115 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Summary Card */}
-        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
-          <View style={styles.profilePhotoContainer}>
-            {user.profile_image ? (
-              <Image 
-                source={{ uri: user.profile_image }}
-                style={[styles.profilePhoto, { borderColor: user.avatarColor || '#E0E0E0' }]}
-                resizeMode="cover"
-                onError={(error) => {
-                  console.error('Profile image load error:', error.nativeEvent.error);
-                  console.error('Failed URL:', user.profile_image);
-                }}
-              />
-            ) : (
-              <View style={[styles.profilePhoto, { borderColor: user.avatarColor || '#E0E0E0' }]}>
-                <Ionicons name="person" size={50} color={user.avatarColor || '#FF6B35'} />
-              </View>
-            )}
-          </View>
-          
-          <Text style={[styles.username, dynamicStyles.username]}>{user.username || user.name}</Text>
-          
-          <View style={styles.statsContainer}>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Active Listings: {user.activeListings}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Total Listings: {userListings.length}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Sold: {userListings.filter(l => normalizeListingStatus(l.status) === 'Sold').length}
-            </Text>
-          </View>
-          
-          <View style={styles.reputationContainer}>
-            <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
-              {hasReviews
-                ? `User Reputation: ${ratingValue.toFixed(2)}`
-                : 'No ratings yet'}
-            </Text>
-            <View style={styles.starsContainer}>
-              {renderRatingStars(ratingValue)}
+        {/* Profile Header Card */}
+        <View style={[styles.profileHeaderCard, dynamicStyles.profileHeaderCard]}>
+          {/* Profile Photo and Name */}
+          <View style={styles.profileHeaderTop}>
+            <View style={styles.profilePhotoContainer}>
+              {user.profile_image ? (
+                <Image 
+                  source={{ uri: user.profile_image }}
+                  style={styles.profilePhoto}
+                  resizeMode="cover"
+                  onError={(error) => {
+                    console.error('Profile image load error:', error.nativeEvent.error);
+                    console.error('Failed URL:', user.profile_image);
+                  }}
+                />
+              ) : (
+                <View style={styles.profilePhoto}>
+                  <Ionicons name="person" size={50} color={theme.primary} />
+                </View>
+              )}
             </View>
-            <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
-              {hasReviews
-                ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
-                : 'This user has not received any reviews yet.'}
-            </Text>
+            <Text style={[styles.username, dynamicStyles.username]}>{user.username || user.name}</Text>
           </View>
 
-          {!isOwnProfile && (
-            <TouchableOpacity
-              style={[
-                styles.followButton,
-                isFollowing && styles.followButtonActive,
-              ]}
-              onPress={handleFollowToggle}
-              activeOpacity={0.8}
-              disabled={followLoading}
-            >
-              {followLoading ? (
-                <ActivityIndicator size="small" color={isFollowing ? '#111' : '#FFF'} />
-              ) : (
-                <Text
-                  style={[
-                    styles.followButtonText,
-                    isFollowing && styles.followButtonTextActive,
-                  ]}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
+          {/* Stats Cards Row */}
+          <View style={styles.statsCardsRow}>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="cube-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {userListings.filter(l => normalizeListingStatus(l.status) === 'Available').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Active</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="list-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {userListings.length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Total</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {userListings.filter(l => normalizeListingStatus(l.status) === 'Sold').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Sold</Text>
+            </View>
+          </View>
+
+          {/* Reputation Section */}
+          <View style={styles.reputationSection}>
+            <View style={styles.reputationHeader}>
+              <Ionicons name="star" size={20} color="#FFD700" />
+              <Text style={[styles.reputationTitle, dynamicStyles.reputationTitle]}>Reputation</Text>
+            </View>
+            <View style={styles.reputationContent}>
+              <View style={styles.ratingDisplay}>
+                <Text style={[styles.ratingValue, dynamicStyles.ratingValue]}>
+                  {hasReviews
+                    ? Number(ratingValue || 0).toFixed(1)
+                    : '0.0'}
                 </Text>
-              )}
-            </TouchableOpacity>
+                <View style={styles.starsContainer}>
+                  {renderRatingStars(ratingValue)}
+                </View>
+              </View>
+              <Text style={[styles.reviewCount, dynamicStyles.reviewCount]}>
+                {hasReviews
+                  ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
+                  : 'No reviews yet'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Follow Button */}
+          {!isOwnProfile && (
+            <View style={styles.followButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.followButton,
+                  isFollowing && styles.followButtonActive,
+                ]}
+                onPress={handleFollowToggle}
+                activeOpacity={0.8}
+                disabled={followLoading}
+              >
+                {followLoading ? (
+                  <ActivityIndicator size="small" color={isFollowing ? '#111' : '#FFF'} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.followButtonText,
+                      isFollowing && styles.followButtonTextActive,
+                    ]}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
         {/* Bio Section */}
-        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
+        <View style={[styles.bioCard, dynamicStyles.bioCard]}>
+          <View style={styles.bioHeader}>
+            <Ionicons name="document-text-outline" size={18} color={theme.textMuted} />
+            <Text style={[styles.bioTitle, dynamicStyles.bioTitle]}>About</Text>
+          </View>
           <Text
             style={[
               styles.bioText,
@@ -716,7 +751,7 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
           >
             {user.bio && user.bio.trim().length
               ? user.bio.trim()
-              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
+              : 'No bio available.'}
           </Text>
         </View>
 

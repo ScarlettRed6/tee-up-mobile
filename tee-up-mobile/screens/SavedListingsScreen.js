@@ -6,6 +6,7 @@ import styles from './styles/SavedListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { favoritesContext } from '../context/favoritesContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
 
 const normalizeListingStatus = (statusValue = 'available') => {
   const lower = (statusValue || '').toString().toLowerCase();
@@ -36,6 +37,7 @@ export default function SavedListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { favorites, favoritesLoading, refreshFavorites } = useContext(favoritesContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
 
   const savedProducts = useMemo(() => {
     return favorites.map((item) => {
@@ -227,6 +229,13 @@ export default function SavedListingsScreen({ navigation }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

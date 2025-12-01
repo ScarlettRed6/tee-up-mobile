@@ -8,6 +8,7 @@ import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
 import { getUserProfile } from '../api/userApi';
 import { CATEGORY_OPTIONS, extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
@@ -16,6 +17,7 @@ export default function DiscoverScreen({ navigation }) {
   const { listings, loading } = useContext(ListingsContext);
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
   const [userProfileImage, setUserProfileImage] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(CATEGORY_OPTIONS[0]);
 
@@ -89,7 +91,10 @@ export default function DiscoverScreen({ navigation }) {
           <TouchableOpacity 
             style={styles.headerIcon}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('SearchFilter')}
+            onPress={() => navigation.navigate('SearchFilter', { 
+              returnTo: 'SearchResults',
+              filters: {}
+            })}
           >
             <Ionicons name="search-outline" size={24} color={theme.text} />
           </TouchableOpacity>
@@ -321,6 +326,13 @@ export default function DiscoverScreen({ navigation }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

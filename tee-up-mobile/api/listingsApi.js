@@ -43,10 +43,17 @@ export async function fetchListings(filters = {}) {
     const params = new URLSearchParams();
     Object.entries(filters || {}).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return;
-        params.append(key, value);
+        // Ensure category is properly encoded
+        if (key === 'category' && value !== 'All') {
+            params.append(key, value.toString().trim());
+        } else if (key !== 'category') {
+            params.append(key, value);
+        }
     });
     const queryString = params.toString();
     const endpoint = queryString ? `/listings?${queryString}` : '/listings';
+    console.log('Fetching listings with filters:', filters);
+    console.log('API endpoint:', endpoint);
     const response = await api.get(endpoint);
     return response.data.result;
 }

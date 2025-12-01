@@ -73,7 +73,7 @@ export default function SearchFilterScreen({ navigation, route }) {
   // Limit recent searches to 5 items
   const limitedRecentSearches = recentSearches.slice(0, 5);
 
-  const categories = ['All', 'Driver', 'Woods', 'Iron', 'Accessories', 'Putters', 'Apparell', 'Others'];
+  const categories = ['All', 'Driver', 'Iron', 'Woods', 'Putters', 'Apparel', 'Accessories', 'Others'];
   const flexOptions = ['Ladies', 'Senior', 'Medium', 'Regular', 'Stiff', 'Extra Stiff'];
   const conditions = ['New', 'Slightly Used', 'Well Used'];
   const handOptions = ['Right Hand', 'Left Hand'];
@@ -128,7 +128,12 @@ export default function SearchFilterScreen({ navigation, route }) {
     };
     
     if (selectedCategory && selectedCategory !== 'All') {
-      filters.category = selectedCategory;
+      // Ensure category is trimmed and properly formatted
+      filters.category = selectedCategory.trim();
+      console.log('🔍 Selected category for filter:', filters.category);
+      console.log('🔍 Full filters object:', filters);
+    } else {
+      console.log('🔍 No category selected or category is "All"');
     }
 
     if (selectedCondition) {
@@ -139,9 +144,19 @@ export default function SearchFilterScreen({ navigation, route }) {
     if (isProfileFilter) {
       filters.status = selectedStatus;
     } else {
-      // Only include price for SearchResults
-      if (minPrice) filters.minPrice = minPrice;
-      if (maxPrice) filters.maxPrice = maxPrice;
+      // Only include price for SearchResults - ensure they're valid numbers
+      if (minPrice && minPrice.trim() !== '') {
+        const minPriceNum = parseFloat(minPrice.trim());
+        if (!Number.isNaN(minPriceNum) && minPriceNum >= 0) {
+          filters.minPrice = minPriceNum.toString();
+        }
+      }
+      if (maxPrice && maxPrice.trim() !== '') {
+        const maxPriceNum = parseFloat(maxPrice.trim());
+        if (!Number.isNaN(maxPriceNum) && maxPriceNum >= 0) {
+          filters.maxPrice = maxPriceNum.toString();
+        }
+      }
     }
     
     console.log('Applying filters:', filters);
@@ -158,8 +173,14 @@ export default function SearchFilterScreen({ navigation, route }) {
           const user = route?.params?.user;
           navigation.navigate('UserProfile', { filters, user });
         } else {
+          // Allow navigation even with empty search query if category or other filters are selected
+          const hasFilters = (selectedCategory && selectedCategory !== 'All') || 
+                            selectedCondition || 
+                            (minPrice && minPrice.trim() !== '') || 
+                            (maxPrice && maxPrice.trim() !== '');
+          
           navigation.navigate('SearchResults', { 
-            searchQuery: trimmedQuery || 'All products',
+            searchQuery: trimmedQuery || (hasFilters ? '' : 'All products'),
             filters 
           });
         }
@@ -378,7 +399,11 @@ export default function SearchFilterScreen({ navigation, route }) {
                     placeholder="0"
                     placeholderTextColor={theme.textMuted}
                     value={minPrice}
-                    onChangeText={setMinPrice}
+                    onChangeText={(text) => {
+                      // Only allow numbers
+                      const numericText = text.replace(/[^0-9]/g, '');
+                      setMinPrice(numericText);
+                    }}
                     keyboardType="numeric"
                   />
                 </View>
@@ -392,7 +417,11 @@ export default function SearchFilterScreen({ navigation, route }) {
                     placeholder="0"
                     placeholderTextColor={theme.textMuted}
                     value={maxPrice}
-                    onChangeText={setMaxPrice}
+                    onChangeText={(text) => {
+                      // Only allow numbers
+                      const numericText = text.replace(/[^0-9]/g, '');
+                      setMaxPrice(numericText);
+                    }}
                     keyboardType="numeric"
                   />
                 </View>

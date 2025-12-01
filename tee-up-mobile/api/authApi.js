@@ -18,7 +18,7 @@ export const loginUser = async (creds) => {
 
         return res.data;
     } catch (err) {
-        console.log("Login error(AUTH API):", err.response?.data || err.message);
+        // Silently handle login errors - user will see appropriate error message in UI
         throw err;
     }
 };

@@ -15,7 +15,7 @@ export const getRefreshToken = () => refreshTokenMemory;
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: { 'Content-Type': 'application/json' },
-    timeout: 10000, // 10 second timeout
+    timeout: 30000, // 30 second timeout (increased for slower connections)
 });
 
 // Log API_BASE_URL for debugging
@@ -57,14 +57,22 @@ api.interceptors.response.use(
                 baseURL: error.config?.baseURL
             });
         } else if (error.response) {
-            console.error('[API Response Error]', {
-                status: error.response.status,
-                statusText: error.response.statusText,
-                url: error.config?.url,
-                data: error.response?.data
-            });
+            // Skip logging for login endpoint to avoid cluttering console
+            const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+            if (!isLoginEndpoint) {
+                console.error('[API Response Error]', {
+                    status: error.response.status,
+                    statusText: error.response.statusText,
+                    url: error.config?.url,
+                    data: error.response?.data
+                });
+            }
         } else {
-            console.error('[API Error]', error.message);
+            // Skip logging for login endpoint
+            const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+            if (!isLoginEndpoint) {
+                console.error('[API Error]', error.message);
+            }
         }
         const originalRequest = error.config;
 

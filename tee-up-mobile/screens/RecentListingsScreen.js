@@ -11,6 +11,7 @@ export default function RecentListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { listings, loading } = useContext(ListingsContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -168,6 +169,13 @@ export default function RecentListingsScreen({ navigation }) {
         >
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

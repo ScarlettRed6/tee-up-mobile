@@ -55,16 +55,21 @@ export async function createListing(req, res) {
             const followers = await getFollowersForUser(user_id);
             if (followers.length > 0) {
                 const seller = await findUserById(user_id);
+                const sellerName = seller?.name || 'Someone';
+                const listingTitle = newListing.title || title;
+                const message = listingTitle 
+                    ? `${sellerName} posted a new listing "${listingTitle}"`
+                    : `${sellerName} posted a new listing`;
                 for (const follower of followers) {
                     const notif = await createNotification(
                         follower.follower_id,
                         "followed_new_listing",
-                        "New listing from someone you follow.",
+                        message,
                         {
                             listing_id: newListing.listing_id,
-                            listing_title: newListing.title || title,
+                            listing_title: listingTitle,
                             seller_id: user_id,
-                            seller_name: seller?.name || 'Seller',
+                            seller_name: sellerName,
                         }
                     );
                     if (io) {
@@ -87,23 +92,28 @@ export async function getAllListingItems(req, res) {
     try{
         const { category, user_id, sort, status, search, min_price, max_price, condition } = req.query;
 
+        console.log('Received query params:', { category, search, min_price, max_price, condition, status });
+        
         const filters = {};
-        if (category) filters.category = category;
+        if (category) {
+            filters.category = category.trim();
+            console.log('Setting category filter:', filters.category);
+        }
         if (user_id) filters.user_id = user_id;
         if (status) filters.status = status;
         if (condition) filters.condition = condition;
         if (search) filters.search = search;
 
-        if (min_price !== undefined) {
+        if (min_price !== undefined && min_price !== null && min_price !== '') {
             const parsedMin = parseFloat(min_price);
-            if (!Number.isNaN(parsedMin)) {
+            if (!Number.isNaN(parsedMin) && parsedMin >= 0) {
                 filters.min_price = parsedMin;
             }
         }
 
-        if (max_price !== undefined) {
+        if (max_price !== undefined && max_price !== null && max_price !== '') {
             const parsedMax = parseFloat(max_price);
-            if (!Number.isNaN(parsedMax)) {
+            if (!Number.isNaN(parsedMax) && parsedMax >= 0) {
                 filters.max_price = parsedMax;
             }
         }
