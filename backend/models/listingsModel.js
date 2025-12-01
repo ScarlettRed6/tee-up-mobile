@@ -1,11 +1,11 @@
 import pool from "../config/db.js";
 
 //Create a new listing
-export async function insertListing(user_id, title, description, category, brand, condition, price, status, photos, location){
+export async function insertListing(user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location){
    const newListing = await pool.query(
-        `INSERT INTO listings (user_id, title, description, category, brand, condition, price, status, photos, location)
+        `INSERT INTO listings (user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [user_id, title, description, category, brand, condition, price, status, photos, location || null]
+        [user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location || null]
    );
    return newListing.rows[0];
 }
@@ -25,6 +25,16 @@ export async function getAllListings(filters = {}, sort = "newest"){
     if(filters.category){
         values.push(filters.category);
         whereClauses.push(`l.category = $${values.length}`);
+    }
+
+    if (filters.flex){
+        values.push(filters.flex);
+        whereClauses.push(`l.flex = $${values.length}`);
+    }
+
+    if (filters.hand){
+        values.push(filters.hand);
+        whereClauses.push(`l.hand = $${values.length}`);
     }
 
     if(filters.user_id){
@@ -113,11 +123,11 @@ export async function getListingById(id) {
 }
 
 //UPDATES
-export async function updateListing(id, title, description, category, brand, condition, price, status, photos, location) {
+export async function updateListing(id, title, description, category, brand, flex, hand, condition, price, status, photos, location) {
     const result = await pool.query(
-        `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, condition = $5, price = $6, status = $7, photos = $8, location = $9
-        WHERE listing_id = $10 RETURNING *`,
-        [title, description, category, brand, condition, price, status, photos, location || null, id]
+        `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, flex = $5, hand = $6, condition = $7, price = $8, status = $9, photos = $10, location = $11
+        WHERE listing_id = $12 RETURNING *`,
+        [title, description, category, brand, flex, hand, condition, price, status, photos, location || null, id]
     );
     return result.rows[0];
 }
