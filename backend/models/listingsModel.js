@@ -168,9 +168,21 @@ export async function deleteListing(id) {
 //For recommendations
 export async function getAllListingsExceptOwn(userId) {
     const result = await pool.query(
-        `SELECT * FROM listings WHERE user_id != $1`,
+        `SELECT 
+            l.*,
+            u.name as seller_name,
+            u.email as seller_email,
+            u.profile_image as seller_profile_image
+        FROM listings l
+        LEFT JOIN users u ON l.user_id = u.id
+        WHERE l.user_id != $1 AND l.status = 'available'
+        ORDER BY l.date_posted DESC`,
         [userId]
     );
-    return result.rows;
+    // Ensure photos are parsed as arrays if they're JSON/JSONB
+    return result.rows.map(row => ({
+        ...row,
+        photos: row.photos ? (Array.isArray(row.photos) ? row.photos : JSON.parse(row.photos || '[]')) : []
+    }));
 }
 
