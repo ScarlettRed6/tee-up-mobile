@@ -246,9 +246,9 @@ export default function NotificationsScreen({ navigation }) {
                   style={styles.profileAvatar}
                 />
               ) : (
-                <View style={styles.profileAvatar}>
-                  <Ionicons name="person" size={18} color={theme.primary} />
-                </View>
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={18} color={theme.primary} />
+              </View>
               )}
             </TouchableOpacity>
           </View>

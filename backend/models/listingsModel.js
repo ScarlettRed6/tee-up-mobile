@@ -4,7 +4,7 @@ import pool from "../config/db.js";
 export async function insertListing(user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location){
    const newListing = await pool.query(
         `INSERT INTO listings (user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
         [user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location || null]
    );
    return newListing.rows[0];

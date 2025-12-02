@@ -189,7 +189,7 @@ export default function RecommendedForYouScreen({ navigation }) {
             resizeMode="cover"
           />
         ) : (
-          <View style={styles.productImagePlaceholder}>
+        <View style={styles.productImagePlaceholder}>
             <Ionicons name="image-outline" size={32} color={theme.textMuted} />
           </View>
         )}
@@ -210,8 +210,8 @@ export default function RecommendedForYouScreen({ navigation }) {
             />
           ) : (
             <View style={styles.sellerAvatar}>
-              <Ionicons name="person" size={12} color={item.sellerColor || theme.primary} />
-            </View>
+            <Ionicons name="person" size={12} color={item.sellerColor || theme.primary} />
+          </View>
           )}
           <Text style={[styles.sellerName, dynamicStyles.sellerName]} numberOfLines={1}>
             {item.seller}
@@ -290,9 +290,9 @@ export default function RecommendedForYouScreen({ navigation }) {
             </Text>
           </View>
         ) : (
-          <View style={styles.productGrid}>
+        <View style={styles.productGrid}>
             {recommendations.map((product, index) => renderProductCard(product, index))}
-          </View>
+        </View>
         )}
       </ScrollView>
 

@@ -69,7 +69,7 @@ export default function SearchResultsScreen({ navigation, route }) {
       payload.hand = parsedFilters.hand;
     }
     // Search results ALWAYS show only available items (never sold or pending)
-    payload.status = 'available';
+      payload.status = 'available';
     // Price filters - convert to numbers and ensure they're valid
     if (parsedFilters.minPrice) {
       const minPriceStr = parsedFilters.minPrice.toString().trim();
@@ -86,7 +86,7 @@ export default function SearchResultsScreen({ navigation, route }) {
         const maxPriceNum = parseFloat(maxPriceStr);
         if (!Number.isNaN(maxPriceNum) && maxPriceNum >= 0) {
           payload.max_price = maxPriceNum;
-        }
+    }
       }
     }
     // Log for debugging
@@ -239,7 +239,7 @@ export default function SearchResultsScreen({ navigation, route }) {
         <View style={styles.headerLeft}>
           <Text style={[styles.pageTitle, dynamicStyles.pageTitle]} numberOfLines={1}>
             {trimmedQuery.length ? `'${displayQuery}'` : displayQuery}
-          </Text>
+            </Text>
           <View style={styles.resultMetaRow}>
             <Text style={[styles.resultCountText, dynamicStyles.resultCountText]}>
               {results.length} result{results.length === 1 ? '' : 's'}

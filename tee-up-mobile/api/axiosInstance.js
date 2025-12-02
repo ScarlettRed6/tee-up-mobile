@@ -60,18 +60,18 @@ api.interceptors.response.use(
             // Skip logging for login endpoint to avoid cluttering console
             const isLoginEndpoint = error.config?.url?.includes('/auth/login');
             if (!isLoginEndpoint) {
-                console.error('[API Response Error]', {
-                    status: error.response.status,
-                    statusText: error.response.statusText,
-                    url: error.config?.url,
-                    data: error.response?.data
-                });
+            console.error('[API Response Error]', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                url: error.config?.url,
+                data: error.response?.data
+            });
             }
         } else {
             // Skip logging for login endpoint
             const isLoginEndpoint = error.config?.url?.includes('/auth/login');
             if (!isLoginEndpoint) {
-                console.error('[API Error]', error.message);
+            console.error('[API Error]', error.message);
             }
         }
         const originalRequest = error.config;
