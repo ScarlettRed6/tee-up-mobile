@@ -8,7 +8,8 @@ import {
     deleteListing, 
     updateListingStatus, 
     getAllListingsExceptOwn,
-    getAdminListingsQuery } 
+    getAdminListingsQuery,
+    adminUpdateListingStatusQuery } 
 from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";

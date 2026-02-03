@@ -232,3 +232,13 @@ export async function getAdminListingsQuery(search, category, condition, status,
     }));
 }//End of getAdminListingsQuery method
 
+export async function adminUpdateListingStatusQuery(listingId, status) {
+    const result = await pool.query(
+        `UPDATE listings SET status = $1 WHERE listing_id = $2 RETURNING *`,
+        [status, listingId]
+    );
+    return result.rows[0];
+}//End of adminUpdateListingStatusQuery
+
+
+
