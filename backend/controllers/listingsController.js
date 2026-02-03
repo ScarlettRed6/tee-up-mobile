@@ -350,7 +350,7 @@ export async function adminUpdateStatus(req, res) {
     }
 }//End of adminUpdateStatus function
 
-export async function adminDeleteListin(req, res) {
+export async function adminDeleteListing(req, res) {
     try {
         const { id } = req.params;
         const deleted = await deleteListing(id);
