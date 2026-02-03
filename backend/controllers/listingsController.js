@@ -1,6 +1,14 @@
 import { uploadToCloudinary } from "../config/cloudinary.js";
 import { getUsersWhoFavorited } from "../models/favoritesModel.js";
-import { insertListing, getAllListings, getListingById, updateListing, deleteListing, updateListingStatus, getAllListingsExceptOwn } 
+import { 
+    insertListing, 
+    getAllListings, 
+    getListingById, 
+    updateListing, 
+    deleteListing, 
+    updateListingStatus, 
+    getAllListingsExceptOwn,
+    getAdminListingsQuery } 
 from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";

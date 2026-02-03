@@ -101,8 +101,8 @@ export async function getAllListings(filters = {}, sort = "newest"){
     }
 
     // Debug logging
-    console.log('🔍 [Backend Model] Final SQL query:', query);
-    console.log('🔍 [Backend Model] Query values:', values);
+    console.log(' [Backend Model] Final SQL query:', query);
+    console.log(' [Backend Model] Query values:', values);
     
     const result = await pool.query(query, values);
     // Ensure photos are parsed as arrays if they're JSON/JSONB
@@ -185,4 +185,50 @@ export async function getAllListingsExceptOwn(userId) {
         photos: row.photos ? (Array.isArray(row.photos) ? row.photos : JSON.parse(row.photos || '[]')) : []
     }));
 }
+
+export async function getAdminListingsQuery(search, category, condition, status, location){
+    let query = 
+        `SELECT l.*,
+            u.name as seller_name, u.email as seller_email,
+            (SELECT COUNT(*) FROM favorites f WHERE f.listing_id = l.listing_id) as total_saves
+            FROM listings l
+            LEFT JOIN users u ON l.user_id = u.id
+            WHERE 1=1`;
+
+    const params = [];
+    let paramIndex = 1;
+
+    //Filters
+    if(category && category !== 'All Categories'){
+        query += ` AND l.category = $${paramIndex}`;
+        params.push(category);
+        paramIndex++;
+    }
+
+    if(status && status !== 'All Status'){
+        query += ` AND l.status = $${paramIndex}`;
+        params.push(status.toLowerCase());
+        paramIndex++;
+    }
+
+    if(search){
+        query += ` AND (l.title ILIKE $${paramIndex} OR u.name ILIKE $${paramIndex} OR
+        CAST(l.listing_id AS TEXT) ILIKE $${paramIndex})`;
+        params.push(`%${search}%`);
+    }
+
+    if(location && location !== 'All Locations'){
+        query += ` AND l.location ILIKE $${paramIndex}`;
+        params.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY l.created_at DESC`;
+    
+    const result = await pool.query(query, params);
+
+    return result.rows.map(row => ({
+        ...row,
+        photos: row.photos ? (Array.isArray(row.photos) ? row.photos : JSON.parse(row.photos || '[]')) : []
+    }));
+}//End of getAdminListingsQuery method
 
