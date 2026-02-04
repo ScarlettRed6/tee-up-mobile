@@ -20,6 +20,8 @@ logs/
 *.env
 backend/.env
 tee-up-mobile/.env
+tee-up-web/.env
+
 
 # Build
 dist/
