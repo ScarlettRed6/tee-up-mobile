@@ -33,6 +33,7 @@ export async function findUserById(id){
     return user.rows[0];
 }
 
+//Create user for registration logic
 export async function createUser(name, email, hashedPassword){
     const result = await pool.query(
         `INSERT INTO users (name, email, password)
@@ -216,6 +217,17 @@ export async function deleteUserQuery(userId){
         [userId]
     );
     return result.rows[0];
-}
+}//End of deleteUserQuery
+
+//Similar to createUser but for admin control, where it also specifies the role
+export async function adminCreateUserQuery(name, email, hashedPassword, role = 'user') {
+    const result = await pool.query(
+        `INSERT INTO users (name, email, password, role, is_verified)
+        VALUES ($1, $2, $3, $4, true) RETURNING *`,
+        [name, email, hashedPassword, role]
+    );
+    return result.rows[0];
+}//End of adminCreateUserQuery
+
 
 
