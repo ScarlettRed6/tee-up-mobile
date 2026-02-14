@@ -229,5 +229,25 @@ export async function adminCreateUserQuery(name, email, hashedPassword, role = '
     return result.rows[0];
 }//End of adminCreateUserQuery
 
+export async function getAllAdmins() {
+    const result = await pool.query(
+        `SELECT id, name, email, role, created_at 
+        FROM users 
+        WHERE role IN ('admin', 'superadmin')
+        ORDER BY created_at DESC`
+    );
+    return result.rows;
+}//End of getAllAdmins query
+
+export async function updateUserRole(userId, role) {
+    const result = await pool.query(
+        `UPDATE users SET role = $1 WHERE id = $2 RETURNING *`,
+        [role, userId]
+    );
+    return result.rows[0];
+}//End of updateUserRole
+
+
+
 
 
