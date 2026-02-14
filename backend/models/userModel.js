@@ -143,6 +143,79 @@ export async function getUserByIdWithStats(id) {
     `;
     const result = await pool.query(query, [id]);
     return result.rows[0];
+}//End of getUserByIdWithStats query
+
+export async function getAllUsers(search = "") {
+    let query = `
+        SELECT 
+            u.*,
+            COALESCE(listing_stats.total_listings, 0) as total_listings,
+            COALESCE(listing_stats.sold_listings, 0) as total_sales,
+            COALESCE(rating_stats.average_rating, 0)::numeric(10,2) as rating,
+            COALESCE(rating_stats.total_ratings, 0) as total_ratings
+        FROM users u
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                COUNT(*) as total_listings,
+                COUNT(*) FILTER (WHERE status = 'sold') as sold_listings
+            FROM listings
+            GROUP BY user_id
+        ) listing_stats ON u.id = listing_stats.user_id
+        LEFT JOIN (
+            SELECT 
+                rated_user_id,
+                AVG(rating)::numeric(10,2) as average_rating,
+                COUNT(*) as total_ratings
+            FROM user_ratings
+            GROUP BY rated_user_id
+        ) rating_stats ON u.id = rating_stats.rated_user_id
+    `;
+    let params = [];
+
+    if (search) {
+        query += ` WHERE (u.name ILIKE $1 OR u.email ILIKE $1)`;
+        params.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY u.id ASC`;
+
+    const result = await pool.query(query, params);
+    return result.rows;
+}//End of getAllUsers query
+
+export async function suspendUserQuery(userId, suspendedUntil = null) {
+    if (suspendedUntil) {
+        const result = await pool.query(
+            `UPDATE users SET status = 'suspended', suspended_until = $2
+            WHERE id = $1 RETURNING *`,
+            [userId, suspendedUntil]
+        );
+    } else {
+        const result = await pool.query(
+            `UPDATE users SET status = 'suspended', suspended_until = NULL
+            WHERE id = $1 RETURNING *`,
+            [userId]
+        );
+    }//End of if else statement
+    return result.rows[0];
+}//End of suspendUserQuery
+
+export async function unsuspendUserQuery(userId) {
+    const result = await pool.query(
+        `UPDATE users SET status = 'active', suspended_until = NULL
+        WHERE id = $1 RETURNING *`,
+        [userId]
+    );
+    return result.rows[0];
+}//End of unsuspendUserQuery
+
+export async function deleteUserQuery(userId){
+    const result = await pool.query(
+        `DELETE FROM users WHERE id = $1 RETURNING *`,
+        [userId]
+    );
+    return result.rows[0];
 }
 
 
