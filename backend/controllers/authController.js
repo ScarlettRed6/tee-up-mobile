@@ -100,6 +100,7 @@ export async function login(req, res){
         const user = await findUserByEmail(email);
         if(!user) return res.status(400).json({message: "User not found"});
 
+        //Check if user email is verified
         if(!user.is_verified){
             return res.status(403).json({ message: "Email not verified. Please verify your Email" });
         }
@@ -110,13 +111,25 @@ export async function login(req, res){
             return res.status(400).json({message: "Invalid password!"});
         }
 
-        const accessToken = jwt.sign({id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        const refreshToken = jwt.sign({id: user.id, role: user.role}, process.env.REFRESH_SECRET, { expiresIn: "7d" });
+        const accessToken = jwt.sign(
+            {id: user.id, role: user.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: "1h" }
+        );
+        const refreshToken = jwt.sign(
+            {id: user.id, role: user.role}, 
+            process.env.REFRESH_SECRET, 
+            { expiresIn: "7d" }
+        );
 
         await storeRefreshToken(refreshToken, user.id);
 
-        console.log(`Token: ${accessToken}\nRefresh Token: ${refreshToken}`);
-        res.json({message: "Login successful", token: accessToken, refreshToken: refreshToken });
+        console.log(`[LOGIN SUCCESS]: Token: ${accessToken}\nRefresh Token: ${refreshToken}`);
+        res.json({
+            message: "Login successful", 
+            token: accessToken, 
+            refreshToken: refreshToken 
+        });
     }catch(err){
         res.status(500).json({ error: err.message });
     }
