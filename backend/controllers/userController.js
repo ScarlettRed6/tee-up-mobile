@@ -1,4 +1,9 @@
-import { findUserById, updateUser, findUserByEmail } from "../models/userModel.js";
+import { 
+    findUserById, 
+    updateUser, 
+    findUserByEmail,
+    getUserByIdWithStats, 
+    } from "../models/userModel.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export async function getUserProfile(req, res){
@@ -68,3 +73,23 @@ export async function updateUserProfile(req, res){
     }
 
 }
+
+
+//ADMIN SPECIFIC USER CONTROLLERS
+export async function adminGetUserById(req, res) {
+    try {
+        const userId = req.params.id;
+        const user = await getUserByIdWithStats(userId);
+
+        if(!user){
+            console.log("[USERCONTROLLER]: USER DOES NOT EXIST");
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        console.log("[USERCONTROLLER]: fetch user by id with stats Success.");
+        return res.json(user);
+    } catch (error) {
+        console.error("[USERCONTROLLER]: ERROR FETCHING USER BY ID: ", error);
+        return res.status(500).json({ message: "[USERCONTROLLER]: ERROR FETCHING USER BY ID" });
+    }
+}//End of adminGetUserById
