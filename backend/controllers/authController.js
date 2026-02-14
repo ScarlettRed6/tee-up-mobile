@@ -128,7 +128,13 @@ export async function login(req, res){
         res.json({
             message: "Login successful", 
             token: accessToken, 
-            refreshToken: refreshToken 
+            refreshToken: refreshToken,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            }
         });
     }catch(err){
         res.status(500).json({ error: err.message });
