@@ -104,4 +104,27 @@ export async function updateAdminRole(req, res) {
     }
 }//End of updateAdminRole function
 
+export async function getAdminProfile(req, res) {
+    const userId = req.user.id;
+    try {
+        const user = await findUserById(userId);
+        if(!user || (user.role !== 'admin' || user.role !== 'superadmin')){
+            console.log("[ADMIN CONTROLLER] User not found / user is not an admin");
+            return res.status(404).json({ message: " User not found / user is not an admin"});
+        }
 
+        console.log("[ADMIN CONTROLLER] Successfully fetched admin profile");
+        res.json({
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                created_at: user.created_at
+            }
+        });
+    } catch (error) {
+        console.error("[ADMIN CONTROLLER] Error fetching admin profile.");
+        res.status(500).json({ error: error.message });
+    }
+}//End of getAdminProfile function
