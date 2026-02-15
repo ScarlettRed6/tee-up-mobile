@@ -2,6 +2,10 @@ import {
     findUserById, 
     updateUser, 
     findUserByEmail,
+    getAllUsers,
+    suspendUserQuery,
+    unsuspendUserQuery,
+    deleteUserQuery,
     getUserByIdWithStats, 
     } from "../models/userModel.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
@@ -76,6 +80,8 @@ export async function updateUserProfile(req, res){
 
 
 //ADMIN SPECIFIC USER CONTROLLERS
+
+//Similar to getUserById but with the user's stats for admin
 export async function adminGetUserById(req, res) {
     try {
         const userId = req.params.id;
@@ -93,3 +99,5 @@ export async function adminGetUserById(req, res) {
         return res.status(500).json({ message: "[USERCONTROLLER]: ERROR FETCHING USER BY ID" });
     }
 }//End of adminGetUserById
+
+
