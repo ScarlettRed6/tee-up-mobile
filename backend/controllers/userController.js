@@ -8,6 +8,11 @@ import {
     deleteUserQuery,
     getUserByIdWithStats, 
     } from "../models/userModel.js";
+import { 
+    createSuspensionLog,
+    getUserSuspensionLogs,
+    getAllSuspensionLogs
+ } from "../models/suspensionLogModel.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export async function getUserProfile(req, res){
@@ -100,4 +105,97 @@ export async function adminGetUserById(req, res) {
     }
 }//End of adminGetUserById
 
+export async function getUsers(req, res) {
+    try {
+        const search = req.query.search || "";
+        const result = await getAllUsers(search);
 
+        console.log("[USER CONTROLLER] Successfully fetched all users.");
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("[USER CONTROLLER] Error fetching all users.");
+        res.status(500).json({});
+    }
+}//End of getUsers function
+
+export async function suspendUser(req, res) {
+    try {
+        const adminId = req.user.id;
+        const adminRole = req.user.role;
+        const targetUserId = parseInt(req.params.id);
+        const { duration, reason } = req.body;
+
+        if(!reason || reason.trim() === ''){
+            console.log("[USER CONTROLLER] Reason is required for user account suspension");
+            return res.status(400).json({ message: "Reason for suspension is required"});
+        }
+
+        const targetUser = await findUserById(targetUserId);
+        if(!targetUser) {
+            console.log("[USER CONTROLLER] Target user for suspension is not found");
+            return res.status(404).json({ message: "Target user for suspension is not found"});
+        }
+
+        // Permission checks:
+        // - Admin can only suspend users (not admins or superadmins)
+        // - Superadmin can suspend both users and admins (but not superadmins)
+        if (adminRole === 'admin') {
+            if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
+                return res.status(403).json({ 
+                    message: "Admins cannot suspend fellow admins. Only superadmins can suspend admins." 
+                });
+            }
+        } else if (adminRole === 'superadmin') {
+            if (targetUser.role === 'superadmin') {
+                return res.status(403).json({ 
+                    message: "Cannot suspend another superadmin" 
+                });
+            }
+        } else {
+            return res.status(403).json({ message: "Admin access required" });
+        }
+
+        let suspendedUntil = null;
+        if(duration && duration > 0){
+            const now = new Date();
+            suspendedUntil = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000);
+        }
+
+        //Suspend the user
+        const suspended = await suspendUserQuery(targetUserId, suspendedUntil);
+        if(!suspended){
+            console.log("[USER CONTROLLER] User to suspend not found");
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        //Log the suspension
+        await createSuspensionLog(targetUserId, adminId, reason.trim(), suspendedUntil);
+
+        console.log("[USER CONTROLLER] Successfully suspended the user.");
+        res.status(200).json({
+            message: suspendedUntil
+                ? `User suspended successfully until ${suspendedUntil.toISOString().split('T')[0]}`
+                : "User suspended permanently",
+            suspended: suspended
+        });
+    } catch (error) {
+        console.log("[USER CONTROLLER] Error in suspending a user.");
+        res.status(500).json({ error: error.message});
+    }
+}//End of suspendUser function
+
+export async function unsuspendUser(req, res) {
+    
+}
+
+export async function getSuspensionLogs(req, res) {
+    
+}
+
+export async function deleteUser(req, res) {
+    
+}
+
+export async function adminUpdateUser(req, res) {
+    
+}
