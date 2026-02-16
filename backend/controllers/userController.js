@@ -239,9 +239,68 @@ export async function getSuspensionLogs(req, res) {
 }//End of getSuspensionLogs function
 
 export async function deleteUser(req, res) {
-    
-}
+    try {
+        const userId = req.params.id;
+        const deleted = await deleteUserQuery(userId);
+        if(!deleted){
+            console.log("[USER CONTROLLER] User not found for account deletion");
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        console.log("[USER CONTROLLER] Successfully deleted user account");
+        res.status(200).json({
+            message: "User deleted successfully",
+            deleted: deleted
+        });
+    } catch (error) {
+        console.error(`[USER CONTROLLER] Error deleting user account: ${error}`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of deleteUser function
 
 export async function adminUpdateUser(req, res) {
-    
-}
+    try {
+        const targetUserId = req.params.id;
+        const { name, email, bio } = req.body;
+
+        const user = await findUserById(targetUserId);
+        if(!user){
+            console.log("[USER CONTROLLER] User not found for updating user account");
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if(email && email !== user.email){
+            const exists = await findUserByEmail(email);
+            if(exists){
+                console.log("[USER CONTROLLER] Email already in use");
+                return res.status(400).json({ message: "Email already in use"});
+            }
+        }//End of if statement
+
+        //If there is new profile if attached update it
+        //Check later if this updates and also removes the old profile 
+        //I think it should delete the old profile replaced by the new one
+        let profileImage = user.profile_image;
+        if (req.file){
+            const uploaded = await uploadToCloudinary(req.file.buffer, "users");
+            profileImage = uploaded.secure_url;
+        }
+
+        const updatedUser = await updateUser(targetUserId, {
+            name: name || user.name,
+            email: email || user.email,
+            bio: bio || user.bio,
+            profile_image: profileImage
+        });
+
+        console.log("[USER CONTROLLER] Successfully updated user account");
+        res.status(200).json({ 
+            message: "User updated successfully",
+            user: updatedUser
+         });
+    } catch (error) {
+        console.error(`[USER CONTROLLER] Error updating the user account: ${error}`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of adminUpdateUser function
+
