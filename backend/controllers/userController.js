@@ -179,18 +179,64 @@ export async function suspendUser(req, res) {
             suspended: suspended
         });
     } catch (error) {
-        console.log("[USER CONTROLLER] Error in suspending a user.");
+        console.error("[USER CONTROLLER] Error in suspending a user.");
         res.status(500).json({ error: error.message});
     }
 }//End of suspendUser function
 
 export async function unsuspendUser(req, res) {
-    
-}
+    try {
+        const adminId = req.user.id;
+        const targetUserId = parseInt(req.params.id);
 
+        const targetUser = await findUserById(targetUserId);
+        if(!targetUser){
+            console.log("[USER CONTROLLER]Target user for suspension removal not found/does not exist");
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const unsuspended = await unsuspendUserQuery(targetUserId);
+        if(!unsuspended){
+            console.log("[USER CONTROLLER]Target user for suspension removal not found/does not exist(2)");
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        console.log("[USER CONTROLLER] User suspension removal Success");
+        res.status(200).json({ 
+            message: "User suspension removal success",
+            user: unsuspended
+         });
+    } catch (error) {
+        console.error("[USER CONTROLLER] Error removing user suspension");
+        res.status(500).json({ error: error.message });
+    }
+}//End of unsuspendUser function
+
+//This suspension logs getter handles either single user suspension log or all suspension logs
 export async function getSuspensionLogs(req, res) {
-    
-}
+    try {
+        const userId = req.query.userId;
+
+        if(userId) {
+            const logs = await getUserSuspensionLogs(parseInt(userId));
+            console.log("[USER CONTROLLER] Successfully fetched user suspension log");
+            res.status(200).json({
+                message: "Fetched user suspension log successfully",
+                logs: logs
+            });
+        } else {
+            const logs = await getAllSuspensionLogs();
+            console.log("[USER CONTROLLER] Successfully fetched all suspension logs");
+            res.status(200).json({ 
+                message: "Fetched all suspension logs succussfully",
+                logs: logs
+            });
+        }
+    } catch (error) {
+        console.error("[USER CONTROLLER] Error fetching suspension logs");
+        res.status(500).json({ error: error.message});
+    }
+}//End of getSuspensionLogs function
 
 export async function deleteUser(req, res) {
     
