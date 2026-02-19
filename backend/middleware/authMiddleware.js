@@ -60,4 +60,4 @@ export async function verifySuperAdmin(req, res, next) {
         console.error(`[AUTH MIDDLEWARE] Error verifying superadmin or Invalid or Expired token: ${error}`);
         res.status(401).json({ message: "Invalid or Expired token"});
     }
-}
+}//End of verifySuperAdmin
