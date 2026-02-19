@@ -45,3 +45,16 @@ export async function reportUser(req, res) {
     }
 }//End of reportUser function
 
+//ADMIN SPECIFIC CONTROLLERS
+export async function getAdminReports(req, res){
+    try {
+        const { search, status, type } = req.query;
+        const reports = await getAllReports(search, status, type);
+
+        console.log("[REPORTS CONTROLLER] Successfully fetched reports for admin.");
+        res.status(200).json({ result: reports });
+    } catch (error) {
+        console.error("[REPORTS CONTROLLER] Error fetching reports for admin");
+        res.status(500).json({ error: error.message });
+    }
+}//End of getAdminReports
