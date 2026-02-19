@@ -58,3 +58,28 @@ export async function getAdminReports(req, res){
         res.status(500).json({ error: error.message });
     }
 }//End of getAdminReports
+
+export async function reviewReport(req, res) {
+    try {
+        const { report_id } = req.params;
+        const { status } = req.body;
+        const admin_id = req.user.id; 
+
+        if(!['resolved', 'dismissed'].includes(status)){
+            console.log("[REPORTS CONTROLLER] Invalid status");
+            return res.status(400).json({ message: "Invalid status"});
+        }
+
+        const updated = await updateReportsStatus(report_id, status, admin_id);
+        if(!updated) {
+            console.log("[REPORTS CONTROLLER] Report not found");
+            return res.status(404).json({ message: "Report not found" });
+        }
+
+        console.log("[REPORTS CONTROLLER] Successfully updated/reviewd a report");
+        res.status(200).json({ message: "Report updated", report: updated });
+    } catch (error) {
+        console.error("[REPORTS CONTROLLER] Error reviewing the report");
+        res.status(500).json({ error: error.message });
+    }
+}//End of reviewReport 
