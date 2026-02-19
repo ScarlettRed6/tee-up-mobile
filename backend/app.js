@@ -13,8 +13,25 @@ import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 
+const allowedOrigins = [
+    'http://localhost:5000',
+    'https://tee-up.com'
+];
+
 //Middleware
-app.use(cors());
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            return callback(null, true);
+        } else {
+            console.log("[APP] Not allowed by CORS");
+            return callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+}));
 app.use(express.json());
 
 // Health check route
