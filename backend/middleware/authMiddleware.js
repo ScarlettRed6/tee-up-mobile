@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { findUserById } from "../models/userModel";
+import { findUserById } from "../models/userModel.js";
 dotenv.config();
 
 export function verifyToken(req, res, next){

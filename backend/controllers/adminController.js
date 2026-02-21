@@ -7,7 +7,7 @@ import {
     findUserById,
     updateUserRole,
     storeRefreshToken
-} from "../models/userModel";
+} from "../models/userModel.js";
 
 export async function createAdmin(req, res) {
     const { name, email, password, role } = req.body;
