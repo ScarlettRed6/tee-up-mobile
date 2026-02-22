@@ -186,6 +186,8 @@ export async function getAllListingsExceptOwn(userId) {
     }));
 }
 
+
+//ADMIN QUERIES
 export async function getAdminListingsQuery(search, category, condition, status, location){
     let query = 
         `SELECT l.*,
