@@ -320,32 +320,38 @@ export async function getRecommendations(req, res) {
     }
 }//End of getRecommendations function
 
+
 //ADMIN SPECIFIC FUNCTIONS
 export async function getAdminListings(req, res) {
     try {
         const { search, category, condition, status, location } = req.query;
         const result = await getAdminListingsQuery(search, category, condition, status, location);
 
+        if (!result){
+            console.log("[LISTINGS CONTROLLER] Listings not found from admin.");
+            return res.status(404).json({ message: "Listings not found" });
+        }
+
         res.status(200).json({ message: "Admin fetched listings successfully", result: result });
     } catch (err) {
-        console.log(`getAdminListings error: ${err}`);
+        console.log(`[LISTINGS CONTROLLER] Error fetching listings for admin: ${err}`);
         res.status(500).json({ error: err.message });
-        
     }
 }//End of getAdminListings function
 
-export async function adminUpdateStatus(req, res) {
+export async function adminUpdateListingStatus(req, res) {
     try {
         const { id } = req.params;
         const { status } = req.body;
 
         const updated = await adminUpdateListingStatusQuery(id, status);
         if(!updated){
+            console.log("[LISTINGS CONTROLLER] Listing not found from admin.");
             return res.status(404).json({ message: "Listing not found" });
         }
         res.status(200).json({ message: "Status updated by admin", listing: updated });
     } catch (err) {
-        console.log(`adminUpdateStatus error: ${err}`);
+        console.log(`[LISTINGS CONTROLLER] Error updating listing status: ${err}`);
         res.status(500).json({ error: err.message });
     }
 }//End of adminUpdateStatus function
@@ -356,11 +362,12 @@ export async function adminDeleteListing(req, res) {
         const deleted = await deleteListing(id);
 
         if(!deleted){
+            console.log("[LISTINGS CONTROLLER] Listing not found from admin.");
             return res.status(404).json({ message: "Listing not found" });
         }
         res.status(200).json({ message: "Listing deleted by admin", listing: deleted });
     } catch (err) {
-        console.log(`adminDeleteListing error: ${err}`);
+        console.log(`[LISTINGS CONTROLLER] Error deleting listing: ${err}`);
         res.status(500).json({ error: err.message });
     }
 }//End of adminDeleteListing function
