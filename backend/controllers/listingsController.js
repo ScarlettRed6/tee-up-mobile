@@ -141,11 +141,17 @@ export async function getListingItemById(req, res) {
     try{
         const { id } = req.params;
         const result = await getListingById(id);
-        res.status(200).json({ message: "Listing got successfully! idk", result });
+        if (!result) {
+            console.log("[LISTINGS CONTROLLER] Listing does not exist");
+            return res.status(404).json({ message: "Listing not found" });
+        }
+
+        res.status(200).json({ message: "Listing item fetched successfully", result });
     }catch(err){
+        console.error(`[LISTINGS CONTROLLER] Error fetching the listing: ${err.message}`);
         res.status(500).json({ error: err.message });
     }
-}
+}//End of getListingItemById
 
 export async function updateListingItem(req, res) {
     try{
@@ -322,7 +328,7 @@ export async function getRecommendations(req, res) {
 
 
 //ADMIN SPECIFIC FUNCTIONS
-export async function getAdminListings(req, res) {
+export async function adminGetAllListings(req, res) {
     try {
         const { search, category, condition, status, location } = req.query;
         const result = await getAdminListingsQuery(search, category, condition, status, location);
@@ -334,10 +340,30 @@ export async function getAdminListings(req, res) {
 
         res.status(200).json({ message: "Admin fetched listings successfully", result: result });
     } catch (err) {
-        console.log(`[LISTINGS CONTROLLER] Error fetching listings for admin: ${err}`);
+        console.error(`[LISTINGS CONTROLLER] Error fetching listings for admin: ${err}`);
         res.status(500).json({ error: err.message });
     }
 }//End of getAdminListings function
+
+export async function adminViewListing(req, res) {
+    try {
+        const listingId = req.params.id;
+        const result = await getListingById(listingId);
+        if (!result) {
+            console.log("[LISTINGS CONTROLLER] Listing not found from admin.");
+            return res.status(404).json({ message: "Listing not found." });
+        }
+
+        //Returns also the seller info (name, email, profile pic)
+        res.status(200).json({
+            message: "Listing item fetched successfully",
+            result: result 
+        });
+    } catch (error) {
+        console.error(`[LISTINGS CONTROLLER] Error fetching listing item from admin.`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of adminViewListing function
 
 export async function adminUpdateListingStatus(req, res) {
     try {
@@ -351,7 +377,7 @@ export async function adminUpdateListingStatus(req, res) {
         }
         res.status(200).json({ message: "Status updated by admin", listing: updated });
     } catch (err) {
-        console.log(`[LISTINGS CONTROLLER] Error updating listing status: ${err}`);
+        console.error(`[LISTINGS CONTROLLER] Error updating listing status: ${err}`);
         res.status(500).json({ error: err.message });
     }
 }//End of adminUpdateStatus function
@@ -367,7 +393,7 @@ export async function adminDeleteListing(req, res) {
         }
         res.status(200).json({ message: "Listing deleted by admin", listing: deleted });
     } catch (err) {
-        console.log(`[LISTINGS CONTROLLER] Error deleting listing: ${err}`);
+        console.error(`[LISTINGS CONTROLLER] Error deleting listing: ${err}`);
         res.status(500).json({ error: err.message });
     }
 }//End of adminDeleteListing function
