@@ -213,6 +213,12 @@ export async function getAdminListingsQuery(search, category, condition, status,
         paramIndex++;
     }
 
+    if(condition && condition !== 'All Conditions'){
+        query += ` AND l.condition = $${paramIndex}`;
+        params.push(condition);
+        paramIndex++;
+    }
+
     if(search){
         query += ` AND (l.title ILIKE $${paramIndex} OR u.name ILIKE $${paramIndex} OR
         CAST(l.listing_id AS TEXT) ILIKE $${paramIndex})`;
@@ -221,10 +227,10 @@ export async function getAdminListingsQuery(search, category, condition, status,
 
     if(location && location !== 'All Locations'){
         query += ` AND l.location ILIKE $${paramIndex}`;
-        params.push(`%${search}%`);
+        params.push(`%${location}%`);
     }
 
-    query += ` ORDER BY l.created_at DESC`;
+    query += ` ORDER BY l.date_posted DESC`;
     
     const result = await pool.query(query, params);
 

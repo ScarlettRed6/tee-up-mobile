@@ -23,12 +23,9 @@ function ListingDetailModal({ listing, onClose }) {
   
   console.log('Modal: Rendering with listing:', listing);
 
-  // Mock images - in real app these would come from listing data
-  const images = listing.images || [
-    { id: 1, uri: null },
-    { id: 2, uri: null },
-    { id: 3, uri: null },
-  ];
+  const images = listing.images?.length ? listing.images : [{ id: 1, uri: null }];
+  const currentImage = images[currentImageIndex];
+  const hasImageUrl = currentImage?.uri;
 
   const handlePreviousImage = () => {
     setCurrentImageIndex((prev) => 
@@ -102,9 +99,18 @@ function ListingDetailModal({ listing, onClose }) {
           {/* Image Carousel */}
           <div className="image-carousel-container">
             <div className="image-wrapper">
-              <div className="product-image-placeholder">
-                <span className="image-placeholder-text">{listing.title}</span>
-              </div>
+              {hasImageUrl ? (
+                <img
+                  src={currentImage.uri}
+                  alt={listing.title}
+                  className="product-image-img"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', background: 'var(--color-light-gray)' }}
+                />
+              ) : (
+                <div className="product-image-placeholder">
+                  <span className="image-placeholder-text">{listing.title}</span>
+                </div>
+              )}
               
               {images.length > 1 && (
                 <>

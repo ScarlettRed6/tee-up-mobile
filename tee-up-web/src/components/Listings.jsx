@@ -1,8 +1,37 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './Listings.css';
 import ListingDetailModal from './ListingDetailModal';
+import { getAdminListings, getAdminListingById, updateAdminListingStatus, deleteAdminListing } from '../api/listingsApi';
+
+// Normalize backend listing row to UI shape (id, seller, postedDate, saves, images, etc.)
+function normalizeListing(row) {
+  const photos = row.photos || (Array.isArray(row.photos) ? row.photos : []);
+  const images = photos.map((url, i) => (typeof url === 'string' ? { id: i + 1, uri: url } : { id: (url?.id ?? i + 1), uri: url?.url ?? url }));
+  return {
+    id: row.listing_id ?? row.id,
+    listing_id: row.listing_id,
+    title: row.title ?? '',
+    seller: row.seller_name ?? row.seller ?? '—',
+    seller_email: row.seller_email,
+    category: row.category ?? '—',
+    condition: row.condition ?? '—',
+    price: parseFloat(row.price) || 0,
+    status: row.status ?? 'active',
+    postedDate: row.date_posted ?? row.created_at ?? row.postedDate,
+    saves: Number(row.total_saves) || 0,
+    location: row.location ?? '—',
+    views: row.views ?? 0,
+    description: row.description ?? '',
+    images,
+    photos,
+    reviews: row.reviews ?? [],
+  };
+}
 
 function Listings() {
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [conditionFilter, setConditionFilter] = useState('all');
@@ -12,158 +41,34 @@ function Listings() {
   const [sortDirection, setSortDirection] = useState('asc');
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedListing, setSelectedListing] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
   const dropdownRefs = useRef({});
 
-  // Debug: Log when selectedListing changes
-  useEffect(() => {
-    console.log('selectedListing state changed:', selectedListing);
-  }, [selectedListing]);
-
-  // Sample listing data
-  const listings = [
-    {
-      id: 'L001',
-      title: 'TaylorMade SIM2 Driver',
-      seller: 'LebronJmaes123',
-      category: 'Driver',
-      condition: 'Slightly Used',
-      price: 18500.00,
-      status: 'active',
-      postedDate: '2024-01-15',
-      saves: 45,
-      location: 'Los Angeles, CA',
-      views: 234,
-      description: 'Used lightly. Excellent condition. Perfect for new players. Comes with original headcover and tool.',
-      images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-      reviews: [
-        {
-          id: 1,
-          heading: 'Great Driver!',
-          text: 'The seller is very trustworthy and the product was exactly as described.',
-          reviewer: { name: 'buyer123' }
-        }
-      ]
-    },
-    {
-      id: 'L002',
-      title: 'Titleist Pro V1 Golf Balls (12 pack)',
-      seller: 'hockeyops',
-      category: 'Accessories',
-      condition: 'New',
-      price: 3200.00,
-      status: 'pending',
-      postedDate: '2024-02-20',
-      saves: 12,
-      location: 'New York, NY',
-      views: 89,
-      description: 'Brand new, never opened. Original packaging included.',
-      images: [{ id: 1 }, { id: 2 }],
-      reviews: []
-    },
-    {
-      id: 'L003',
-      title: 'Callaway Apex Iron Set',
-      seller: 'scottiescheflerfan312',
-      category: 'Iron',
-      condition: 'Well Used',
-      price: 35000.00,
-      status: 'active',
-      postedDate: '2024-03-10',
-      saves: 78,
-      location: 'Miami, FL',
-      views: 456,
-      description: 'Well-used iron set but still in good playing condition. Some wear on the faces but grooves are still effective.',
-      images: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }],
-      reviews: []
-    },
-    {
-      id: 'L004',
-      title: 'Nike Golf Polo Shirt',
-      seller: 'ilovegolf543',
-      category: 'Apparel',
-      condition: 'New',
-      price: 2500.00,
-      status: 'sold',
-      postedDate: '2024-01-08',
-      saves: 23,
-      location: 'Chicago, IL',
-      views: 167,
-      description: 'Brand new with tags. Size Large. Never worn.',
-      images: [{ id: 1 }],
-      reviews: []
-    },
-    {
-      id: 'L005',
-      title: 'Scotty Cameron Putter',
-      seller: 'tigerfan99',
-      category: 'Putters',
-      condition: 'Slightly Used',
-      price: 22000.00,
-      status: 'active',
-      postedDate: '2024-02-14',
-      saves: 92,
-      location: 'Phoenix, AZ',
-      views: 523,
-      description: 'Excellent condition putter. Only used for a few rounds. Comes with original headcover.',
-      images: [{ id: 1 }, { id: 2 }],
-      reviews: [
-        {
-          id: 1,
-          heading: 'Amazing Putter!',
-          text: 'Great seller, fast shipping. Putter is in perfect condition.',
-          reviewer: { name: 'golfer123' }
-        }
-      ]
-    },
-    {
-      id: 'L006',
-      title: 'Ping G425 Fairway Wood',
-      seller: 'LebronJmaes123',
-      category: 'Woods',
-      condition: 'New',
-      price: 15000.00,
-      status: 'pending',
-      postedDate: '2024-04-05',
-      saves: 34,
-      location: 'Los Angeles, CA',
-      views: 145,
-      description: 'Brand new in box. Never been hit. Still has plastic on head.',
-      images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-      reviews: []
-    },
-    {
-      id: 'L007',
-      title: 'Golf Bag Stand Bag',
-      seller: 'hockeyops',
-      category: 'Accessories',
-      condition: 'Slightly Used',
-      price: 8500.00,
-      status: 'active',
-      postedDate: '2024-03-22',
-      saves: 56,
-      location: 'New York, NY',
-      views: 278,
-      description: 'Lightly used stand bag. All zippers work perfectly. Some minor scuffs but overall great condition.',
-      images: [{ id: 1 }, { id: 2 }],
-      reviews: []
-    },
-    {
-      id: 'L008',
-      title: 'Mizuno JPX921 Iron Set',
-      seller: 'scottiescheflerfan312',
-      category: 'Iron',
-      condition: 'Slightly Used',
-      price: 42000.00,
-      status: 'active',
-      postedDate: '2024-02-28',
-      saves: 67,
-      location: 'Miami, FL',
-      views: 389,
-      description: 'Excellent condition iron set. Used for one season. Faces show minimal wear.',
-      images: [{ id: 1 }, { id: 2 }, { id: 3 }],
-      reviews: []
+  const fetchListings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await getAdminListings({
+        search: searchQuery.trim() || undefined,
+        category: categoryFilter === 'all' ? undefined : categoryFilter,
+        condition: conditionFilter === 'all' ? undefined : conditionFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        location: locationFilter === 'all' ? undefined : locationFilter,
+      });
+      const raw = data?.result ?? (Array.isArray(data) ? data : []);
+      setListings(raw.map(normalizeListing));
+    } catch (err) {
+      console.error('Error fetching listings:', err);
+      setError(err.response?.data?.error || err.message || 'Failed to load listings');
+      setListings([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [searchQuery, categoryFilter, conditionFilter, statusFilter, locationFilter]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -193,19 +98,8 @@ function Listings() {
     };
   }, []);
 
-  const filteredListings = listings.filter(listing => {
-    const matchesSearch = 
-      listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.seller.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      listing.id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = categoryFilter === 'all' || listing.category === categoryFilter;
-    const matchesCondition = conditionFilter === 'all' || listing.condition === conditionFilter;
-    const matchesStatus = statusFilter === 'all' || listing.status === statusFilter;
-    const matchesLocation = locationFilter === 'all' || listing.location === locationFilter;
-    
-    return matchesSearch && matchesCategory && matchesCondition && matchesStatus && matchesLocation;
-  });
+  // List is already filtered by the API when fetchListings runs with current filters
+  const listToSort = listings;
 
   // Handle column sorting
   const handleSort = (column) => {
@@ -218,16 +112,16 @@ function Listings() {
   };
 
   // Sort listings based on selected sort option
-  const sortedListings = [...filteredListings].sort((a, b) => {
+  const sortedListings = [...listToSort].sort((a, b) => {
     if (!sortBy) return 0;
 
     let comparison = 0;
     switch (sortBy) {
       case 'listingId':
-        comparison = a.id.localeCompare(b.id);
+        comparison = (Number(a.id) || 0) - (Number(b.id) || 0) || String(a.id).localeCompare(String(b.id));
         break;
       case 'postedDate':
-        comparison = new Date(a.postedDate) - new Date(b.postedDate);
+        comparison = new Date(a.postedDate || 0) - new Date(b.postedDate || 0);
         break;
       case 'price':
         comparison = a.price - b.price;
@@ -300,17 +194,14 @@ function Listings() {
     setOpenDropdown(openDropdown === listingId ? null : listingId);
   };
 
-  const handleView = (listingId) => {
-    console.log('handleView called with:', listingId);
-    const listing = listings.find(l => l.id === listingId);
-    console.log('Found listing:', listing);
+  const handleView = async (listingId) => {
+    const listing = listings.find(l => l.id === listingId || l.listing_id === listingId);
     if (listing) {
       setSelectedListing(listing);
-      console.log('Setting selectedListing to:', listing);
       setOpenDropdown(null);
-    } else {
-      console.error('Listing not found:', listingId);
+      return;
     }
+    setOpenDropdown(null);
   };
 
   const handleEdit = (listingId) => {
@@ -318,22 +209,67 @@ function Listings() {
     setOpenDropdown(null);
   };
 
-  const handleApprove = (listingId) => {
-    console.log('Approve listing:', listingId);
+  const handleApprove = async (listingId) => {
+    setActionLoading(listingId);
     setOpenDropdown(null);
+    try {
+      await updateAdminListingStatus(listingId, 'active');
+      await fetchListings();
+    } catch (err) {
+      console.error('Error approving listing:', err);
+      alert(err.response?.data?.error || err.message || 'Failed to approve listing');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleMarkSold = (listingId) => {
-    console.log('Mark as sold:', listingId);
+  const handleMarkSold = async (listingId) => {
+    setActionLoading(listingId);
     setOpenDropdown(null);
+    try {
+      await updateAdminListingStatus(listingId, 'sold');
+      await fetchListings();
+    } catch (err) {
+      console.error('Error marking as sold:', err);
+      alert(err.response?.data?.error || err.message || 'Failed to update status');
+    } finally {
+      setActionLoading(null);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="listings-page">
+        <div className="listings-header">
+          <h1 className="page-title">Listings Management</h1>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400, color: 'var(--color-text-muted)' }}>
+          Loading listings…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="listings-page">
       <div className="listings-header">
         <h1 className="page-title">Listings Management</h1>
-        <button className="add-listing-button">Add New Listing</button>
+        <button className="add-listing-button" type="button" disabled>Add New Listing</button>
       </div>
+
+      {error && (
+        <div style={{
+          backgroundColor: '#FEE2E2',
+          color: '#DC2626',
+          padding: '12px 16px',
+          borderRadius: '12px',
+          marginBottom: '16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        }}>
+          {error}
+        </div>
+      )}
 
       <div className="listings-filters">
         <div className="search-container">
@@ -562,7 +498,7 @@ function Listings() {
 
       <div className="listings-footer">
         <div className="results-count">
-          Showing {sortedListings.length} of {listings.length} listings
+          Showing {sortedListings.length} listing{sortedListings.length !== 1 ? 's' : ''}
         </div>
       </div>
 
