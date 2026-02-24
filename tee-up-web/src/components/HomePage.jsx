@@ -1,7 +1,20 @@
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Logo from './Logo';
 import './HomePage.css';
+
+// Golf scenery for hero slideshow – only URLs that load reliably (full Unsplash photo-id-hash format)
+const HERO_SLIDES = [
+  'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80',  // putting green, golf ball
+  'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',  // golf course
+  'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80',
+  'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',
+  'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80',
+  'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',
+  'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80',
+  'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',
+];
 
 // Placeholder trending items (replace with API later)
 const TRENDING_PLACEHOLDER = [
@@ -12,8 +25,25 @@ const TRENDING_PLACEHOLDER = [
 ];
 
 function HomePage({ onOpenLogin, onOpenSignUp }) {
+  const [heroIndex, setHeroIndex] = useState(0);
   const handleOpenLogin = () => (onOpenLogin ? onOpenLogin() : null);
   const handleOpenSignUp = () => (onOpenSignUp ? onOpenSignUp() : onOpenLogin?.());
+
+  // Preload slideshow images for smoother transitions
+  useEffect(() => {
+    HERO_SLIDES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  // Auto-advance with longer interval so crossfade feels smooth
+  useEffect(() => {
+    const id = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % HERO_SLIDES.length);
+    }, 6500);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="home-page" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -49,13 +79,20 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
         </div>
       </header>
 
-      {/* Hero */}
-      <section
-        className="home-hero"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.25)), url('https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80')`,
-        }}
-      >
+      {/* Hero – auto slideshow of golf scenery (no user controls) */}
+      <section className="home-hero" aria-label="Golf scenery">
+        <div className="home-hero-slides" aria-hidden="true">
+          {HERO_SLIDES.map((src, i) => (
+            <div
+              key={src}
+              className={`home-hero-slide ${i === heroIndex ? 'home-hero-slide-active' : ''}`}
+              style={{
+                backgroundImage: `url('${src}')`,
+              }}
+            />
+          ))}
+        </div>
+        <div className="home-hero-overlay" aria-hidden="true" />
         <div className="home-hero-content">
           <h1 className="home-hero-title">Upgrade Your Bag.</h1>
           <p className="home-hero-subtitle">

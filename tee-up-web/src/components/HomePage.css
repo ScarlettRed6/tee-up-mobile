@@ -91,12 +91,18 @@
 }
 
 .home-btn-join {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   background-color: var(--color-primary) !important;
   color: var(--color-white) !important;
   border-radius: var(--radius-button);
   font-weight: var(--font-weight-semibold);
-  padding: var(--button-padding-small) var(--spacing-2xl);
+  padding: 13px 24px 11px !important; /* slight extra top padding to optically center text */
   box-shadow: var(--shadow-button);
+  line-height: 1;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .home-btn-join:hover {
@@ -104,19 +110,51 @@
   transform: translateY(-1px);
 }
 
-/* Hero */
+/* Hero – slideshow container */
 .home-hero {
+  position: relative;
   min-height: 420px;
-  background-size: cover;
-  background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: var(--spacing-4xl) var(--spacing-2xl);
+  overflow: hidden;
+}
+
+.home-hero-slides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-hero-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.home-hero-slide-active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.home-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+  z-index: 1;
 }
 
 .home-hero-content {
+  position: relative;
+  z-index: 2;
   max-width: 640px;
 }
 
