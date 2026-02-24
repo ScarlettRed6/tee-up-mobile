@@ -67,8 +67,9 @@ function Users() {
       setLoading(true);
       setError('');
       const response = await getAllUsers(search);
-      // Show all users including admins
-      setUsers(response.result);
+      // Backend returns the array directly; support both shapes for compatibility
+      const list = Array.isArray(response) ? response : (response?.result ?? []);
+      setUsers(list);
     } catch (err) {
       console.error('Error fetching users:', err);
       setError(err.response?.data?.error || 'Failed to fetch users');

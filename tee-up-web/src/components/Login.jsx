@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert } from './ui/alert';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, ArrowLeft } from 'lucide-react';
 
-function Login() {
+function Login({ initialView = 'login', onBackToHome }) {
   const [theme, toggleTheme] = useTheme();
   const { login, register } = useAuth();
-  const [view, setView] = useState('login');
+  const [view, setView] = useState(initialView);
+
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -117,14 +121,26 @@ function Login() {
           backgroundSize: '24px 24px',
         }}
       >
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-          className="absolute top-6 right-6 p-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] text-[var(--color-text-primary)] hover:opacity-90 hover:scale-105 transition-all duration-200 shadow-sm"
-        >
-          {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-        </button>
+        <div className="absolute top-6 right-6 flex items-center gap-2">
+          {onBackToHome && (
+            <button
+              type="button"
+              onClick={onBackToHome}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] text-[var(--color-text-primary)] hover:bg-[var(--color-light-gray)] transition-all duration-200 shadow-sm text-sm font-medium"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to home
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="p-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] text-[var(--color-text-primary)] hover:opacity-90 hover:scale-105 transition-all duration-200 shadow-sm"
+          >
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </button>
+        </div>
 
         <div className="w-full max-w-[400px] login-form-enter">
           {success && (

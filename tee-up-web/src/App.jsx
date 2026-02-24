@@ -8,11 +8,14 @@ import Listings from './components/Listings';
 import Reports from './components/Reports';
 import Login from './components/Login';
 import UserHome from './components/UserHome';
+import HomePage from './components/HomePage';
 import './App.css';
 
 function AppContent() {
   const { isAuthenticated, loading, logout, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [authView, setAuthView] = useState('home'); // 'home' | 'login'
+  const [loginInitialView, setLoginInitialView] = useState('login'); // 'login' | 'signup'
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
@@ -48,7 +51,26 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    if (authView === 'login') {
+      return (
+        <Login
+          initialView={loginInitialView}
+          onBackToHome={() => setAuthView('home')}
+        />
+      );
+    }
+    return (
+      <HomePage
+        onOpenLogin={() => {
+          setLoginInitialView('login');
+          setAuthView('login');
+        }}
+        onOpenSignUp={() => {
+          setLoginInitialView('signup');
+          setAuthView('login');
+        }}
+      />
+    );
   }
 
   if (!isAdmin) {
