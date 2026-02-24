@@ -35,8 +35,8 @@
 }
 
 .add-listing-button:hover {
-  background-color: #E55A2B;
-  box-shadow: 0 6px 12px rgba(255, 107, 53, 0.25);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 12px rgba(66, 122, 67, 0.25);
   transform: translateY(-1px);
 }
 
@@ -427,7 +427,7 @@
 }
 
 .sold-item:hover {
-  background-color: rgba(255, 107, 53, 0.1);
+  background-color: rgba(66, 122, 67, 0.1);
 }
 
 .no-results {

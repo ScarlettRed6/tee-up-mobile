@@ -36,8 +36,8 @@
 }
 
 .add-user-button:hover {
-  background-color: #E55A2B;
-  box-shadow: 0 6px 12px rgba(255, 107, 53, 0.25);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 12px rgba(66, 122, 67, 0.25);
   transform: translateY(-1px);
 }
 
@@ -321,7 +321,7 @@
 .user-type-superadmin {
   background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
   color: var(--color-white);
-  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 2px 4px rgba(66, 122, 67, 0.3);
 }
 
 .user-type-user {
@@ -437,7 +437,7 @@
 }
 
 .suspend-item:hover {
-  background-color: rgba(255, 107, 53, 0.1);
+  background-color: rgba(66, 122, 67, 0.1);
 }
 
 .delete-item {
@@ -705,8 +705,8 @@
 }
 
 .modal-button-primary:hover:not(:disabled) {
-  background-color: #E55A2B;
-  box-shadow: 0 6px 12px rgba(255, 107, 53, 0.25);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 12px rgba(66, 122, 67, 0.25);
   transform: translateY(-1px);
 }
 
@@ -766,7 +766,7 @@
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+  box-shadow: 0 0 0 3px rgba(66, 122, 67, 0.1);
 }
 
 .form-input:disabled {

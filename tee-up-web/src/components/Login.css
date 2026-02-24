@@ -180,7 +180,7 @@
 }
 
 .forgot-password:hover {
-  color: #E55A2B;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
@@ -200,8 +200,8 @@
 }
 
 .login-button:hover {
-  background-color: #E55A2B;
-  box-shadow: 0 6px 12px rgba(255, 107, 53, 0.25);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 12px rgba(66, 122, 67, 0.25);
   transform: translateY(-1px);
 }
 

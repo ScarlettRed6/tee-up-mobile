@@ -22,20 +22,6 @@
 .logo-container {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-}
-
-.logo-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-circle);
-  background-color: var(--color-light-gray);
-}
-
-.logo-text {
-  font-size: var(--font-size-h3);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
 }
 
 .header-right {

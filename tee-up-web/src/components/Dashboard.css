@@ -51,7 +51,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--color-primary), rgba(255, 107, 53, 0.5));
+  background: linear-gradient(90deg, var(--color-primary), rgba(66, 122, 67, 0.5));
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -74,7 +74,7 @@
 }
 
 .metric-card-listings::before {
-  background: linear-gradient(90deg, var(--color-primary), rgba(255, 107, 53, 0.5));
+  background: linear-gradient(90deg, var(--color-primary), rgba(66, 122, 67, 0.5));
 }
 
 .metric-card-header {
@@ -103,7 +103,7 @@
 }
 
 .metric-icon-listings {
-  background: linear-gradient(135deg, var(--color-primary), #E55A2B);
+  background: linear-gradient(135deg, var(--color-primary), rgba(66, 122, 67, 0.85));
 }
 
 .metric-content {
@@ -198,7 +198,7 @@
 
 .card-action:hover {
   background-color: var(--color-background);
-  color: #E55A2B;
+  color: var(--color-primary);
 }
 
 .seller-list {
@@ -225,7 +225,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-small);
-  background: linear-gradient(135deg, var(--color-primary), #E55A2B);
+  background: linear-gradient(135deg, var(--color-primary), rgba(66, 122, 67, 0.85));
   color: var(--color-white);
   display: flex;
   align-items: center;

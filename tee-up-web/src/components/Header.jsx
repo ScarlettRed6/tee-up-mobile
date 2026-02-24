@@ -1,5 +1,6 @@
 import './Header.css';
 import { useTheme } from '../hooks/useTheme';
+import Logo from './Logo';
 
 function Header() {
   const [theme, toggleTheme] = useTheme();
@@ -13,8 +14,7 @@ function Header() {
     <header className="header">
       <div className="header-left">
         <div className="logo-container">
-          <div className="logo-circle"></div>
-          <span className="logo-text">Tee Up</span>
+          <Logo size={36} />
         </div>
       </div>
       <div className="header-right">

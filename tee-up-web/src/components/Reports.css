@@ -654,7 +654,7 @@
 .reviewer-role-badge.role-superadmin {
   background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
   color: var(--color-white);
-  box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 2px 4px rgba(66, 122, 67, 0.3);
 }
 
 .report-actions {
