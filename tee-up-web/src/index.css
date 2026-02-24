@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import './styles/variables.css';
 
 * {
@@ -70,3 +71,96 @@ a {
 input, textarea, select {
   font-family: var(--font-family);
 }
+
+/* Login / auth page animations and effects */
+@keyframes login-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes login-float {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(4px, -6px);
+  }
+}
+
+.login-form-enter {
+  animation: login-fade-in-up 0.6s ease-out forwards;
+}
+
+.login-brand-enter {
+  animation: login-fade-in 0.8s ease-out forwards;
+}
+
+.login-float-slow {
+  animation: login-float 8s ease-in-out infinite;
+}
+
+.login-float-slower {
+  animation: login-float 12s ease-in-out infinite;
+  animation-delay: -2s;
+}
+
+/* Form view switch (login ↔ signup) */
+@keyframes login-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-view-enter {
+  animation: login-view-in 0.35s ease-out forwards;
+}
+
+/* Staggered form fields */
+@keyframes login-field-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-form-stagger > * {
+  animation: login-field-in 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.login-form-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.login-form-stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.login-form-stagger > *:nth-child(3) { animation-delay: 0.19s; }
+.login-form-stagger > *:nth-child(4) { animation-delay: 0.26s; }
+.login-form-stagger > *:nth-child(5) { animation-delay: 0.33s; }
+.login-form-stagger > *:nth-child(6) { animation-delay: 0.4s; }
+.login-form-stagger > *:nth-child(7) { animation-delay: 0.47s; }
+.login-form-stagger > *:nth-child(8) { animation-delay: 0.54s; }
+.login-form-stagger > *:nth-child(9) { animation-delay: 0.61s; }
+.login-form-stagger > *:nth-child(10) { animation-delay: 0.68s; }
+.login-form-stagger > *:nth-child(11) { animation-delay: 0.75s; }
+.login-form-stagger > *:nth-child(12) { animation-delay: 0.82s; }

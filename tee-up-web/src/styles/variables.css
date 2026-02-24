@@ -2,7 +2,7 @@
 
 :root {
   /* Colors - Light Mode */
-  --color-primary: #FF6B35;
+  --color-primary: #427A43;
   --color-background: #F6EDE2;
   --color-background-alt: #FAF1E6;
   --color-white: #FFFFFF;
@@ -94,7 +94,7 @@
 /* Dark Mode */
 [data-theme="dark"] {
   /* Colors - Dark Mode */
-  --color-primary: #FF6B35;
+  --color-primary: #427A43;
   --color-background: #1a1a1a;
   --color-background-alt: #242424;
   --color-white: #2a2a2a;

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { adminLogin, getAdminProfile } from '../api/adminApi';
+import { login as authLogin, getProfile, register as authRegister } from '../api/authApi';
 
 const AuthContext = createContext(null);
 
@@ -17,22 +17,20 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkAuth = async () => {
-      const token = localStorage.getItem('adminToken');
-      const storedUser = localStorage.getItem('adminUser');
+      const token = localStorage.getItem('authToken');
+      const storedUser = localStorage.getItem('authUser');
 
       if (token && storedUser) {
         try {
-          // Verify token is still valid by fetching profile
-          const response = await getAdminProfile();
-          setUser(response.user);
+          const response = await getProfile();
+          const parsed = JSON.parse(storedUser);
+          setUser({ ...parsed, ...response });
           setIsAuthenticated(true);
         } catch (error) {
-          // Token invalid, clear storage
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('adminRefreshToken');
-          localStorage.removeItem('adminUser');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authRefreshToken');
+          localStorage.removeItem('authUser');
           setUser(null);
           setIsAuthenticated(false);
         }
@@ -45,13 +43,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await adminLogin(email, password);
+      const response = await authLogin(email, password);
       const { token, refreshToken, user: userData } = response;
 
-      // Store tokens and user data
-      localStorage.setItem('adminToken', token);
-      localStorage.setItem('adminRefreshToken', refreshToken);
-      localStorage.setItem('adminUser', JSON.stringify(userData));
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('authRefreshToken', refreshToken);
+      localStorage.setItem('authUser', JSON.stringify(userData));
 
       setUser(userData);
       setIsAuthenticated(true);
@@ -63,11 +60,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminRefreshToken');
-    localStorage.removeItem('adminUser');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authRefreshToken');
+    localStorage.removeItem('authUser');
     setUser(null);
     setIsAuthenticated(false);
+  };
+
+  const register = async (name, email, password, confirmPassword) => {
+    try {
+      await authRegister(name, email, password, confirmPassword);
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || error.response?.data?.error || 'Sign up failed';
+      return { success: false, error: message };
+    }
   };
 
   const value = {
@@ -76,6 +83,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    register,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

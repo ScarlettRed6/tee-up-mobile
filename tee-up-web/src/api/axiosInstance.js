@@ -9,10 +9,10 @@ const axiosInstance = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token (single auth for all users)
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,23 +34,23 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('adminRefreshToken');
+        const refreshToken = localStorage.getItem('authRefreshToken');
         if (refreshToken) {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refreshToken: refreshToken,
           });
 
           const { token } = response.data;
-          localStorage.setItem('adminToken', token);
+          localStorage.setItem('authToken', token);
           originalRequest.headers.Authorization = `Bearer ${token}`;
 
           return axiosInstance(originalRequest);
         }
       } catch (refreshError) {
         // Refresh failed, logout user
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminRefreshToken');
-        localStorage.removeItem('adminUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authRefreshToken');
+        localStorage.removeItem('authUser');
         window.location.href = '/';
         return Promise.reject(refreshError);
       }

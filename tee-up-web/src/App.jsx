@@ -7,24 +7,24 @@ import Users from './components/Users';
 import Listings from './components/Listings';
 import Reports from './components/Reports';
 import Login from './components/Login';
+import UserHome from './components/UserHome';
 import './App.css';
 
 function AppContent() {
   const { isAuthenticated, loading, logout, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+
   const handleLogout = () => {
     logout();
-    setCurrentPage('dashboard'); // Reset to dashboard when logging out
+    setCurrentPage('dashboard');
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'users':
-        // Admin and superadmin can access users page
-        if (user?.role !== 'admin' && user?.role !== 'superadmin') {
-          return <Dashboard />;
-        }
+        if (!isAdmin) return <Dashboard />;
         return <Users />;
       case 'listings':
         return <Listings />;
@@ -38,15 +38,11 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#F6EDE2',
-        fontFamily: 'Exo, sans-serif'
-      }}>
-        <div>Loading...</div>
+      <div
+        className="flex items-center justify-center min-h-screen"
+        style={{ backgroundColor: 'var(--color-background)' }}
+      >
+        <div className="text-[var(--color-text-muted)]">Loading…</div>
       </div>
     );
   }
@@ -55,12 +51,16 @@ function AppContent() {
     return <Login />;
   }
 
+  if (!isAdmin) {
+    return <UserHome />;
+  }
+
   return (
     <div className="app">
       <Header user={user} />
-      <Sidebar 
-        onNavigate={setCurrentPage} 
-        currentPage={currentPage} 
+      <Sidebar
+        onNavigate={setCurrentPage}
+        currentPage={currentPage}
         onLogout={handleLogout}
         user={user}
       />
