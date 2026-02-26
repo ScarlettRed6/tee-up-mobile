@@ -9,6 +9,7 @@ import {
     adminUpdateUser,
     getUsers,
     getAllActiveUsersCount,
+    getTotalUserCount,
     getSuspensionLogs
 } from "../controllers/userController.js";
 import { verifyToken, verifyAdmin, verifySuperAdmin } from "../middleware/authMiddleware.js";
@@ -29,6 +30,7 @@ router.get("/admin/suspension-logs", verifyAdmin, getSuspensionLogs);
 router.get("/admin/user/:id", verifyAdmin, getUserById);
 router.get("/admin/profile", verifyToken, verifyAdmin, getUserProfile);
 router.get("/admin/active", verifyAdmin, getAllActiveUsersCount);
+router.get("/admin/total", verifyAdmin, getTotalUserCount);
 
 router.put("/admin/update/:id", verifyAdmin, upload.single("profile_image"), adminUpdateUser);
 router.post("/admin/suspend/:id", verifyAdmin, suspendUser);

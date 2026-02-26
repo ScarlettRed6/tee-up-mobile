@@ -4,6 +4,7 @@ import {
     findUserByEmail,
     getAllUsers,
     getActiveUsers,
+    getUserCount,
     suspendUserQuery,
     unsuspendUserQuery,
     deleteUserQuery,
@@ -130,10 +131,25 @@ export async function getAllActiveUsersCount(req, res) {
 
         res.status(200).json({ message: "Successfully fetched all active users", activeCount: result });
     } catch (error) {
-        console.error(`[USER CONTROLLER] Error fetching count of active users`);
+        console.error(`[USER CONTROLLER] Error fetching count of active users: ${error.message}`);
         res.status(500).json({ error: error.message });
     }
 }//End of getAllActiveUsersCount
+
+export async function getTotalUserCount(req, res) {
+    try {
+        const result = await getUserCount();
+        if (!result) {
+            console.log("THERE ARE NO USERS (HOW'S THAT POSSIBLE)");
+            return res.status(404).json({ message: "There are no users" });
+        }
+
+        res.status(200).json({ message: "Successfully fetched total user count", totalUsers: result});
+    } catch (error) {
+        console.error(`[USER CONTROLLER] Error fetching total user count: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of getTotalUserCount function
 
 export async function suspendUser(req, res) {
     try {

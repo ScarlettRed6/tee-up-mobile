@@ -185,6 +185,15 @@ export async function getAllUsers(search = "") {
     return result.rows;
 }//End of getAllUsers query
 
+export async function getUserCount() {
+    const query = `
+    SELECT COUNT(*) FROM users
+    WHERE role = 'user'`;
+    const result = await pool.query(query);
+
+    return result.rows[0].count;
+}//End of getTotalUserCount query
+
 export async function getActiveUsers() {
     const query = `
     SELECT COUNT(*) FROM users
@@ -256,8 +265,4 @@ export async function updateUserRole(userId, role) {
     );
     return result.rows[0];
 }//End of updateUserRole
-
-
-
-
 
