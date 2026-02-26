@@ -186,11 +186,14 @@ export async function getAllUsers(search = "") {
 }//End of getAllUsers query
 
 export async function getActiveUsers() {
-    const result = `
+    const query = `
     SELECT COUNT(*) FROM users
-    WHERE suspended_until IS NULL OR suspended_until <= NOW()`;
+    WHERE (suspended_until IS NULL OR suspended_until <= NOW())
+    AND role = 'user'`;
+    const result = await pool.query(query);
+
     return result.rows[0].count;
-}
+}//End of getActiveUsers query
 
 export async function suspendUserQuery(userId, suspendedUntil = null) {
     if (suspendedUntil) {

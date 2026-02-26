@@ -8,6 +8,7 @@ import {
     deleteUser,
     adminUpdateUser,
     getUsers,
+    getAllActiveUsersCount,
     getSuspensionLogs
 } from "../controllers/userController.js";
 import { verifyToken, verifyAdmin, verifySuperAdmin } from "../middleware/authMiddleware.js";
@@ -25,8 +26,9 @@ router.get("/:id", getUserById);
 //ADMIN ROUTES - user manangement
 router.get("/admin/users", verifyAdmin, getUsers);
 router.get("/admin/suspension-logs", verifyAdmin, getSuspensionLogs);
-router.get("/admin/:id", verifyAdmin, getUserById);
+router.get("/admin/user/:id", verifyAdmin, getUserById);
 router.get("/admin/profile", verifyToken, verifyAdmin, getUserProfile);
+router.get("/admin/active", verifyAdmin, getAllActiveUsersCount);
 
 router.put("/admin/update/:id", verifyAdmin, upload.single("profile_image"), adminUpdateUser);
 router.post("/admin/suspend/:id", verifyAdmin, suspendUser);

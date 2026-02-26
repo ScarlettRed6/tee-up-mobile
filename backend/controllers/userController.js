@@ -3,6 +3,7 @@ import {
     updateUser, 
     findUserByEmail,
     getAllUsers,
+    getActiveUsers,
     suspendUserQuery,
     unsuspendUserQuery,
     deleteUserQuery,
@@ -114,9 +115,25 @@ export async function getUsers(req, res) {
         res.status(200).json(result);
     } catch (error) {
         console.error("[USER CONTROLLER] Error fetching all users.");
-        res.status(500).json({});
+        res.status(500).json({ error: error.message });
     }
 }//End of getUsers function
+
+export async function getAllActiveUsersCount(req, res) {
+    try {
+        const result = await getActiveUsers();
+
+        if (!result) {
+            console.log("THERE ARE NO ACTIVE USERS");
+            return res.status(404).json({ message: "There are no active users" });
+        }
+
+        res.status(200).json({ message: "Successfully fetched all active users", activeCount: result });
+    } catch (error) {
+        console.error(`[USER CONTROLLER] Error fetching count of active users`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of getAllActiveUsersCount
 
 export async function suspendUser(req, res) {
     try {
