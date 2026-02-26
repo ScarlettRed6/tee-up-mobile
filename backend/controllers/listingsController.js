@@ -9,7 +9,8 @@ import {
     updateListingStatus, 
     getAllListingsExceptOwn,
     getAdminListingsQuery,
-    adminUpdateListingStatusQuery } 
+    adminUpdateListingStatusQuery,
+    getListingCount } 
 from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";
@@ -135,7 +136,7 @@ export async function getAllListingItems(req, res) {
     }catch(err){
         res.status(500).json({ error: err.message });
     }
-}
+}//End of getAllListingItems function
 
 export async function getListingItemById(req, res) {
     try{
@@ -344,6 +345,21 @@ export async function adminGetAllListings(req, res) {
         res.status(500).json({ error: err.message });
     }
 }//End of getAdminListings function
+
+export async function adminGetTotalListingCount(req, res) {
+    try {
+        const result = await getListingCount();
+        if(!result){
+            console.log("[LISTINGS CONTROLLER] There are no listings | result is null");
+            return res.status(404).json({ message: "There are no listings" });
+        }
+
+        res.status(200).json({ message: "Successfully fetched total listings count", totalListings: result });
+    } catch (error) {
+        console.error(`[LISTINGS CONTROLLER] Error fetching total listings count: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of getTotalListingCount function
 
 export async function adminViewListing(req, res) {
     try {

@@ -248,4 +248,7 @@ export async function adminUpdateListingStatusQuery(listingId, status) {
     return result.rows[0];
 }//End of adminUpdateListingStatusQuery
 
-
+export async function getListingCount() {
+    const result = await pool.query(`SELECT COUNT(*) FROM listings`);
+    return result.rows[0].count;
+}//End of getTotalListingCount query

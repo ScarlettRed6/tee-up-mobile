@@ -11,7 +11,8 @@ import {
     adminGetAllListings,
     adminUpdateListingStatus,
     adminDeleteListing,
-    adminViewListing
+    adminViewListing,
+    adminGetTotalListingCount
 } from "../controllers/listingsController.js";
 import { verifyToken, verifyAdmin } from "../middleware/authMiddleware.js";
 
@@ -29,8 +30,11 @@ router.patch("/:listing_id/status", verifyToken, changeListingStatus);
 
 //Admin routes
 router.get("/admin/all", verifyToken, verifyAdmin, adminGetAllListings);
-router.put("/admin/status/:id", verifyToken, verifyAdmin, adminUpdateListingStatus);
 router.get("/admin/listing/:id", verifyToken, verifyAdmin, adminViewListing);
+router.get("/admin/count", verifyAdmin, adminGetTotalListingCount);
+
+router.put("/admin/status/:id", verifyToken, verifyAdmin, adminUpdateListingStatus);
+
 router.delete("/admin/delete/:id", verifyToken, verifyAdmin, adminDeleteListing);
 
 export default router;
