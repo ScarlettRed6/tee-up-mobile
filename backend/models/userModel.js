@@ -185,16 +185,23 @@ export async function getAllUsers(search = "") {
     return result.rows;
 }//End of getAllUsers query
 
+export async function getActiveUsers() {
+    const result = `
+    SELECT COUNT(*) FROM users
+    WHERE suspended_until IS NULL OR suspended_until <= NOW()`;
+    return result.rows[0].count;
+}
+
 export async function suspendUserQuery(userId, suspendedUntil = null) {
     if (suspendedUntil) {
         const result = await pool.query(
-            `UPDATE users SET status = 'suspended', suspended_until = $2
+            `UPDATE users SET suspended_until = $2
             WHERE id = $1 RETURNING *`,
             [userId, suspendedUntil]
         );
     } else {
         const result = await pool.query(
-            `UPDATE users SET status = 'suspended', suspended_until = NULL
+            `UPDATE users SET suspended_until = NULL
             WHERE id = $1 RETURNING *`,
             [userId]
         );
@@ -204,7 +211,7 @@ export async function suspendUserQuery(userId, suspendedUntil = null) {
 
 export async function unsuspendUserQuery(userId) {
     const result = await pool.query(
-        `UPDATE users SET status = 'active', suspended_until = NULL
+        `UPDATE users SET suspended_until = NULL
         WHERE id = $1 RETURNING *`,
         [userId]
     );
