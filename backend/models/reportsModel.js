@@ -34,7 +34,7 @@ export async function getCompletedReportsCount() {
     const query = `
         SELECT COUNT(*) FROM reports
         WHERE status = 'complete'`;
-    const result = pool.query(query);
+    const result = await pool.query(query);
 
     return result.rows[0].count;
 }//End of getCompletedReportsCount query

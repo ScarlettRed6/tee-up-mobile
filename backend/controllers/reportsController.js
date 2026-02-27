@@ -69,8 +69,8 @@ export async function adminGetPendingReportsCount(req, res) {
     try {
         const result = await getPendingReportsCount();
         if(!result) {
-            console.log("[REPORTS CONTROLLER] There are no pending reports.");
-            res.status(404).json({ message: "There are no pending reporsts."});
+            console.log("[REPORTS CONTROLLER] There are no pending reports/result is null");
+            res.status(404).json({ message: "There are no pending reports."});
         }
 
         res.status(200).json({ message: "Successfully fetched pending reports count", reportCount: result });
@@ -79,6 +79,21 @@ export async function adminGetPendingReportsCount(req, res) {
         res.status(500).json({ error: error.message });
     }
 }//End of adminGetPendingReportsCount function
+
+export async function adminGetCompletedReportsCount(req, res) {
+    try {
+        const result = await getCompletedReportsCount();
+        if(!result) {
+            console.log("[REPORTS CONTROLLER] There are no completed reports/result is null");
+            res.status(404).json({ message: "There are no completed reports."});
+        }
+
+        res.status(200).json({ message: "Successfully fetched completed reports count", reportCount: result });
+    } catch (error) {
+        console.error(`[REPORTS CONTROLLER] Error fetching completed reports count: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of adminGetCompletedReportsCount function
 
 export async function reviewReport(req, res) {
     try {
