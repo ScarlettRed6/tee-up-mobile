@@ -19,7 +19,25 @@ export async function getAllReports() {
         ORDER BY r.created_at DESC`
     );
     return result.rows;
-}
+}//End of getAllReports query
+
+export async function getPendingReportsCount() {
+    const query = `
+        SELECT COUNT(*) FROM reports
+        WHERE status = 'pending'`;
+    const result = await pool.query(query);
+
+    return result.rows[0].count;
+}//End of getPendingReportsCount query
+
+export async function getCompletedReportsCount() {
+    const query = `
+        SELECT COUNT(*) FROM reports
+        WHERE status = 'complete'`;
+    const result = pool.query(query);
+
+    return result.rows[0].count;
+}//End of getCompletedReportsCount query
 
 export async function updateReportsStatus(report_id, status, admin_id) {
     const result = await pool.query(
@@ -27,4 +45,4 @@ export async function updateReportsStatus(report_id, status, admin_id) {
         WHERE report_id = $3 RETURNING *`, [status, admin_id, report_id]
     );
     return result.rows[0];
-}
+}//End of updateReportsStatus query

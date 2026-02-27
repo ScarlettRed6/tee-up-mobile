@@ -1,4 +1,10 @@
-import { addReport, getAllReports, updateReportsStatus } from "../models/reportsModel.js";
+import { 
+    addReport, 
+    getAllReports, 
+    updateReportsStatus,
+    getPendingReportsCount,
+    getCompletedReportsCount 
+} from "../models/reportsModel.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export async function reportListing(req, res) {
@@ -58,6 +64,21 @@ export async function getAdminReports(req, res){
         res.status(500).json({ error: error.message });
     }
 }//End of getAdminReports
+
+export async function adminGetPendingReportsCount(req, res) {
+    try {
+        const result = await getPendingReportsCount();
+        if(!result) {
+            console.log("[REPORTS CONTROLLER] There are no pending reports.");
+            res.status(404).json({ message: "There are no pending reporsts."});
+        }
+
+        res.status(200).json({ message: "Successfully fetched pending reports count", reportCount: result });
+    } catch (error) {
+        console.error(`[REPORTS CONTROLLER] Error fetching pending reports count: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+}//End of adminGetPendingReportsCount function
 
 export async function reviewReport(req, res) {
     try {

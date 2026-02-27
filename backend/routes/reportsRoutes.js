@@ -4,7 +4,8 @@ import {
     reportListing, 
     reportUser,
     getAdminReports,
-    reviewReport 
+    reviewReport,
+    adminGetPendingReportsCount 
 } from "../controllers/reportsController.js";
 import upload from "../middleware/upload.js";
 
@@ -15,6 +16,8 @@ router.post("/user/:user_id", verifyToken, upload.single("photo"), reportUser);
 
 //Admin report routes
 router.get("/admin/all", verifyToken, verifyAdmin, getAdminReports);
+router.get("/admin/pending", verifyAdmin, adminGetPendingReportsCount);
+
 router.put("/admin/review/:report_id", verifyToken, verifyAdmin, reviewReport);
 
 export default router;
