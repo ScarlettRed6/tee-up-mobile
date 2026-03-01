@@ -1,0 +1,76 @@
+.user-home {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-home-main {
+  flex: 1;
+  padding: var(--spacing-2xl) 0;
+}
+
+.user-home-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-2xl);
+}
+
+.user-home-error {
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  background: #FEE2E2;
+  color: var(--color-error);
+  border-radius: var(--radius-medium);
+  font-size: var(--font-size-body-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.user-home-loading {
+  padding: var(--spacing-4xl);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+}
+
+.user-home-section {
+  margin-bottom: var(--spacing-4xl);
+}
+
+.user-home-section-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xl);
+  letter-spacing: -0.02em;
+}
+
+.user-home-scroll {
+  display: flex;
+  gap: var(--spacing-xl);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-md);
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.user-home-scroll .listing-card {
+  scroll-snap-align: start;
+}
+
+.user-home-empty {
+  font-size: var(--font-size-body);
+  color: var(--color-text-muted);
+  margin: 0;
+  padding: var(--spacing-2xl) 0;
+}
+
+@media (max-width: 768px) {
+  .user-home-container {
+    padding: 0 var(--spacing-lg);
+  }
+
+  .user-home-section-title {
+    font-size: var(--font-size-h3);
+  }
+}

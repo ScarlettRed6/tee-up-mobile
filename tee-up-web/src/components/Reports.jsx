@@ -298,7 +298,6 @@ function Reports() {
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
-            <option value="reviewed">Reviewed</option>
             <option value="resolved">Resolved</option>
             <option value="dismissed">Dismissed</option>
           </select>
@@ -442,7 +441,7 @@ function Reports() {
                           >
                             View Details
                           </button>
-                          {(report.status === 'pending' || report.status === 'reviewed') && (
+                          {(report.status === 'pending') && (
                             <>
                               <button 
                                 className="dropdown-item" 
@@ -488,12 +487,6 @@ function Reports() {
           <span className="summary-label">Pending:</span>
           <span className="summary-value status-pending">
             {reports.filter(r => r.status === 'pending').length}
-          </span>
-        </div>
-        <div className="summary-item">
-          <span className="summary-label">Reviewed:</span>
-          <span className="summary-value status-reviewed">
-            {reports.filter(r => r.status === 'reviewed').length}
           </span>
         </div>
         <div className="summary-item">
@@ -673,7 +666,7 @@ function Reports() {
                 </div>
 
                 {/* Action Buttons */}
-                {(selectedReport.status === 'pending' || selectedReport.status === 'reviewed') && (
+                {(selectedReport.status === 'pending') && (
                   <div className="report-actions">
                     <button
                       className="modal-button-secondary"

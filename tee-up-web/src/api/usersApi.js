@@ -7,9 +7,9 @@ export const getAllUsers = async (search = '') => {
   return response.data;
 };
 
-// Get user by ID (superadmin only)
+// Get user by ID (admin) – backend route is GET /user/admin/user/:id
 export const getUserById = async (userId) => {
-  const response = await axiosInstance.get(`/user/admin/${userId}`);
+  const response = await axiosInstance.get(`/user/admin/user/${userId}`);
   return response.data;
 };
 

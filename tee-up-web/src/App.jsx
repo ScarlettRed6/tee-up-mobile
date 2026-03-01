@@ -35,7 +35,12 @@ function AppContent() {
         return <Reports />;
       case 'dashboard':
       default:
-        return <Dashboard />;
+        return (
+          <Dashboard
+            onViewUsers={() => setCurrentPage('users')}
+            onViewReports={() => setCurrentPage('reports')}
+          />
+        );
     }
   };
 

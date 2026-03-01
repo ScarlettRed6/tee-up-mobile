@@ -204,6 +204,33 @@ export async function getActiveUsers() {
     return result.rows[0].count;
 }//End of getActiveUsers query
 
+export async function getTopSellers(limit = 10) {
+    const query = `
+        SELECT 
+            u.id,
+            u.name,
+            COALESCE(listing_stats.sold_listings, 0)::int as total_sales,
+            COALESCE(rating_stats.average_rating, 0)::numeric(10,2) as rating,
+            COALESCE(rating_stats.total_ratings, 0)::int as total_ratings
+        FROM users u
+        LEFT JOIN (
+            SELECT user_id, COUNT(*) FILTER (WHERE status = 'sold') as sold_listings
+            FROM listings GROUP BY user_id
+        ) listing_stats ON u.id = listing_stats.user_id
+        LEFT JOIN (
+            SELECT 
+                rated_user_id,
+                AVG(rating)::numeric(10,2) as average_rating,
+                COUNT(*) as total_ratings
+            FROM user_ratings GROUP BY rated_user_id
+        ) rating_stats ON u.id = rating_stats.rated_user_id
+        WHERE u.role = 'user'
+        ORDER BY total_ratings DESC NULLS LAST, rating DESC NULLS LAST
+        LIMIT $1`;
+    const result = await pool.query(query, [limit]);
+    return result.rows;
+}//End of getTopSellers query
+
 export async function suspendUserQuery(userId, suspendedUntil = null) {
     if (suspendedUntil) {
         const result = await pool.query(

@@ -24,6 +24,22 @@
   margin: 0;
 }
 
+.dashboard-error {
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  background-color: #FEE2E2;
+  color: var(--color-error, #B91C1C);
+  border-radius: var(--radius-medium);
+  font-weight: var(--font-weight-medium);
+}
+
+.dashboard-loading {
+  padding: var(--spacing-2xl);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -219,6 +235,12 @@
 
 .seller-item:hover {
   background-color: var(--color-background-alt);
+}
+
+.seller-item-empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+  justify-content: center;
 }
 
 .seller-rank-badge {

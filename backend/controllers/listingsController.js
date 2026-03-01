@@ -349,12 +349,7 @@ export async function adminGetAllListings(req, res) {
 export async function adminGetTotalListingCount(req, res) {
     try {
         const result = await getListingCount();
-        if(!result){
-            console.log("[LISTINGS CONTROLLER] There are no listings | result is null");
-            return res.status(404).json({ message: "There are no listings" });
-        }
-
-        res.status(200).json({ message: "Successfully fetched total listings count", totalListings: result });
+        res.status(200).json({ message: "Successfully fetched total listings count", totalListings: result ?? 0 });
     } catch (error) {
         console.error(`[LISTINGS CONTROLLER] Error fetching total listings count: ${error.message}`);
         res.status(500).json({ error: error.message });
