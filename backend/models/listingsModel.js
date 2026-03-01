@@ -1,5 +1,19 @@
 import pool from "../config/db.js";
 
+/**
+ * Get distinct category values from listings (for filters/dropdowns).
+ * Returns array of strings, sorted.
+ */
+export async function getDistinctCategories() {
+  const result = await pool.query(
+    `SELECT DISTINCT TRIM(category) AS category
+     FROM listings
+     WHERE category IS NOT NULL AND TRIM(category) != ''
+     ORDER BY category`
+  );
+  return result.rows.map((row) => row.category);
+}
+
 //Create a new listing
 export async function insertListing(user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location){
    const newListing = await pool.query(

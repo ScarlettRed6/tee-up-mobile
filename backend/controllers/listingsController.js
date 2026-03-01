@@ -4,11 +4,12 @@ import {
     insertListing, 
     getAllListings, 
     getListingById, 
-    updateListing, 
+    updateListing,
     deleteListing, 
     updateListingStatus, 
     getAllListingsExceptOwn,
     getAdminListingsQuery,
+    getDistinctCategories,
     adminUpdateListingStatusQuery,
     getListingCount } 
 from "../models/listingsModel.js";
@@ -138,21 +139,29 @@ export async function getAllListingItems(req, res) {
     }
 }//End of getAllListingItems function
 
+export async function getCategories(req, res) {
+    try {
+        const categories = await getDistinctCategories();
+        res.status(200).json({ categories });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
 export async function getListingItemById(req, res) {
-    try{
+    try {
         const { id } = req.params;
         const result = await getListingById(id);
         if (!result) {
             console.log("[LISTINGS CONTROLLER] Listing does not exist");
             return res.status(404).json({ message: "Listing not found" });
         }
-
         res.status(200).json({ message: "Listing item fetched successfully", result });
-    }catch(err){
+    } catch (err) {
         console.error(`[LISTINGS CONTROLLER] Error fetching the listing: ${err.message}`);
         res.status(500).json({ error: err.message });
     }
-}//End of getListingItemById
+}
 
 export async function updateListingItem(req, res) {
     try{

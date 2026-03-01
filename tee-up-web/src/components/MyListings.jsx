@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { getListings } from '../api/userListingsApi';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
+import ListingSearchFilters from './ListingSearchFilters';
 import { Button } from './ui/button';
 import { Alert } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
@@ -36,8 +37,12 @@ export default function MyListings({
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
+  const fetchListings = useCallback(() => {
     if (!user?.id) {
       setListings([]);
       setLoading(false);
@@ -45,11 +50,22 @@ export default function MyListings({
     }
     setLoading(true);
     setError(null);
-    getListings({ user_id: user.id })
+    const params = {
+      user_id: user.id,
+      sort: sort || 'newest',
+    };
+    if (search.trim()) params.search = search.trim();
+    if (category) params.category = category;
+    if (statusFilter) params.status = statusFilter;
+    getListings(params)
       .then((data) => setListings(Array.isArray(data) ? data.map(normalizeListing) : []))
       .catch((err) => setError(err?.message ?? 'Failed to load your listings'))
       .finally(() => setLoading(false));
-  }, [user?.id]);
+  }, [user?.id, search, category, sort, statusFilter]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   return (
     <div className="my-listings" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -70,6 +86,19 @@ export default function MyListings({
             <ChevronLeft className="h-4 w-4" /> Back to home
           </Button>
           <h1 className="my-listings-title">My Listings</h1>
+
+          <ListingSearchFilters
+            search={search}
+            onSearchChange={setSearch}
+            category={category}
+            onCategoryChange={setCategory}
+            sort={sort}
+            onSortChange={setSort}
+            showStatusFilter
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+            placeholder="Search your listings…"
+          />
 
           {error && (
             <Alert variant="destructive" className="my-listings-error">{error}</Alert>

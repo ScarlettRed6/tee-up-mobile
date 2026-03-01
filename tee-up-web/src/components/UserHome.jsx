@@ -9,11 +9,18 @@ import MyListings from './MyListings';
 import ProfilePage from './ProfilePage';
 import PublicProfilePage from './PublicProfilePage';
 import { Alert } from './ui/alert';
-import { Card, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { ChevronRight } from 'lucide-react';
 import './UserHome.css';
+
+// Golf slideshow for logged-in hero (same style as landing)
+const HERO_SLIDES = [
+  'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80',
+  'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',
+  'https://images.unsplash.com/photo-1545241047-6083a3684587?w=1200&q=80',
+  'https://images.unsplash.com/photo-1593111774240-d2b1dc2b16e2?w=1200&q=80',
+];
 
 function UserHome() {
   const { user, logout } = useAuth();
@@ -29,6 +36,15 @@ function UserHome() {
   const [selectedOwnerListingId, setSelectedOwnerListingId] = useState(null);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   const [ownerListingFromView, setOwnerListingFromView] = useState('feed');
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    HERO_SLIDES.forEach((src) => { const img = new Image(); img.src = src; });
+  }, []);
+  useEffect(() => {
+    const id = setInterval(() => setHeroIndex((i) => (i + 1) % HERO_SLIDES.length), 6000);
+    return () => clearInterval(id);
+  }, []);
 
   const normalizeListing = (item) => {
     const photos = item.photos != null
@@ -243,38 +259,41 @@ function UserHome() {
       />
 
       <main className="user-home-main">
+          {!loading && (
+            <section className="user-home-hero-wrap" aria-label="Featured">
+              <div className="user-home-hero-slides" aria-hidden="true">
+                {HERO_SLIDES.map((src, i) => (
+                  <div
+                    key={src}
+                    className={`user-home-hero-slide ${i === heroIndex ? 'user-home-hero-slide-active' : ''}`}
+                    style={{ backgroundImage: `url('${src}')` }}
+                  />
+                ))}
+              </div>
+              <div className="user-home-hero-overlay" aria-hidden="true" />
+              <div className="user-home-hero-content">
+                <p className="user-home-hero-label">Pre-owned golf gear</p>
+                <h2 className="user-home-hero-text">Find your next club</h2>
+                <p className="user-home-hero-sub">
+                  Browse listings from sellers in your community. Make an offer and get fitted for your game.
+                </p>
+                <Button
+                  size="lg"
+                  className="user-home-hero-cta"
+                  onClick={() => document.getElementById('user-home-recent')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  Browse listings
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            </section>
+          )}
+
         <div className="user-home-container">
           {error && (
             <Alert variant="destructive" className="user-home-error" role="alert">
               {error}
             </Alert>
-          )}
-
-          {!loading && (
-            <section className="user-home-hero-wrap">
-              <Card className="user-home-hero">
-                <CardHeader className="user-home-hero-header">
-                  <p className="user-home-hero-label">Pre-owned golf gear</p>
-                  <CardTitle className="user-home-hero-text">
-                    Find your next club
-                  </CardTitle>
-                  <CardDescription className="user-home-hero-sub">
-                    Browse listings from sellers in your community. Make an offer and get fitted for your game.
-                  </CardDescription>
-                  <Button
-                    size="lg"
-                    className="user-home-hero-cta"
-                    onClick={() => document.getElementById('user-home-recent')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    Browse listings
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </CardHeader>
-              </Card>
-              <p className="user-home-trust">
-                Authentic gear from verified sellers · Make an offer anytime
-              </p>
-            </section>
           )}
 
           {loading ? (

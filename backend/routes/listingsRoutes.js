@@ -4,6 +4,7 @@ import {
     createListing, 
     getAllListingItems, 
     getListingItemById, 
+    getCategories,
     updateListingItem, 
     deleteListingItem, 
     changeListingStatus, 
@@ -19,6 +20,7 @@ import { verifyToken, verifyAdmin } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 router.get("/recommendations", verifyToken, getRecommendations);
+router.get("/categories", getCategories);
 router.get("/", getAllListingItems);
 router.get("/:id", getListingItemById);
 

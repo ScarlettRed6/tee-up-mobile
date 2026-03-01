@@ -10,6 +10,15 @@ export const getListings = async (params = {}) => {
 };
 
 /**
+ * Get distinct categories from backend (for filter dropdowns).
+ * Backend: GET /listings/categories
+ */
+export const getListingCategories = async () => {
+  const response = await axiosInstance.get('/listings/categories');
+  return response.data.categories || [];
+};
+
+/**
  * Personalized recommendations (auth required).
  * Backend: GET /listings/recommendations?preferredCategory=&preferredBrand=&preferredPrice=
  */

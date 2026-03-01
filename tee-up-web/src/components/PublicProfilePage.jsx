@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert } from './ui/alert';
 import { getPublicUserProfile } from '../api/usersApi';
 import { getListings } from '../api/userListingsApi';
+import ListingSearchFilters from './ListingSearchFilters';
 import { cn } from '@/lib/utils';
 import './ProfilePage.css';
 
@@ -55,6 +56,9 @@ export default function PublicProfilePage({
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('listings');
   const [following, setFollowing] = useState(false);
+  const [listingsSearch, setListingsSearch] = useState('');
+  const [listingsCategory, setListingsCategory] = useState('');
+  const [listingsSort, setListingsSort] = useState('newest');
 
   useEffect(() => {
     if (!profileUserId) {
@@ -63,18 +67,26 @@ export default function PublicProfilePage({
     }
     setLoading(true);
     setError(null);
-    Promise.all([
-      getPublicUserProfile(profileUserId)
-        .then(setProfile)
-        .catch((err) => {
-          setError(err?.message ?? 'Failed to load profile');
-          setProfile(null);
-        }),
-      getListings({ user_id: profileUserId, status: 'available' })
-        .then((d) => setListings(Array.isArray(d) ? d.map(normalizeListing) : []))
-        .catch(() => setListings([])),
-    ]).finally(() => setLoading(false));
+    getPublicUserProfile(profileUserId)
+      .then(setProfile)
+      .catch((err) => {
+        setError(err?.message ?? 'Failed to load profile');
+        setProfile(null);
+      })
+      .finally(() => setLoading(false));
   }, [profileUserId]);
+
+  useEffect(() => {
+    if (!profileUserId || activeTab !== 'listings') return;
+    setLoading(true);
+    const params = { user_id: profileUserId, status: 'available', sort: listingsSort || 'newest' };
+    if (listingsSearch.trim()) params.search = listingsSearch.trim();
+    if (listingsCategory) params.category = listingsCategory;
+    getListings(params)
+      .then((d) => setListings(Array.isArray(d) ? d.map(normalizeListing) : []))
+      .catch(() => setListings([]))
+      .finally(() => setLoading(false));
+  }, [profileUserId, activeTab, listingsSearch, listingsCategory, listingsSort]);
 
   const handleFollow = () => {
     setFollowing((prev) => !prev);
@@ -206,7 +218,17 @@ export default function PublicProfilePage({
 
           <div className="profile-content">
             {activeTab === 'listings' && (
-              <div className="profile-listings-grid">
+              <>
+                <ListingSearchFilters
+                  search={listingsSearch}
+                  onSearchChange={setListingsSearch}
+                  category={listingsCategory}
+                  onCategoryChange={setListingsCategory}
+                  sort={listingsSort}
+                  onSortChange={setListingsSort}
+                  placeholder="Search this seller's listings…"
+                />
+                <div className="profile-listings-grid">
                 {loading ? (
                   <p className="profile-content-muted">Loading…</p>
                 ) : listings.length === 0 ? (
@@ -244,7 +266,8 @@ export default function PublicProfilePage({
                     );
                   })
                 )}
-              </div>
+                </div>
+              </>
             )}
             {activeTab === 'reviews' && (
               <p className="profile-content-muted">Reviews for this seller will appear here.</p>

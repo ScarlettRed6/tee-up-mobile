@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getListings, getFavorites } from '../api/userListingsApi';
 import { getProfileStats } from '../api/authApi';
+import ListingSearchFilters from './ListingSearchFilters';
 import { cn } from '@/lib/utils';
 import './ProfilePage.css';
 
@@ -55,6 +56,9 @@ export default function ProfilePage({
   const [draftsCount, setDraftsCount] = useState(0);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [listingsSearch, setListingsSearch] = useState('');
+  const [listingsCategory, setListingsCategory] = useState('');
+  const [listingsSort, setListingsSort] = useState('newest');
 
   useEffect(() => {
     if (!user?.id) {
@@ -62,12 +66,22 @@ export default function ProfilePage({
       return;
     }
     Promise.all([
-      getListings({ user_id: user.id, status: 'available' }).then((d) => setMyListings(Array.isArray(d) ? d.map(normalizeListing) : [])),
       getFavorites().then((d) => setSavedCount(Array.isArray(d) ? d.length : 0)),
       getListings({ user_id: user.id, status: 'pending' }).then((d) => setDraftsCount(Array.isArray(d) ? d.length : 0)),
       getProfileStats().then(setStats).catch(() => setStats(null)),
-    ]).finally(() => setLoading(false));
+    ]).finally(() => { /* counts only */ });
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setLoading(true);
+    const params = { user_id: user.id, status: 'available', sort: listingsSort || 'newest' };
+    if (listingsSearch.trim()) params.search = listingsSearch.trim();
+    if (listingsCategory) params.category = listingsCategory;
+    getListings(params)
+      .then((d) => setMyListings(Array.isArray(d) ? d.map(normalizeListing) : []))
+      .finally(() => setLoading(false));
+  }, [user?.id, listingsSearch, listingsCategory, listingsSort]);
 
   const activeItemsCount = stats?.active_listings ?? myListings.length;
   const reviewsCount = stats?.total_ratings ?? 0;
@@ -158,7 +172,17 @@ export default function ProfilePage({
 
           <div className="profile-content">
             {activeTab === 'listings' && (
-              <div className="profile-listings-grid">
+              <>
+                <ListingSearchFilters
+                  search={listingsSearch}
+                  onSearchChange={setListingsSearch}
+                  category={listingsCategory}
+                  onCategoryChange={setListingsCategory}
+                  sort={listingsSort}
+                  onSortChange={setListingsSort}
+                  placeholder="Search your listings…"
+                />
+                <div className="profile-listings-grid">
                 {loading ? (
                   <p className="profile-content-muted">Loading…</p>
                 ) : myListings.length === 0 ? (
@@ -196,7 +220,8 @@ export default function ProfilePage({
                     );
                   })
                 )}
-              </div>
+                </div>
+              </>
             )}
             {activeTab === 'drafts' && (
               <p className="profile-content-muted">Draft listings will appear here.</p>
