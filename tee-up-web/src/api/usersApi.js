@@ -1,5 +1,23 @@
 import axiosInstance from './axiosInstance';
 
+/**
+ * Get public user profile by id (for viewing other users' profiles).
+ * Backend: GET /user/:id (no auth required)
+ */
+export const getPublicUser = async (userId) => {
+  const response = await axiosInstance.get(`/user/${userId}`);
+  return response.data;
+};
+
+/**
+ * Get public user profile with stats (listing count, rating, reviews).
+ * Backend: GET /user/:id/profile
+ */
+export const getPublicUserProfile = async (userId) => {
+  const response = await axiosInstance.get(`/user/${userId}/profile`);
+  return response.data;
+};
+
 // Get all users (superadmin only)
 export const getAllUsers = async (search = '') => {
   const params = search ? { search } : {};

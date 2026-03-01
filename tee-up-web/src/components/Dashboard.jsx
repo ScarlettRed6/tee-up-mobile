@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getDashboardData } from '../api/dashboardApi';
+import { Alert } from './ui/alert';
+import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 import './Dashboard.css';
 
 function Dashboard({ onViewUsers, onViewReports }) {
@@ -42,13 +45,23 @@ function Dashboard({ onViewUsers, onViewReports }) {
       </div>
 
       {error && (
-        <div className="dashboard-error" role="alert">
+        <Alert variant="destructive" className="dashboard-error" role="alert">
           {error}
-        </div>
+        </Alert>
       )}
 
       {loading ? (
-        <div className="dashboard-loading">Loading dashboard…</div>
+        <div className="dashboard-loading">
+          <div className="metrics-grid">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-2xl" />
+            ))}
+          </div>
+          <div className="content-grid" style={{ marginTop: '2rem' }}>
+            <Skeleton className="h-64 rounded-2xl" />
+            <Skeleton className="h-64 rounded-2xl" />
+          </div>
+        </div>
       ) : (
         <>
           <div className="metrics-grid">
@@ -104,7 +117,7 @@ function Dashboard({ onViewUsers, onViewReports }) {
             <div className="info-card">
               <div className="card-header">
                 <h3 className="card-title">Top Sellers</h3>
-                <button type="button" className="card-action" onClick={onViewUsers}>View All</button>
+                <Button type="button" variant="link" className="card-action" onClick={onViewUsers}>View All</Button>
               </div>
               <ul className="seller-list">
                 {topSellers.length === 0 ? (
@@ -132,7 +145,7 @@ function Dashboard({ onViewUsers, onViewReports }) {
             <div className="info-card">
               <div className="card-header">
                 <h3 className="card-title">Flagged Listings</h3>
-                <button type="button" className="card-action" onClick={onViewReports}>View All</button>
+                <Button type="button" variant="link" className="card-action" onClick={onViewReports}>View All</Button>
               </div>
               <div className="flagged-list">
                 <div className="flagged-item flagged-pending">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -9,6 +10,7 @@ import Reports from './components/Reports';
 import Login from './components/Login';
 import UserHome from './components/UserHome';
 import HomePage from './components/HomePage';
+import { ThemeToggle } from './components/ThemeToggle';
 import './App.css';
 
 function AppContent() {
@@ -98,9 +100,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+        <ThemeToggle />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

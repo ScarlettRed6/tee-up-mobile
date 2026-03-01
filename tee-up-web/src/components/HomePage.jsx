@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Logo from './Logo';
+import { ChevronRight } from 'lucide-react';
 import './HomePage.css';
 
 // Golf scenery for hero slideshow – only URLs that load reliably (full Unsplash photo-id-hash format)
@@ -46,7 +47,7 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
   }, []);
 
   return (
-    <div className="home-page" style={{ backgroundColor: 'var(--color-background)' }}>
+    <div className="home-page">
       {/* Header */}
       <header className="home-header">
         <div className="home-header-inner">
@@ -94,7 +95,7 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
         </div>
         <div className="home-hero-overlay" aria-hidden="true" />
         <div className="home-hero-content">
-          <h1 className="home-hero-title">Upgrade Your Bag.</h1>
+          <h1 className="home-hero-title">Upgrade your bag</h1>
           <p className="home-hero-subtitle">
             The premium community marketplace for golf enthusiasts in the Philippines.
           </p>
@@ -104,15 +105,19 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
             className="home-hero-cta"
             size="lg"
           >
-            Browse Marketplace
+            Browse marketplace
+            <ChevronRight className="home-hero-cta-icon" />
           </Button>
         </div>
       </section>
 
       {/* Trending Gear */}
-      <section className="home-section home-trending">
+      <section className="home-section home-trending" aria-labelledby="home-trending-title">
         <div className="home-section-inner">
-          <h2 className="home-section-title">Trending Gear</h2>
+          <header className="home-section-head">
+            <span className="home-section-label">Popular now</span>
+            <h2 id="home-trending-title" className="home-section-title">Trending gear</h2>
+          </header>
           <div className="home-trending-grid">
             {TRENDING_PLACEHOLDER.map((item) => (
               <article key={item.id} className="home-product-card">
@@ -133,6 +138,7 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
                     <span className="home-product-merchant-dot" />
                     {item.merchant}
                   </p>
+                  <span className="home-product-view-hint">View details <ChevronRight className="home-product-view-icon" /></span>
                 </div>
               </article>
             ))}

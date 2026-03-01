@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -123,23 +123,20 @@ function Login({ initialView = 'login', onBackToHome }) {
       >
         <div className="absolute top-6 right-6 flex items-center gap-2">
           {onBackToHome && (
-            <button
-              type="button"
-              onClick={onBackToHome}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] text-[var(--color-text-primary)] hover:bg-[var(--color-light-gray)] transition-all duration-200 shadow-sm text-sm font-medium"
-            >
-              <ArrowLeft className="h-4 w-4" />
+            <Button type="button" variant="outline" size="sm" onClick={onBackToHome}>
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
               Back to home
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            className="p-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] text-[var(--color-text-primary)] hover:opacity-90 hover:scale-105 transition-all duration-200 shadow-sm"
           >
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          </button>
+          </Button>
         </div>
 
         <div className="w-full max-w-[400px] login-form-enter">
@@ -262,24 +259,16 @@ function Login({ initialView = 'login', onBackToHome }) {
             {view === 'login' ? (
               <>
                 New here?{' '}
-                <button
-                  type="button"
-                  onClick={switchToSignUp}
-                  className="font-semibold text-[var(--color-primary)] underline underline-offset-2 hover:no-underline inline-flex items-center rounded-full px-4 py-1.5 -ml-2 transition-all duration-200 hover:bg-[var(--color-primary)]/10"
-                >
+                <Button type="button" variant="link" className="p-0 h-auto font-semibold" onClick={switchToSignUp}>
                   Create an account
-                </button>
+                </Button>
               </>
             ) : (
               <>
                 Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={switchToLogin}
-                  className="font-semibold text-[var(--color-primary)] underline underline-offset-2 hover:no-underline inline-flex items-center rounded-full px-4 py-1.5 -ml-2 transition-all duration-200 hover:bg-[var(--color-primary)]/10"
-                >
+                <Button type="button" variant="link" className="p-0 h-auto font-semibold" onClick={switchToLogin}>
                   Log in
-                </button>
+                </Button>
               </>
             )}
           </p>

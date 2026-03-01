@@ -1,0 +1,306 @@
+/* Shared profile layout - own profile & public profile */
+
+.profile-page {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.profile-page-main {
+  padding: var(--spacing-2xl) 0 var(--spacing-4xl);
+}
+
+.profile-page-container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-2xl);
+}
+
+/* Back link (public profile only when used) */
+.profile-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body-small);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xl);
+  transition: color 0.2s;
+}
+
+.profile-back-link:hover {
+  color: var(--color-primary);
+}
+
+/* Hero / Summary card - single cohesive block */
+.profile-hero {
+  background: var(--color-white);
+  border-radius: var(--radius-large);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.profile-hero-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2xl);
+}
+
+.profile-avatar-wrap {
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-circle);
+  border: 3px solid var(--color-border);
+}
+
+.profile-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-hero-name {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs);
+  line-height: 1.2;
+}
+
+.profile-hero-you {
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+}
+
+.profile-hero-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.profile-hero-star {
+  width: 18px;
+  height: 18px;
+  color: var(--color-warning);
+  fill: var(--color-warning);
+}
+
+.profile-hero-meta {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.profile-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.profile-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Stats row - below hero */
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.profile-stat-card {
+  background: var(--color-white);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+
+.profile-stat-card:hover {
+  box-shadow: var(--shadow-subtle);
+}
+
+.profile-stat-value {
+  font-size: 2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-xs);
+}
+
+.profile-stat-label {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+/* Tabs */
+.profile-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.profile-tab {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: -2px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.profile-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.profile-tab-active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.profile-tab-count {
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-muted);
+  margin-left: 2px;
+}
+
+.profile-tab-active .profile-tab-count {
+  color: var(--color-text-secondary);
+}
+
+/* Content area */
+.profile-content {
+  min-height: 240px;
+}
+
+.profile-content-muted {
+  font-size: var(--font-size-body);
+  color: var(--color-text-muted);
+  margin: 0;
+  padding: var(--spacing-xl) 0;
+}
+
+/* Listings grid */
+.profile-listings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+.profile-listing-card {
+  background: var(--color-white);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.profile-listing-card:hover {
+  box-shadow: var(--shadow-card);
+  border-color: var(--color-primary);
+}
+
+.profile-listing-image-wrap {
+  aspect-ratio: 1;
+  background: var(--color-background-alt);
+  overflow: hidden;
+}
+
+.profile-listing-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-listing-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.profile-listing-body {
+  padding: var(--spacing-lg);
+}
+
+.profile-listing-title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-xs);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.profile-listing-price {
+  font-size: var(--font-size-body-small);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-md);
+}
+
+.profile-listing-view-btn {
+  width: 100%;
+}
+
+/* Public profile overrides */
+.public-profile-actions .profile-hero-btn {
+  min-width: 120px;
+}
+
+@media (max-width: 640px) {
+  .profile-page-container {
+    padding: 0 var(--spacing-lg);
+  }
+
+  .profile-hero-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-hero-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .profile-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-listings-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+  }
+}

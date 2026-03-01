@@ -1,5 +1,5 @@
 import './Header.css';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../context/ThemeContext';
 import Logo from './Logo';
 
 function Header() {

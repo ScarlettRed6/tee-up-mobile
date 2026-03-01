@@ -265,6 +265,15 @@ export async function deleteUserQuery(userId){
     return result.rows[0];
 }//End of deleteUserQuery
 
+/** Count listings where user_id = userId and status = 'available' */
+export async function getActiveListingsCount(userId) {
+    const result = await pool.query(
+        `SELECT COUNT(*)::int as count FROM listings WHERE user_id = $1 AND status = 'available'`,
+        [userId]
+    );
+    return result.rows[0]?.count ?? 0;
+}
+
 //Similar to createUser but for creating an admin user
 export async function createAdminUser(name, email, hashedPassword, role = 'admin') {
     const result = await pool.query(

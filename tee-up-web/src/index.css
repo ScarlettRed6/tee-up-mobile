@@ -72,7 +72,33 @@ input, textarea, select {
   font-family: var(--font-family);
 }
 
-/* Login / auth page animations and effects */
+/* Scrollbar styling - applies globally */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
 @keyframes login-fade-in-up {
   from {
     opacity: 0;

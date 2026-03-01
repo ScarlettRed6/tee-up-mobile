@@ -9,7 +9,8 @@ import {
     suspendUserQuery,
     unsuspendUserQuery,
     deleteUserQuery,
-    getUserByIdWithStats, 
+    getUserByIdWithStats,
+    getActiveListingsCount,
     } from "../models/userModel.js";
 import { 
     createSuspensionLog,
@@ -23,8 +24,8 @@ export async function getUserProfile(req, res){
         const user = await findUserById(req.user.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const {id, name, email, profile_image, provider, bio } = user;
-        res.json({ id, name, email, profile_image, provider, bio });
+        const {id, name, email, profile_image, provider, bio, created_at } = user;
+        res.json({ id, name, email, profile_image, provider, bio, created_at: created_at || null });
     }catch(err){
         res.status(500).json({ error: err.message });
     }
@@ -46,6 +47,52 @@ export async function getUserById(req, res){
         return res.status(500).json({ message: "Fetching error" });
     }
 }//End of getUserById function
+
+/** Public profile with stats (no auth). Returns safe fields + listing/rating stats. */
+export async function getPublicUserProfile(req, res) {
+    try {
+        const userId = req.params.id;
+        const userWithStats = await getUserByIdWithStats(userId);
+        if (!userWithStats) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const activeCount = await getActiveListingsCount(userId);
+        res.json({
+            id: userWithStats.id,
+            name: userWithStats.name,
+            profile_image: userWithStats.profile_image,
+            bio: userWithStats.bio || null,
+            created_at: userWithStats.created_at,
+            total_listings: Number(userWithStats.total_listings) || 0,
+            total_sales: Number(userWithStats.total_sales) || 0,
+            active_listings: activeCount,
+            rating: Number(userWithStats.rating) || 0,
+            total_ratings: Number(userWithStats.total_ratings) || 0,
+        });
+    } catch (err) {
+        console.error("(USERCONTROLLER) getPublicUserProfile:", err);
+        res.status(500).json({ message: "Failed to load profile" });
+    }
+}
+
+/** Current user's profile stats (auth required). */
+export async function getProfileStats(req, res) {
+    try {
+        const userId = req.user.id;
+        const userWithStats = await getUserByIdWithStats(userId);
+        const activeCount = await getActiveListingsCount(userId);
+        res.json({
+            active_listings: activeCount,
+            total_ratings: Number(userWithStats?.total_ratings) || 0,
+            rating: Number(userWithStats?.rating) || 0,
+            total_listings: Number(userWithStats?.total_listings) || 0,
+            total_sales: Number(userWithStats?.total_sales) || 0,
+        });
+    } catch (err) {
+        console.error("(USERCONTROLLER) getProfileStats:", err);
+        res.status(500).json({ message: "Failed to load stats" });
+    }
+}
 
 export async function updateUserProfile(req, res){
     const userId = req.user.id;

@@ -1,29 +1,58 @@
+/* Listing card – golf e‑commerce product card (2nd Swing / OEM style) */
+
 .listing-card {
-  flex: 0 0 200px;
-  width: 200px;
+  flex: 0 0 220px;
+  width: 220px;
   background: var(--color-white);
-  border-radius: var(--radius-large);
+  border-radius: var(--radius-medium);
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .listing-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-button);
+  box-shadow: var(--browse-card-hover);
+  border-color: rgba(66, 122, 67, 0.2);
+}
+
+.listing-card:active {
+  transform: translateY(-2px);
+}
+
+/* Grid variant – fluid width, same product-card feel */
+.listing-card--grid {
+  flex: none;
+  width: 100%;
+  max-width: 100%;
 }
 
 .listing-card-image-wrap {
   position: relative;
   aspect-ratio: 1;
   background: var(--color-light-gray);
+  overflow: hidden;
+  flex: none;
+}
+
+.listing-card-image-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .listing-card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.listing-card:hover .listing-card-image {
+  transform: scale(1.05);
 }
 
 .listing-card-image-placeholder {
@@ -33,52 +62,82 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
+  background: linear-gradient(145deg, var(--color-background-alt) 0%, var(--color-light-gray) 100%);
+}
+
+.listing-card-image-placeholder svg {
+  opacity: 0.5;
+}
+
+.listing-card-badge-saved {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+}
+
+.listing-card-image-wrap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 35%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.12), transparent);
+  pointer-events: none;
 }
 
 .listing-card-fav {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   width: 36px;
   height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   color: var(--color-text-muted);
-  background: var(--color-white);
-  border: none;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: var(--radius-circle);
-  cursor: pointer;
-  transition: color 0.2s, background 0.2s;
   box-shadow: var(--shadow-subtle);
+  z-index: 1;
+  transition: transform 0.2s, color 0.2s, background 0.2s;
 }
 
 .listing-card-fav:hover {
   color: var(--color-error);
   background: var(--color-white);
+  transform: scale(1.06);
+}
+
+.listing-card-fav-active {
+  color: var(--color-error);
 }
 
 .listing-card-body {
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
 }
 
 .listing-card-title {
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-xs);
-  line-height: 1.3;
+  margin: 0 0 var(--spacing-sm);
+  line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.2s;
+}
+
+.listing-card:hover .listing-card-title {
+  color: var(--color-primary);
 }
 
 .listing-card-price {
-  font-size: var(--font-size-body);
+  font-size: 1.125rem;
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
   margin: 0 0 var(--spacing-xs);
+  letter-spacing: -0.01em;
 }
 
 .listing-card-subtitle {
@@ -91,9 +150,39 @@
 }
 
 .listing-card-dot {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: var(--color-text-primary);
+  background: var(--color-primary);
   flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* “View details” hint – grid / shop style */
+.listing-card-view-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  margin-top: var(--spacing-sm);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.listing-card:hover .listing-card-view-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.listing-card-view-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .listing-card-image-wrap::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent);
 }

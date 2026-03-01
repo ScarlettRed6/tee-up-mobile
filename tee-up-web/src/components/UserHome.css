@@ -1,3 +1,5 @@
+/* Browse / Feed – premium golf e‑commerce feel (2nd Swing, TaylorMade, Callaway style) */
+
 .user-home {
   min-height: 100vh;
   display: flex;
@@ -6,15 +8,71 @@
 
 .user-home-main {
   flex: 1;
-  padding: var(--spacing-2xl) 0;
+  padding: var(--spacing-2xl) 0 var(--spacing-4xl);
 }
 
 .user-home-container {
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 var(--spacing-2xl);
 }
 
+/* Hero – full-width feel, clear CTA */
+.user-home-hero-wrap {
+  margin-bottom: var(--spacing-4xl);
+}
+
+.user-home-hero {
+  background: var(--browse-hero-gradient);
+  border-radius: var(--radius-large);
+  border: 1px solid var(--browse-hero-border, rgba(66, 122, 67, 0.06));
+  overflow: hidden;
+}
+
+.user-home-hero-header {
+  padding: var(--spacing-4xl) var(--spacing-3xl);
+  text-align: left;
+}
+
+.user-home-hero-label {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.user-home-hero-text {
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.user-home-hero-sub {
+  font-size: var(--font-size-body);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-2xl);
+  max-width: 42ch;
+  line-height: 1.5;
+}
+
+.user-home-hero-cta {
+  min-width: 160px;
+}
+
+.user-home-trust {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  margin: var(--spacing-lg) 0 0;
+  padding: 0 var(--spacing-3xl);
+  text-align: center;
+}
+
+/* Error */
 .user-home-error {
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
@@ -26,14 +84,28 @@
 }
 
 .user-home-loading {
-  padding: var(--spacing-4xl);
-  text-align: center;
+  padding: 0;
+  text-align: left;
   color: var(--color-text-muted);
-  font-size: var(--font-size-body);
 }
 
+/* Sections – clean headers like OEM / 2nd Swing */
 .user-home-section {
   margin-bottom: var(--spacing-4xl);
+}
+
+.user-home-section-head {
+  margin-bottom: var(--spacing-xl);
+}
+
+.user-home-section-label {
+  display: block;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-xs);
 }
 
 .user-home-section-title {
@@ -41,28 +113,59 @@
   font-size: var(--font-size-h2);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  margin: 0 0 var(--spacing-xl);
+  margin: 0;
   letter-spacing: -0.02em;
 }
 
+/* Horizontal scroll – featured rows */
 .user-home-scroll {
   display: flex;
   gap: var(--spacing-xl);
   overflow-x: auto;
-  padding-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) 0 var(--spacing-xl);
+  margin: 0 calc(-1 * var(--spacing-md));
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 48px), transparent 100%);
 }
 
 .user-home-scroll .listing-card {
   scroll-snap-align: start;
 }
 
+/* Grid – main shop (Recently Posted) */
+.user-home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-2xl);
+}
+
+.user-home-grid .listing-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .user-home-empty {
   font-size: var(--font-size-body);
   color: var(--color-text-muted);
   margin: 0;
-  padding: var(--spacing-2xl) 0;
+  padding: var(--spacing-2xl) var(--spacing-md);
+}
+
+.user-home-empty-grid {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: var(--spacing-4xl);
+}
+
+@media (max-width: 1024px) {
+  .user-home-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -70,7 +173,43 @@
     padding: 0 var(--spacing-lg);
   }
 
+  .user-home-hero-header {
+    padding: var(--spacing-2xl) var(--spacing-xl);
+  }
+
+  .user-home-hero-text {
+    font-size: var(--font-size-h3);
+  }
+
+  .user-home-hero-sub {
+    font-size: var(--font-size-body-small);
+  }
+
+  .user-home-trust {
+    padding: 0 var(--spacing-lg);
+    font-size: var(--font-size-tiny);
+  }
+
   .user-home-section-title {
     font-size: var(--font-size-h3);
+  }
+
+  .user-home-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+  }
+
+  .user-home-scroll {
+    margin: 0 calc(-1 * var(--spacing-lg));
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 24px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 24px), transparent 100%);
+  }
+}
+
+@media (max-width: 480px) {
+  .user-home-grid {
+    grid-template-columns: 1fr;
   }
 }

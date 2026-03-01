@@ -1,0 +1,338 @@
+/* Owner Listing View - Seller's view of their own listing */
+
+.owner-listing-view {
+  min-height: 100vh;
+}
+
+.owner-listing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-4xl);
+}
+
+.owner-listing-back {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.owner-listing-back:hover {
+  color: var(--color-primary);
+}
+
+.owner-listing-error {
+  margin-bottom: var(--spacing-lg);
+}
+
+.owner-listing-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: var(--spacing-4xl);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .owner-listing-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.owner-listing-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.owner-listing-gallery-main {
+  position: relative;
+  aspect-ratio: 4/3;
+  background: var(--color-background-alt);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  margin-bottom: var(--spacing-md);
+}
+
+.owner-listing-gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--color-light-gray);
+}
+
+.owner-listing-gallery-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body-small);
+  text-align: center;
+  padding: var(--spacing-2xl);
+}
+
+.owner-listing-gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-circle);
+  box-shadow: var(--shadow-button);
+  background: var(--color-white) !important;
+  color: var(--color-text-primary);
+}
+
+.owner-listing-gallery-arrow:hover {
+  background: var(--color-light-gray) !important;
+}
+
+.owner-listing-gallery-arrow-left {
+  left: var(--spacing-md);
+}
+
+.owner-listing-gallery-arrow-right {
+  right: var(--spacing-md);
+}
+
+.owner-listing-gallery-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-background-alt);
+  border-radius: var(--radius-medium);
+}
+
+.owner-listing-gallery-strip-btn {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.owner-listing-gallery-dots {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.owner-listing-gallery-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  border: none;
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.owner-listing-gallery-dot:hover {
+  background: var(--color-text-muted);
+}
+
+.owner-listing-gallery-dot-active {
+  background: var(--color-text-primary);
+  transform: scale(1.2);
+}
+
+.owner-listing-gallery-skeleton {
+  aspect-ratio: 4/3;
+  border-radius: var(--radius-large);
+}
+
+.owner-listing-info-skeleton {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Current Offers */
+.owner-listing-offers {
+  margin: 0;
+}
+
+.owner-listing-section-title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.owner-listing-offers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.owner-listing-offers-empty {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.owner-listing-offer-card {
+  margin: 0;
+}
+
+.owner-listing-offer-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg) !important;
+}
+
+.owner-listing-offer-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.owner-listing-offer-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.owner-listing-offer-name {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.owner-listing-offer-amount {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-secondary);
+}
+
+.owner-listing-offer-btn {
+  flex-shrink: 0;
+  background: var(--color-dark-gray) !important;
+  color: var(--color-white) !important;
+}
+
+.owner-listing-offer-btn:hover {
+  background: var(--color-text-primary) !important;
+  color: var(--color-white) !important;
+}
+
+/* Info column */
+.owner-listing-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.owner-listing-title {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-heading);
+  margin: 0;
+}
+
+.owner-listing-price {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.owner-listing-meta {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.owner-listing-meta-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.owner-listing-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.owner-listing-action-btn {
+  flex: 1;
+  min-width: 140px;
+  background: var(--color-dark-gray) !important;
+  color: var(--color-white) !important;
+}
+
+.owner-listing-action-btn:hover:not(:disabled) {
+  background: var(--color-text-primary) !important;
+  color: var(--color-white) !important;
+  opacity: 0.95;
+}
+
+.owner-listing-section {
+  margin: 0;
+}
+
+.owner-listing-description {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-body);
+  margin: 0;
+}
+
+.owner-listing-details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-secondary);
+}
+
+.owner-listing-details li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.owner-listing-detail-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-right: var(--spacing-xs);
+}
+
+.owner-listing-delete-wrap {
+  margin-top: var(--spacing-md);
+}
+
+.owner-listing-delete-btn {
+  width: 100%;
+  background: var(--color-dark-gray) !important;
+  color: var(--color-white) !important;
+}
+
+.owner-listing-delete-btn:hover:not(:disabled) {
+  background: var(--color-error) !important;
+  color: var(--color-white) !important;
+}
+
+.owner-listing-delete-warning {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  margin: var(--spacing-sm) 0 0;
+}
+
+@media (max-width: 600px) {
+  .owner-listing-container {
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .owner-listing-actions-row {
+    flex-direction: column;
+  }
+
+  .owner-listing-action-btn {
+    min-width: 0;
+  }
+}

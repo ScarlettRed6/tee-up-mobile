@@ -2,6 +2,8 @@ import express from "express";
 import { 
     getUserProfile, 
     getUserById, 
+    getPublicUserProfile,
+    getProfileStats,
     updateUserProfile,
     suspendUser,
     unsuspendUser,
@@ -21,7 +23,11 @@ const router = express.Router();
 
 //User routes - specific routes must come before parameterized routes
 router.get("/profile", verifyToken, getUserProfile);
+router.get("/profile/stats", verifyToken, getProfileStats);
 router.put("/update", verifyToken, upload.single("profile_image"), updateUserProfile);
+
+// Public profile with stats: GET /user/:id/profile (no auth)
+router.get("/:id/profile", getPublicUserProfile);
 
 //For the public route - must be last to avoid catching other routes
 router.get("/:id", getUserById);

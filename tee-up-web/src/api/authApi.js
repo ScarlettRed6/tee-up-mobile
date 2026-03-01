@@ -24,6 +24,15 @@ export const getProfile = async () => {
 };
 
 /**
+ * Get current user's profile stats (auth required).
+ * Backend: GET /user/profile/stats
+ */
+export const getProfileStats = async () => {
+  const response = await axiosInstance.get('/user/profile/stats');
+  return response.data;
+};
+
+/**
  * Create account. Backend sends verification email; user must verify before logging in.
  * Backend: POST /auth/register
  */
