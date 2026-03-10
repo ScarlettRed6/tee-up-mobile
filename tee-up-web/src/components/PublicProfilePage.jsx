@@ -43,6 +43,8 @@ export default function PublicProfilePage({
   onMessages,
   onMyListings,
   onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
   onOpenProfile,
   onLogout,
   onMessageUser,
@@ -105,6 +107,8 @@ export default function PublicProfilePage({
           onMessages={onMessages}
           onMyListings={onMyListings}
           onNotifications={onNotifications}
+          onViewAllNotifications={onViewAllNotifications}
+          onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}
@@ -138,6 +142,8 @@ export default function PublicProfilePage({
         onMessages={onMessages}
         onMyListings={onMyListings}
         onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
         onOpenProfile={onOpenProfile}
         onLogout={onLogout}
         onGoHome={onGoHome}

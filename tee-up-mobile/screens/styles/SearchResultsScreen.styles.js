@@ -13,6 +13,81 @@ export default StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
   },
+  // Results Summary Section
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  resultsHeaderLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  resultsHeaderRight: {
+    alignItems: 'flex-end',
+  },
+  resultsTitle: {
+    fontFamily: 'Exo_700Bold',
+    fontSize: 18,
+    color: '#111827',
+  },
+  resultsQueryText: {
+    fontFamily: 'Exo_700Bold',
+  },
+  resultsSubtitle: {
+    marginTop: 4,
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  clearAllButton: {
+    marginBottom: 8,
+  },
+  clearAllText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#2563EB',
+    textDecorationLine: 'underline',
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  sortButtonText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 12,
+    color: '#111827',
+    marginRight: 6,
+  },
+  sortMenu: {
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  sortMenuItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  sortMenuItemText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#374151',
+  },
+  sortMenuItemTextActive: {
+    fontFamily: 'Exo_600SemiBold',
+    color: '#FF6B35',
+  },
   // Header Section
   header: {
     flexDirection: 'row',

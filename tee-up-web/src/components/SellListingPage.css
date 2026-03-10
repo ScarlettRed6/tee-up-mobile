@@ -1,0 +1,184 @@
+.sell-page-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-3xl);
+  display: flex;
+  justify-content: center;
+}
+
+.sell-card {
+  width: 100%;
+  max-width: 980px;
+  margin-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+}
+
+.sell-card-header {
+  text-align: left;
+}
+
+.sell-card-content {
+  padding-top: 0;
+}
+
+.sell-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  column-gap: var(--spacing-3xl);
+  row-gap: var(--spacing-2xl);
+  align-items: flex-start;
+}
+
+.sell-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.sell-section-title {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-primary);
+}
+
+.sell-section-subtitle {
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+.sell-photos-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.sell-photo-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-medium);
+  border: 1px dashed var(--color-border);
+  background: var(--color-background-alt);
+}
+
+.sell-photo-upload {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--spacing-lg);
+  height: 40px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-light-gray);
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.sell-photo-upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sell-photos-count {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+}
+
+.sell-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-xl) var(--spacing-xl);
+  margin-top: var(--spacing-sm);
+}
+
+.sell-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sell-field.span-2 {
+  grid-column: span 2;
+}
+
+.sell-select {
+  height: 44px;
+  width: 100%;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  padding: 0 var(--spacing-xl) 0 var(--spacing-md);
+  font-size: var(--font-size-body-small);
+  background: var(--color-light-gray);
+  color: var(--color-text-primary);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
+}
+
+.sell-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(66, 122, 67, 0.16);
+}
+
+.sell-textarea {
+  width: 100%;
+  border-radius: var(--radius-medium);
+  border: 2px solid var(--color-border);
+  padding: var(--spacing-md);
+  font-size: var(--font-size-body);
+  font-family: var(--font-family);
+  resize: vertical;
+  min-height: 120px;
+}
+
+.sell-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(66, 122, 67, 0.16);
+}
+
+.sell-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+
+.sell-btn-secondary {
+  min-width: 140px;
+}
+
+.sell-btn-primary {
+  min-width: 180px;
+}
+
+@media (max-width: 768px) {
+  .sell-page-main {
+    padding: var(--spacing-lg);
+  }
+
+  .sell-layout {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--spacing-xl);
+  }
+
+  .sell-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sell-field.span-2 {
+    grid-column: span 1;
+  }
+
+  .sell-card-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}
+

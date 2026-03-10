@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Pressable, ActivityIndicator, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './styles/SearchFilterScreen.styles';
 import jwtDecode from 'jwt-decode';
@@ -255,6 +255,11 @@ export default function SearchFilterScreen({ navigation, route }) {
                 placeholderTextColor={theme.textMuted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                returnKeyType="search"
+                onSubmitEditing={() => {
+                  Keyboard.dismiss();
+                  handleApplyFilters();
+                }}
               />
             </View>
           </View>

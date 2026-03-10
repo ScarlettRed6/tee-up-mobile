@@ -13,6 +13,8 @@ import { getConversations } from '../api/chatApi';
 import { getUserProfile } from '../api/userApi';
 import { extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
 
+const SORT_OPTIONS = ['Newest First', 'Price: Low to High', 'Price: High to Low'];
+
 export default function SearchResultsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { theme } = useContext(ThemeContext);
@@ -98,6 +100,8 @@ export default function SearchResultsScreen({ navigation, route }) {
   const [results, setResults] = useState([]);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [resultsError, setResultsError] = useState(null);
+  const [sortOption, setSortOption] = useState(SORT_OPTIONS[0]);
+  const [isSortMenuVisible, setIsSortMenuVisible] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -126,6 +130,17 @@ export default function SearchResultsScreen({ navigation, route }) {
       isMounted = false;
     };
   }, [serializedBackendFilters]);
+
+  const sortedResults = useMemo(() => {
+    if (!Array.isArray(results)) return [];
+    const list = [...results];
+    if (sortOption === 'Price: Low to High') {
+      list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    } else if (sortOption === 'Price: High to Low') {
+      list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+    }
+    return list;
+  }, [results, sortOption]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -183,6 +198,13 @@ export default function SearchResultsScreen({ navigation, route }) {
     });
   };
 
+  const handleClearAll = () => {
+    navigation.replace('SearchResults', {
+      searchQuery: '',
+      filters: {},
+    });
+  };
+
   // Fetch user profile image
   const fetchUserProfile = useCallback(async () => {
     if (!accessToken) return;
@@ -214,6 +236,14 @@ export default function SearchResultsScreen({ navigation, route }) {
     }, [fetchUserProfile, loadInboxUnread])
   );
 
+  const hasAnyFiltersApplied =
+    trimmedQuery.length > 0 || (appliedFilters && Object.keys(appliedFilters).length > 0);
+
+  const locationLabel = appliedFilters.location || null;
+  const resultsMetaText = `${results.length} result${results.length === 1 ? '' : 's'}${
+    locationLabel ? ` found in ${locationLabel}` : ''
+  }`;
+
   const dynamicStyles = {
     container: { backgroundColor: theme.background },
     header: { backgroundColor: theme.background },
@@ -230,6 +260,9 @@ export default function SearchResultsScreen({ navigation, route }) {
     productPrice: { color: theme.primary },
     sellerName: { color: theme.textMuted },
     bottomNav: { backgroundColor: theme.card },
+    clearAllText: { color: theme.primary },
+    sortButtonText: { color: theme.text },
+    sortMenuItemTextActive: { color: theme.primary },
   };
 
   return (
@@ -291,6 +324,82 @@ export default function SearchResultsScreen({ navigation, route }) {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
+
+        <View style={styles.resultsHeader}>
+          <View style={styles.resultsHeaderLeft}>
+            <Text
+              style={[styles.resultsTitle, dynamicStyles.pageTitle]}
+              numberOfLines={2}
+            >
+              Showing results for{' '}
+              <Text style={styles.resultsQueryText}>"{displayQuery}"</Text>
+            </Text>
+            <Text
+              style={[styles.resultsSubtitle, dynamicStyles.resultCountText]}
+              numberOfLines={1}
+            >
+              {resultsMetaText}
+            </Text>
+          </View>
+          <View style={styles.resultsHeaderRight}>
+            {hasAnyFiltersApplied && (
+              <TouchableOpacity
+                style={styles.clearAllButton}
+                activeOpacity={0.7}
+                onPress={handleClearAll}
+              >
+                <Text style={[styles.clearAllText, dynamicStyles.clearAllText]}>
+                  Clear All
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.sortButton}
+              activeOpacity={0.8}
+              onPress={() => setIsSortMenuVisible((prev) => !prev)}
+            >
+              <Text
+                style={[styles.sortButtonText, dynamicStyles.sortButtonText]}
+                numberOfLines={1}
+              >
+                Sort by: {sortOption}
+              </Text>
+              <Ionicons
+                name={isSortMenuVisible ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={theme.text}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {isSortMenuVisible && (
+          <View style={styles.sortMenu}>
+            {SORT_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={styles.sortMenuItem}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSortOption(option);
+                  setIsSortMenuVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.sortMenuItemText,
+                    option === sortOption && [
+                      styles.sortMenuItemTextActive,
+                      dynamicStyles.sortMenuItemTextActive,
+                    ],
+                  ]}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {resultsLoading ? (
           <View style={styles.loadingState}>

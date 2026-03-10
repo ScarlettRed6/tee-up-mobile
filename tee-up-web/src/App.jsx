@@ -11,6 +11,7 @@ import Login from './components/Login';
 import UserHome from './components/UserHome';
 import HomePage from './components/HomePage';
 import { ThemeToggle } from './components/ThemeToggle';
+import { NotificationsProvider } from './context/NotificationsContext';
 import './App.css';
 
 function AppContent() {
@@ -81,7 +82,11 @@ function AppContent() {
   }
 
   if (!isAdmin) {
-    return <UserHome />;
+    return (
+      <NotificationsProvider>
+        <UserHome />
+      </NotificationsProvider>
+    );
   }
 
   return (

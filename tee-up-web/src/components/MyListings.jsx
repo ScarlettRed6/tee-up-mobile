@@ -30,6 +30,8 @@ export default function MyListings({
   onMessages,
   onMyListings,
   onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
   onOpenProfile,
   onLogout,
   onGoHome,
@@ -76,6 +78,8 @@ export default function MyListings({
         onMessages={onMessages}
         onMyListings={onMyListings}
         onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
         onOpenProfile={onOpenProfile}
         onLogout={onLogout}
         onGoHome={onGoHome}

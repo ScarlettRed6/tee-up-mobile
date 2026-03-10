@@ -43,6 +43,8 @@ export default function ProfilePage({
   onMessages,
   onMyListings,
   onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
   onOpenProfile,
   onLogout,
   onGoHome,
@@ -52,10 +54,12 @@ export default function ProfilePage({
 }) {
   const [activeTab, setActiveTab] = useState('listings');
   const [myListings, setMyListings] = useState([]);
+  const [savedItems, setSavedItems] = useState([]);
   const [savedCount, setSavedCount] = useState(0);
   const [draftsCount, setDraftsCount] = useState(0);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [savedLoading, setSavedLoading] = useState(false);
   const [listingsSearch, setListingsSearch] = useState('');
   const [listingsCategory, setListingsCategory] = useState('');
   const [listingsSort, setListingsSort] = useState('newest');
@@ -65,11 +69,25 @@ export default function ProfilePage({
       setLoading(false);
       return;
     }
+    setSavedLoading(true);
     Promise.all([
-      getFavorites().then((d) => setSavedCount(Array.isArray(d) ? d.length : 0)),
-      getListings({ user_id: user.id, status: 'pending' }).then((d) => setDraftsCount(Array.isArray(d) ? d.length : 0)),
-      getProfileStats().then(setStats).catch(() => setStats(null)),
-    ]).finally(() => { /* counts only */ });
+      getFavorites().catch(() => []),
+      getListings({ user_id: user.id, status: 'pending' }).catch(() => []),
+      getProfileStats().catch(() => null),
+    ])
+      .then(([favorites, drafts, statsRes]) => {
+        const favArray = Array.isArray(favorites) ? favorites.map(normalizeListing) : [];
+        setSavedItems(favArray);
+        setSavedCount(favArray.length);
+
+        const draftsArray = Array.isArray(drafts) ? drafts : [];
+        setDraftsCount(draftsArray.length);
+
+        setStats(statsRes);
+      })
+      .finally(() => {
+        setSavedLoading(false);
+      });
   }, [user?.id]);
 
   useEffect(() => {
@@ -104,6 +122,8 @@ export default function ProfilePage({
         onMessages={onMessages}
         onMyListings={onMyListings}
         onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
         onOpenProfile={onOpenProfile}
         onLogout={onLogout}
         onGoHome={onGoHome}
@@ -227,7 +247,53 @@ export default function ProfilePage({
               <p className="profile-content-muted">Draft listings will appear here.</p>
             )}
             {activeTab === 'saved' && (
-              <p className="profile-content-muted">Saved items are in the Saved Listings section on the home page.</p>
+              <>
+                {savedLoading ? (
+                  <p className="profile-content-muted">Loading saved items…</p>
+                ) : savedItems.length === 0 ? (
+                  <p className="profile-content-muted">
+                    You haven&apos;t saved any items yet. Tap the heart on a listing to save it.
+                  </p>
+                ) : (
+                  <div className="profile-listings-grid">
+                    {savedItems.map((listing) => {
+                      const photos = listing.photos ?? [];
+                      const imageUrl = photos[0] || null;
+                      const price = listing.price != null ? Number(listing.price) : 0;
+                      const formattedPrice = new Intl.NumberFormat('en-PH', {
+                        style: 'currency',
+                        currency: 'PHP',
+                        minimumFractionDigits: 0,
+                      }).format(price);
+                      return (
+                        <div key={listing.listing_id ?? listing.id} className="profile-listing-card">
+                          <div className="profile-listing-image-wrap">
+                            {imageUrl ? (
+                              <img src={imageUrl} alt="" className="profile-listing-image" />
+                            ) : (
+                              <div className="profile-listing-image-placeholder">
+                                <User className="h-10 w-10" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="profile-listing-body">
+                            <h3 className="profile-listing-title">{listing.title || 'Untitled'}</h3>
+                            <p className="profile-listing-price">{formattedPrice}</p>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="profile-listing-view-btn"
+                              onClick={() => onViewListing?.(listing.listing_id ?? listing.id)}
+                            >
+                              View Listing
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
             {activeTab === 'reviews' && (
               <p className="profile-content-muted">Your reviews will appear here.</p>

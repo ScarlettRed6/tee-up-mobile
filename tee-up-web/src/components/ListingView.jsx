@@ -24,7 +24,7 @@ function normalizeListing(row) {
   };
 }
 
-export default function ListingView({ listingId, onBack, user, onSearch, onSell, onMessages, onMyListings, onNotifications, onOpenProfile, onLogout, onViewSellerProfile, onGoHome }) {
+export default function ListingView({ listingId, onBack, user, onSearch, onSell, onMessages, onMyListings, onNotifications, onViewAllNotifications, onNotificationClick, onOpenProfile, onLogout, onViewSellerProfile, onGoHome }) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,6 +55,8 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
           onMessages={onMessages}
           onMyListings={onMyListings}
           onNotifications={onNotifications}
+          onViewAllNotifications={onViewAllNotifications}
+          onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}
@@ -87,6 +89,8 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
           onMessages={onMessages}
           onMyListings={onMyListings}
           onNotifications={onNotifications}
+          onViewAllNotifications={onViewAllNotifications}
+          onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}
@@ -132,6 +136,8 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
         onMessages={onMessages}
         onMyListings={onMyListings}
         onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}

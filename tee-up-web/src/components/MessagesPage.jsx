@@ -1,0 +1,422 @@
+import { useEffect, useState, useCallback, useRef } from 'react';
+import UserHeader from './UserHeader';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { getConversations, getMessages, findOrCreateConversation } from '../api/chatApi';
+import { getSocket } from '../utils/socketClient';
+import './MessagesPage.css';
+
+function normalizeConversation(conv) {
+  let listingPhotos = [];
+  if (conv.listing_photos) {
+    if (typeof conv.listing_photos === 'string') {
+      try {
+        listingPhotos = JSON.parse(conv.listing_photos);
+      } catch {
+        listingPhotos = [conv.listing_photos];
+      }
+    } else if (Array.isArray(conv.listing_photos)) {
+      listingPhotos = conv.listing_photos;
+    }
+  }
+
+  return {
+    id: conv.conversation_id,
+    conversation_id: conv.conversation_id,
+    productName: conv.listing_title || 'Product',
+    listingId: conv.listing_id,
+    price: conv.listing_price,
+    image: listingPhotos[0] || null,
+    username: conv.other_user_name || 'User',
+    otherUserId: conv.other_user_id,
+    otherUserProfileImage: conv.other_user_profile_image || null,
+    lastMessage: conv.last_message || '',
+    lastMessageTime: conv.last_message_time || conv.created_at,
+  };
+}
+
+function normalizeMessage(row, currentUserId) {
+  const senderId = String(row.sender_id ?? '');
+  const meId = String(currentUserId ?? '');
+  const isMe = senderId === meId;
+  return {
+    id: row.id,
+    text: row.message || '',
+    imageUrl: row.image_url || null,
+    sender: isMe ? 'me' : 'other',
+    timestamp: row.created_at,
+    senderName: row.sender_name,
+    senderAvatar: row.sender_profile_image || null,
+  };
+}
+
+export default function MessagesPage({
+  user,
+  onSearch,
+  onSell,
+  onMessages,
+  onMyListings,
+  onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
+  onOpenProfile,
+  onLogout,
+  onGoHome,
+  listingContext,
+  onViewListing,
+  initialConversationId,
+}) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [conversations, setConversations] = useState([]);
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [selectedConversationId, setSelectedConversationId] = useState(initialConversationId ?? null);
+  const [messages, setMessages] = useState([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const socketRef = useRef(null);
+
+  const currentUserId = user?.id;
+
+  const loadConversations = useCallback(async () => {
+    setLoadingConversations(true);
+    try {
+      const data = await getConversations();
+      const rawConvs = data?.conversations ?? [];
+      setConversations(rawConvs.map(normalizeConversation));
+    } catch (err) {
+      console.error('Failed to load conversations', err);
+      setConversations([]);
+    } finally {
+      setLoadingConversations(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (initialConversationId) {
+      setSelectedConversationId(initialConversationId);
+    }
+  }, [initialConversationId]);
+
+  useEffect(() => {
+    try {
+      const socket = getSocket();
+      socketRef.current = socket;
+
+      socket.off('new_message');
+      socket.on('new_message', (payload) => {
+        const convId = payload?.conversation_id;
+        if (!convId) return;
+        setConversations((prev) => {
+          // ensure newest message surfaces for list; rely on backend sorting on reload for now
+          return prev;
+        });
+        if (convId !== selectedConversationId) return;
+        setMessages((prev) => [
+          ...prev,
+          normalizeMessage(payload, currentUserId),
+        ]);
+      });
+    } catch (err) {
+      console.error('Failed to init websocket for messages page', err);
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('new_message');
+      }
+    };
+  }, [currentUserId, selectedConversationId]);
+
+  useEffect(() => {
+    const startFromListing = async () => {
+      if (!listingContext || !listingContext.sellerId || !listingContext.listingId) return;
+      try {
+        const conv = await findOrCreateConversation(listingContext.sellerId, listingContext.listingId);
+        const normalized = normalizeConversation(conv);
+        setSelectedConversationId(normalized.conversation_id);
+        await loadConversations();
+      } catch (err) {
+        console.error('Failed to start conversation from listing', err);
+      }
+    };
+    startFromListing();
+  }, [listingContext, loadConversations]);
+
+  const loadMessages = useCallback(
+    async (conversationId) => {
+      if (!conversationId) return;
+      setLoadingMessages(true);
+      try {
+        const data = await getMessages(conversationId);
+        const rawMessages = data?.messages ?? [];
+        setMessages(rawMessages.map((m) => normalizeMessage(m, currentUserId)));
+      } catch (err) {
+        console.error('Failed to load messages', err);
+        setMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    },
+    [currentUserId]
+  );
+
+  useEffect(() => {
+    if (!selectedConversationId) return;
+    loadMessages(selectedConversationId);
+  }, [selectedConversationId, loadMessages]);
+
+  const filteredConversations = conversations.filter((c) => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.productName.toLowerCase().includes(q) ||
+      c.username.toLowerCase().includes(q)
+    );
+  });
+
+  const activeConversation = conversations.find(
+    (c) => c.conversation_id === selectedConversationId
+  );
+
+  const handleSend = async () => {
+    const text = messageInput.trim();
+    if (!text || !activeConversation || !socketRef.current || sending) return;
+
+    setSending(true);
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = {
+      id: tempId,
+      text,
+      imageUrl: null,
+      sender: 'me',
+      timestamp: new Date().toISOString(),
+      senderName: user?.name ?? '',
+      senderAvatar: user?.profile_image ?? null,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setMessageInput('');
+
+    try {
+      socketRef.current.emit('send_message', {
+        conversationId: activeConversation.conversation_id,
+        message: text,
+        image_url: null,
+      });
+    } catch (err) {
+      console.error('Failed to send message over websocket', err);
+      // roll back optimistic message
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMessageInput(text);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="messages-page" style={{ backgroundColor: 'var(--color-background)' }}>
+      <UserHeader
+        user={user}
+        onSearch={onSearch}
+        onSell={onSell}
+        onMessages={onMessages}
+        onMyListings={onMyListings}
+        onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
+        onOpenProfile={onOpenProfile}
+        onLogout={onLogout}
+        onGoHome={onGoHome}
+      />
+
+      <main className="messages-main">
+        <div className="messages-shell">
+          <aside className="messages-sidebar" aria-label="Conversations list">
+            <div className="messages-sidebar-header">
+              <h1 className="messages-title">Messages</h1>
+              <p className="messages-subtitle">Chat about listings you&apos;re interested in.</p>
+            </div>
+            <div className="messages-search">
+              <Input
+                type="search"
+                placeholder="Search by user or listing…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="messages-list">
+              {loadingConversations ? (
+                <div className="messages-empty">Loading conversations…</div>
+              ) : filteredConversations.length === 0 ? (
+                <div className="messages-empty">
+                  No conversations yet. Open a listing and click &quot;Message seller&quot; to start.
+                </div>
+              ) : (
+                filteredConversations.map((conv) => {
+                  const isActive = conv.conversation_id === selectedConversationId;
+                  return (
+                    <button
+                      key={conv.conversation_id}
+                      type="button"
+                      className={`messages-list-item ${isActive ? 'messages-list-item-active' : ''}`}
+                      onClick={() => setSelectedConversationId(conv.conversation_id)}
+                    >
+                      <div className="messages-list-avatar">
+                        {conv.image ? (
+                          <img src={conv.image} alt={conv.productName} />
+                        ) : (
+                          <div className="messages-list-avatar-fallback" />
+                        )}
+                      </div>
+                      <div className="messages-list-text">
+                        <div className="messages-list-row">
+                          <span className="messages-list-name">{conv.productName}</span>
+                        </div>
+                        <div className="messages-list-row">
+                          <span className="messages-list-product">with {conv.username}</span>
+                        </div>
+                        {conv.lastMessage && (
+                          <div className="messages-list-row">
+                            <span className="messages-list-last">{conv.lastMessage}</span>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </aside>
+
+          <section className="messages-thread">
+            {!activeConversation ? (
+              <div className="messages-thread-empty">
+                <p>Select a conversation on the left to start chatting.</p>
+              </div>
+            ) : (
+              <>
+                <header className="messages-thread-header">
+                  <div className="messages-thread-heading">
+                    <div className="messages-thread-avatar">
+                      {activeConversation.image ? (
+                        <img src={activeConversation.image} alt={activeConversation.productName} />
+                      ) : (
+                        <div className="messages-thread-avatar-fallback" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="messages-thread-product">
+                        {activeConversation.productName}
+                      </div>
+                      <div className="messages-thread-meta">
+                        with <span className="messages-thread-name">{activeConversation.username}</span>{' '}
+                        {activeConversation.price != null && (
+                          <span className="messages-thread-price">
+                            · ₱{Number(activeConversation.price).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="messages-thread-listing-btn"
+                    type="button"
+                    onClick={() => {
+                      if (onViewListing && activeConversation.listingId) {
+                        onViewListing(activeConversation.listingId);
+                      }
+                    }}
+                  >
+                    View Listing
+                  </Button>
+                </header>
+
+                <div className="messages-thread-body">
+                  <div className="messages-thread-listing-summary">
+                    <div className="messages-thread-listing-thumb">
+                      {activeConversation.image ? (
+                        <img src={activeConversation.image} alt={activeConversation.productName} />
+                      ) : (
+                        <div className="messages-thread-listing-thumb-fallback" />
+                      )}
+                    </div>
+                    <div className="messages-thread-listing-text">
+                      <div className="messages-thread-listing-title">
+                        {activeConversation.productName}
+                      </div>
+                      {activeConversation.price != null && (
+                        <div className="messages-thread-listing-price">
+                          ₱{Number(activeConversation.price).toLocaleString()}
+                        </div>
+                      )}
+                      <div className="messages-thread-listing-caption">
+                        Listing you&apos;re chatting about.
+                      </div>
+                    </div>
+                  </div>
+
+                  {loadingMessages ? (
+                    <div className="messages-thread-empty">Loading messages…</div>
+                  ) : messages.length === 0 ? (
+                    <div className="messages-thread-empty">
+                      No messages yet. Say hi to start the conversation.
+                    </div>
+                  ) : (
+                    <div className="messages-thread-scroll">
+                      {messages.map((m) => (
+                        <div
+                          key={m.id}
+                          className={`messages-bubble-row ${
+                            m.sender === 'me' ? 'messages-bubble-row-me' : 'messages-bubble-row-other'
+                          }`}
+                        >
+                          <div
+                            className={`messages-bubble ${
+                              m.sender === 'me' ? 'messages-bubble-me' : 'messages-bubble-other'
+                            }`}
+                          >
+                            {m.text}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <footer className="messages-thread-input">
+                  <Input
+                    type="text"
+                    placeholder="Type your message…"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    className="messages-thread-input-field"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={!messageInput.trim() || sending}
+                    onClick={handleSend}
+                  >
+                    Send
+                  </Button>
+                </footer>
+              </>
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+}
+

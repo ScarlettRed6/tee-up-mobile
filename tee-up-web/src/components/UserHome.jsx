@@ -1,17 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getListings, getRecommendations, getFavorites, addFavorite, removeFavorite } from '../api/userListingsApi';
+import { getListings, getRecommendations, getFavorites, addFavorite, removeFavorite, getListingById } from '../api/userListingsApi';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import ListingView from './ListingView';
 import OwnerListingView from './OwnerListingView';
 import MyListings from './MyListings';
+import SellListingPage from './SellListingPage';
 import ProfilePage from './ProfilePage';
 import PublicProfilePage from './PublicProfilePage';
+import MessagesPage from './MessagesPage';
 import { Alert } from './ui/alert';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { ChevronRight } from 'lucide-react';
+import SearchResultsPage from './SearchResultsPage';
+import NotificationsPage from './NotificationsPage';
 import './UserHome.css';
 
 // Golf slideshow for logged-in hero (same style as landing)
@@ -25,6 +29,16 @@ const HERO_SLIDES = [
 function UserHome() {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [searchFilters, setSearchFilters] = useState({
+    category: null,
+    condition: null,
+    minPrice: '',
+    maxPrice: '',
+    location: '',
+  });
   const [recommended, setRecommended] = useState([]);
   const [recent, setRecent] = useState([]);
   const [saved, setSaved] = useState([]);
@@ -37,6 +51,8 @@ function UserHome() {
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   const [ownerListingFromView, setOwnerListingFromView] = useState('feed');
   const [heroIndex, setHeroIndex] = useState(0);
+  const [messagesListingContext, setMessagesListingContext] = useState(null);
+  const [initialMessagesConversationId, setInitialMessagesConversationId] = useState(null);
 
   useEffect(() => {
     HERO_SLIDES.forEach((src) => { const img = new Image(); img.src = src; });
@@ -83,6 +99,64 @@ function UserHome() {
     loadData();
   }, [loadData]);
 
+  // Load search results whenever we have a query and are in the search view
+  useEffect(() => {
+    if (!searchQuery || view !== 'search') return;
+    let cancelled = false;
+    const run = async () => {
+      setSearchLoading(true);
+      setSearchError(null);
+      try {
+        const params = {
+          search: searchQuery,
+          status: 'available',
+          sort: 'newest',
+        };
+
+        if (searchFilters.category) {
+          params.category = searchFilters.category;
+        }
+        if (searchFilters.condition) {
+          params.condition = searchFilters.condition;
+        }
+        if (searchFilters.minPrice) {
+          const minNum = Number(searchFilters.minPrice);
+          if (!Number.isNaN(minNum) && minNum >= 0) {
+            params.min_price = minNum;
+          }
+        }
+        if (searchFilters.maxPrice) {
+          const maxNum = Number(searchFilters.maxPrice);
+          if (!Number.isNaN(maxNum) && maxNum >= 0) {
+            params.max_price = maxNum;
+          }
+        }
+        if (searchFilters.location) {
+          params.location = searchFilters.location;
+        }
+
+        const list = await getListings(params);
+        if (!cancelled) {
+          setSearchResults(Array.isArray(list) ? list.map(normalizeListing) : []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Search failed', err);
+          setSearchError(err?.message || 'Failed to search listings');
+          setSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setSearchLoading(false);
+        }
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchQuery, view, searchFilters]);
+
   const handleFavorite = async (listingId) => {
     const id = String(listingId);
     const isCurrentlySaved = savedIds.has(id);
@@ -107,20 +181,90 @@ function UserHome() {
   };
 
   const handleSearch = (q) => {
-    setSearchQuery(q);
-    // Could filter local or refetch with search param
+    const trimmed = (q || '').trim();
+    if (!trimmed) return;
+    setSearchQuery(trimmed);
+    setView('search');
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
   };
 
   const handleSell = () => {
-    // TODO: navigate to sell / create listing
+    setView('sell');
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
   };
 
   const handleMessages = () => {
-    // TODO: navigate to messages
+    setInitialMessagesConversationId(null);
+    setView('messages');
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
   };
 
   const handleMyListings = () => {
     setView('myListings');
+    setSelectedOwnerListingId(null);
+  };
+
+  const handleViewAllNotifications = () => {
+    setView('notifications');
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
+  };
+
+  const handleNotificationClick = (notification) => {
+    const { type, data } = notification;
+    if (type === 'new_message' && data?.conversationId) {
+      setInitialMessagesConversationId(data.conversationId);
+      setView('messages');
+      setSelectedListingId(null);
+      setSelectedOwnerListingId(null);
+      setSelectedProfileUserId(null);
+      return;
+    }
+    if (
+      (type === 'favorite_sold' ||
+        type === 'favorite_status_changed' ||
+        type === 'listing_favorited' ||
+        type === 'followed_new_listing') &&
+      data?.listing_id
+    ) {
+      openListingById(data.listing_id);
+      return;
+    }
+    if (type === 'new_follower' && data?.follower_id) {
+      setSelectedProfileUserId(String(data.follower_id));
+      setView('publicProfile');
+      setSelectedListingId(null);
+      setSelectedOwnerListingId(null);
+      return;
+    }
+    if (type === 'rating_received') {
+      setView('profile');
+      setSelectedListingId(null);
+      setSelectedOwnerListingId(null);
+      setSelectedProfileUserId(null);
+      return;
+    }
+  };
+
+  const handleOpenMessages = (conversationId) => {
+    if (conversationId) setInitialMessagesConversationId(conversationId);
+    setView('messages');
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
+  };
+
+  const handleOpenUserProfile = (userId) => {
+    setSelectedProfileUserId(String(userId));
+    setView('publicProfile');
+    setSelectedListingId(null);
     setSelectedOwnerListingId(null);
   };
 
@@ -141,6 +285,16 @@ function UserHome() {
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
     setSelectedProfileUserId(null);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setSearchFilters({
+      category: null,
+      condition: null,
+      minPrice: '',
+      maxPrice: '',
+      location: '',
+    });
   };
 
   const handleListingClick = (listing) => {
@@ -157,6 +311,31 @@ function UserHome() {
     }
   };
 
+  const openListingById = useCallback(
+    async (listingId) => {
+      const idStr = String(listingId);
+      const fromMemory =
+        [...recent, ...recommended, ...saved, ...searchResults].find(
+          (l) => String(l.listing_id ?? l.id) === idStr
+        ) || null;
+
+      if (fromMemory) {
+        handleListingClick(fromMemory);
+        return;
+      }
+
+      try {
+        const fetched = await getListingById(idStr);
+        if (!fetched) return;
+        const normalized = normalizeListing(fetched);
+        handleListingClick(normalized);
+      } catch (err) {
+        console.error('Failed to open listing by id', listingId, err);
+      }
+    },
+    [recent, recommended, saved, searchResults, handleListingClick]
+  );
+
   return (
     <div className="user-home" style={{ backgroundColor: 'var(--color-background)' }}>
       {view === 'profile' ? (
@@ -168,6 +347,8 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
@@ -186,6 +367,8 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
@@ -204,9 +387,68 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
+        />
+      ) : view === 'search' && searchQuery ? (
+        <SearchResultsPage
+          user={user}
+          query={searchQuery}
+          results={searchResults}
+          loading={searchLoading}
+          error={searchError}
+          filters={searchFilters}
+          onFiltersChange={setSearchFilters}
+          onBack={handleGoHome}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onGoHome={handleGoHome}
+          onViewListing={openListingById}
+        />
+      ) : view === 'notifications' ? (
+        <NotificationsPage
+          user={user}
+          onBack={() => setView('feed')}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onGoHome={handleGoHome}
+          onViewListing={openListingById}
+          onOpenMessages={handleOpenMessages}
+          onOpenUserProfile={handleOpenUserProfile}
+        />
+      ) : view === 'messages' ? (
+        <MessagesPage
+          user={user}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onGoHome={handleGoHome}
+          listingContext={messagesListingContext}
+          onViewListing={openListingById}
+          initialConversationId={initialMessagesConversationId}
         />
       ) : view === 'myListings' ? (
         <MyListings
@@ -222,9 +464,27 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
+        />
+      ) : view === 'sell' ? (
+        <SellListingPage
+          user={user}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onGoHome={handleGoHome}
+          onListingCreated={async (_created, status) => {
+            await loadData();
+            setView(status === 'pending' ? 'myListings' : 'feed');
+          }}
         />
       ) : selectedListingId != null ? (
         <ListingView
@@ -236,6 +496,8 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onViewSellerProfile={(userId) => {
@@ -253,6 +515,8 @@ function UserHome() {
         onMessages={handleMessages}
         onMyListings={handleMyListings}
         onNotifications={() => {}}
+        onViewAllNotifications={handleViewAllNotifications}
+        onNotificationClick={handleNotificationClick}
         onOpenProfile={handleOpenProfile}
         onLogout={handleLogout}
         onGoHome={handleGoHome}

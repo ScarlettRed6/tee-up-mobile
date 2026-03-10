@@ -32,6 +32,8 @@ export default function OwnerListingView({
   onMessages,
   onMyListings,
   onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
   onProfile,
   onEditListing,
   onReviewOffer,
@@ -96,6 +98,8 @@ export default function OwnerListingView({
           onMessages={onMessages}
           onMyListings={onMyListings}
           onNotifications={onNotifications}
+          onViewAllNotifications={onViewAllNotifications}
+          onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}
@@ -126,6 +130,8 @@ export default function OwnerListingView({
           onMessages={onMessages}
           onMyListings={onMyListings}
           onNotifications={onNotifications}
+          onViewAllNotifications={onViewAllNotifications}
+          onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}
@@ -151,6 +157,8 @@ export default function OwnerListingView({
           onMessages={onMessages}
           onMyListings={onMyListings}
           onNotifications={onNotifications}
+          onViewAllNotifications={onViewAllNotifications}
+          onNotificationClick={onNotificationClick}
           onOpenProfile={onOpenProfile}
           onLogout={onLogout}
           onGoHome={onGoHome}
@@ -192,6 +200,8 @@ export default function OwnerListingView({
         onMessages={onMessages}
         onMyListings={onMyListings}
         onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
         onProfile={onProfile}
       />
 
