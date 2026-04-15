@@ -18,6 +18,15 @@ export const getPublicUserProfile = async (userId) => {
   return response.data;
 };
 
+/**
+ * Get all ratings/reviews for a user.
+ * Backend: GET /ratings/:user_id
+ */
+export const getUserRatings = async (userId) => {
+  const response = await axiosInstance.get(`/ratings/${userId}`);
+  return response.data?.ratings || [];
+};
+
 // Get all users (superadmin only)
 export const getAllUsers = async (search = '') => {
   const params = search ? { search } : {};

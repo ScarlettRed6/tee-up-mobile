@@ -121,3 +121,45 @@ export const createListing = async (listingData, files = []) => {
   });
   return response.data?.listing ?? null;
 };
+
+/**
+ * Update an existing listing (auth required).
+ * Backend: PUT /listings/:id (multipart/form-data with photos[] and existingPhotos)
+ */
+export const updateListing = async (listingId, listingData, files = [], existingPhotos = []) => {
+  const formData = new FormData();
+
+  formData.append('title', listingData.title);
+  formData.append('description', listingData.description);
+  formData.append('category', listingData.category);
+  formData.append('condition', listingData.condition);
+  formData.append('price', String(listingData.price));
+  formData.append('status', listingData.status || 'available');
+  formData.append('existingPhotos', JSON.stringify(existingPhotos));
+
+  if (listingData.brand) {
+    formData.append('brand', listingData.brand);
+  }
+  if (listingData.flex) {
+    formData.append('flex', listingData.flex);
+  }
+  if (listingData.hand) {
+    formData.append('hand', listingData.hand);
+  }
+  if (listingData.location) {
+    formData.append('location', listingData.location);
+  }
+
+  files.forEach((file) => {
+    if (file instanceof File) {
+      formData.append('photos', file);
+    }
+  });
+
+  const response = await axiosInstance.put(`/listings/${listingId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data?.listing ?? null;
+};

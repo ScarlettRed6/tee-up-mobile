@@ -6,7 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Bell, User, LogOut, MessageCircle, Star, Tag, Heart, Megaphone, UserPlus } from 'lucide-react';
@@ -240,19 +242,25 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[160px]">
+              <DropdownMenuContent align="end" sideOffset={8} className="user-header-profile-dropdown">
+                <DropdownMenuLabel className="user-header-profile-dropdown-label">
+                  <span className="user-header-profile-name">{user?.name || 'Profile'}</span>
+                  {user?.email ? <span className="user-header-profile-email">{user.email}</span> : null}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="cursor-pointer"
+                  className="cursor-pointer user-header-profile-dropdown-item"
                   onSelect={(e) => {
                     e.preventDefault();
                     handleOpenProfile();
                   }}
                 >
+                  <User className="h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  className="cursor-pointer user-header-dropdown-item-logout"
+                  className="cursor-pointer user-header-profile-dropdown-item user-header-dropdown-item-logout"
                   onSelect={(e) => {
                     e.preventDefault();
                     handleLogout();

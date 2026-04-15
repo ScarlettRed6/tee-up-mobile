@@ -33,6 +33,39 @@ export const getProfileStats = async () => {
 };
 
 /**
+ * Update current user profile (auth required).
+ * Backend: PUT /user/update (multipart/form-data)
+ */
+export const updateProfile = async ({ name, bio, profileImageFile }) => {
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('bio', bio ?? '');
+  if (profileImageFile instanceof File) {
+    formData.append('profile_image', profileImageFile);
+  }
+
+  const response = await axiosInstance.put('/user/update', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data?.user ?? null;
+};
+
+/**
+ * Change password for local accounts.
+ * Backend: PUT /auth/change-password
+ */
+export const changePassword = async ({ currentPassword, newPassword, confirmNewPassword }) => {
+  const response = await axiosInstance.put('/auth/change-password', {
+    currentPassword,
+    newPassword,
+    confirmNewPassword,
+  });
+  return response.data;
+};
+
+/**
  * Create account. Backend sends verification email; user must verify before logging in.
  * Backend: POST /auth/register
  */

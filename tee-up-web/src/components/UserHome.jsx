@@ -27,7 +27,7 @@ const HERO_SLIDES = [
 ];
 
 function UserHome() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -50,6 +50,7 @@ function UserHome() {
   const [selectedOwnerListingId, setSelectedOwnerListingId] = useState(null);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   const [ownerListingFromView, setOwnerListingFromView] = useState('feed');
+  const [editingListing, setEditingListing] = useState(null);
   const [heroIndex, setHeroIndex] = useState(0);
   const [messagesListingContext, setMessagesListingContext] = useState(null);
   const [initialMessagesConversationId, setInitialMessagesConversationId] = useState(null);
@@ -195,6 +196,7 @@ function UserHome() {
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
     setSelectedProfileUserId(null);
+    setEditingListing(null);
   };
 
   const handleMessages = () => {
@@ -352,6 +354,9 @@ function UserHome() {
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
+          onEditProfile={async () => {
+            await refreshProfile();
+          }}
           onViewListing={(id) => {
             setSelectedOwnerListingId(String(id));
             setView('ownerListing');
@@ -392,6 +397,10 @@ function UserHome() {
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
+          onEditListing={(listing) => {
+            setEditingListing(listing);
+            setView('editListing');
+          }}
         />
       ) : view === 'search' && searchQuery ? (
         <SearchResultsPage
@@ -484,6 +493,28 @@ function UserHome() {
           onListingCreated={async (_created, status) => {
             await loadData();
             setView(status === 'pending' ? 'myListings' : 'feed');
+          }}
+        />
+      ) : view === 'editListing' && editingListing ? (
+        <SellListingPage
+          user={user}
+          mode="edit"
+          initialListing={editingListing}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onGoHome={handleGoHome}
+          onBack={() => setView('ownerListing')}
+          onListingUpdated={async (updated) => {
+            await loadData();
+            if (updated?.listing_id || updated?.id) {
+              setSelectedOwnerListingId(String(updated.listing_id ?? updated.id));
+            }
+            setView('ownerListing');
           }}
         />
       ) : selectedListingId != null ? (

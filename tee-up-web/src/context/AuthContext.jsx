@@ -77,6 +77,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshProfile = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return null;
+    const response = await getProfile();
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...response };
+      localStorage.setItem('authUser', JSON.stringify(next));
+      return next;
+    });
+    return response;
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -84,6 +96,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -41,11 +41,15 @@ export default function OwnerListingView({
   onLogout,
   onGoHome,
 }) {
+  const SOLD_CONFIRM_ACTION = 'sold';
+  const AVAILABLE_CONFIRM_ACTION = 'available';
+  const DELETE_CONFIRM_ACTION = 'delete';
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [actionLoading, setActionLoading] = useState(null);
+  const [pendingConfirmAction, setPendingConfirmAction] = useState(null);
 
   useEffect(() => {
     if (!listingId) return;
@@ -73,8 +77,21 @@ export default function OwnerListingView({
     }
   };
 
+  const handleMarkAsAvailable = async () => {
+    if (!listing?.listing_id) return;
+    setActionLoading('available');
+    try {
+      await updateListingStatus(listing.listing_id, 'available');
+      setListing((prev) => (prev ? { ...prev, status: 'available' } : null));
+    } catch (err) {
+      setError(err?.message ?? 'Failed to update status');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleDelete = async () => {
-    if (!listing?.listing_id || !window.confirm('Delete this listing? This cannot be undone.')) return;
+    if (!listing?.listing_id) return;
     setActionLoading('delete');
     try {
       await deleteListing(listing.listing_id);
@@ -190,6 +207,44 @@ export default function OwnerListingView({
   const currentOffers = [
     { id: '1', buyerName: 'Hockeyops', offerAmount: 7500, buyerImage: null },
   ];
+
+  const openSoldConfirmation = () => setPendingConfirmAction(SOLD_CONFIRM_ACTION);
+  const openAvailableConfirmation = () => setPendingConfirmAction(AVAILABLE_CONFIRM_ACTION);
+  const openDeleteConfirmation = () => setPendingConfirmAction(DELETE_CONFIRM_ACTION);
+  const closeConfirmationModal = () => {
+    if (actionLoading) return;
+    setPendingConfirmAction(null);
+  };
+  const confirmPendingAction = async () => {
+    if (pendingConfirmAction === SOLD_CONFIRM_ACTION) {
+      await handleMarkAsSold();
+    } else if (pendingConfirmAction === AVAILABLE_CONFIRM_ACTION) {
+      await handleMarkAsAvailable();
+    } else if (pendingConfirmAction === DELETE_CONFIRM_ACTION) {
+      await handleDelete();
+    }
+    setPendingConfirmAction(null);
+  };
+  const confirmConfig = pendingConfirmAction === SOLD_CONFIRM_ACTION
+    ? {
+      title: 'Mark listing as sold?',
+      message: 'This listing will be shown as sold and buyers will see it as no longer available.',
+      confirmLabel: actionLoading === 'sold' ? 'Marking…' : 'Mark as Sold',
+    }
+    : pendingConfirmAction === AVAILABLE_CONFIRM_ACTION
+      ? {
+        title: 'Mark listing as available?',
+        message: 'This listing will be shown as available and buyers can purchase it again.',
+        confirmLabel: actionLoading === 'available' ? 'Updating…' : 'Mark as Available',
+      }
+    : pendingConfirmAction === DELETE_CONFIRM_ACTION
+      ? {
+        title: 'Delete this listing?',
+        message: 'This action is permanent and cannot be undone.',
+        confirmLabel: actionLoading === 'delete' ? 'Deleting…' : 'Delete Listing',
+      }
+      : null;
+  const isConfirming = actionLoading === 'sold' || actionLoading === 'available' || actionLoading === 'delete';
 
   return (
     <div className="owner-listing-view" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -342,10 +397,14 @@ export default function OwnerListingView({
                 variant="secondary"
                 size="default"
                 className="owner-listing-action-btn"
-                onClick={handleMarkAsSold}
-                disabled={listing.status === 'sold' || actionLoading === 'sold'}
+                onClick={listing.status === 'sold' ? openAvailableConfirmation : openSoldConfirmation}
+                disabled={actionLoading === 'sold' || actionLoading === 'available'}
               >
-                {actionLoading === 'sold' ? 'Updating…' : 'Mark as Sold'}
+                {actionLoading === 'sold' || actionLoading === 'available'
+                  ? 'Updating…'
+                  : listing.status === 'sold'
+                    ? 'Mark as Available'
+                    : 'Mark as Sold'}
               </Button>
             </div>
 
@@ -367,7 +426,7 @@ export default function OwnerListingView({
                 variant="secondary"
                 size="lg"
                 className="owner-listing-delete-btn"
-                onClick={handleDelete}
+                onClick={openDeleteConfirmation}
                 disabled={actionLoading === 'delete'}
               >
                 {actionLoading === 'delete' ? 'Deleting…' : 'Delete Listing'}
@@ -377,6 +436,33 @@ export default function OwnerListingView({
           </div>
         </div>
       </div>
+      {pendingConfirmAction && confirmConfig && (
+        <div className="owner-listing-modal-overlay" onClick={closeConfirmationModal}>
+          <div className="owner-listing-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="owner-listing-confirm-title">{confirmConfig.title}</h3>
+            <p className="owner-listing-confirm-message">{confirmConfig.message}</p>
+            <div className="owner-listing-confirm-actions">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={closeConfirmationModal}
+                disabled={isConfirming}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="owner-listing-confirm-primary"
+                onClick={confirmPendingAction}
+                disabled={isConfirming}
+              >
+                {confirmConfig.confirmLabel}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

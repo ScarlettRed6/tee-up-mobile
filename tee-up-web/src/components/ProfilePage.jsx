@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Star, User, Settings, ChevronLeft } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Star, User, Settings, Camera } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { getListings, getFavorites } from '../api/userListingsApi';
-import { getProfileStats } from '../api/authApi';
+import { changePassword, getProfileStats, updateProfile } from '../api/authApi';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import ListingSearchFilters from './ListingSearchFilters';
+import { getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
 import './ProfilePage.css';
 
@@ -35,6 +38,8 @@ function formatMemberSince(createdAt) {
   return isNaN(year) ? null : year;
 }
 
+const BIO_MAX_LENGTH = 200;
+
 export default function ProfilePage({
   user,
   onBack,
@@ -60,9 +65,24 @@ export default function ProfilePage({
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savedLoading, setSavedLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviews, setReviews] = useState([]);
   const [listingsSearch, setListingsSearch] = useState('');
   const [listingsCategory, setListingsCategory] = useState('');
   const [listingsSort, setListingsSort] = useState('newest');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editImageFile, setEditImageFile] = useState(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
     if (!user?.id) {
@@ -101,11 +121,139 @@ export default function ProfilePage({
       .finally(() => setLoading(false));
   }, [user?.id, listingsSearch, listingsCategory, listingsSort]);
 
+  useEffect(() => {
+    if (!user?.id || activeTab !== 'reviews') return;
+    setReviewsLoading(true);
+    getUserRatings(user.id)
+      .then((data) => setReviews(Array.isArray(data) ? data : []))
+      .catch(() => setReviews([]))
+      .finally(() => setReviewsLoading(false));
+  }, [user?.id, activeTab]);
+
   const activeItemsCount = stats?.active_listings ?? myListings.length;
   const reviewsCount = stats?.total_ratings ?? 0;
   const rating = stats?.rating != null ? Number(stats.rating).toFixed(1) : '—';
   const displayName = user?.name || 'User';
   const memberSince = formatMemberSince(user?.created_at) || '—';
+  const editImagePreview = useMemo(() => {
+    if (editImageFile) return URL.createObjectURL(editImageFile);
+    return user?.profile_image || null;
+  }, [editImageFile, user?.profile_image]);
+
+  useEffect(() => {
+    return () => {
+      if (editImageFile) URL.revokeObjectURL(editImagePreview);
+    };
+  }, [editImageFile, editImagePreview]);
+
+  const openEditProfile = () => {
+    setEditName(user?.name || '');
+    setEditBio(user?.bio || '');
+    setEditImageFile(null);
+    setProfileError('');
+    setPasswordOpen(false);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setPasswordError('');
+    setPasswordSuccess('');
+    setEditOpen(true);
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setProfileError('Please select an image file.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('Image must be under 5MB.');
+      return;
+    }
+    setProfileError('');
+    setEditImageFile(file);
+  };
+
+  const handleSaveProfile = async () => {
+    const trimmedName = editName.trim();
+    const trimmedBio = editBio.trim();
+
+    if (!trimmedName) {
+      setProfileError('Name is required.');
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setProfileError('Name must be at least 2 characters.');
+      return;
+    }
+    if (trimmedBio.length > BIO_MAX_LENGTH) {
+      setProfileError(`Bio cannot exceed ${BIO_MAX_LENGTH} characters.`);
+      return;
+    }
+
+    setSavingProfile(true);
+    setProfileError('');
+    try {
+      await updateProfile({
+        name: trimmedName,
+        bio: trimmedBio,
+        profileImageFile: editImageFile,
+      });
+      await onEditProfile?.();
+      setEditOpen(false);
+    } catch (err) {
+      setProfileError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to update profile.'
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!currentPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
+      setPasswordError('All password fields are required.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await changePassword({
+        currentPassword: currentPassword.trim(),
+        newPassword: newPassword.trim(),
+        confirmNewPassword: confirmNewPassword.trim(),
+      });
+      setPasswordSuccess('Password changed successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setPasswordOpen(false);
+    } catch (err) {
+      setPasswordError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to change password.'
+      );
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
   const tabsWithCount = TABS.map((t) => {
     if (t.countKey === 'drafts') return { ...t, count: draftsCount };
@@ -152,7 +300,7 @@ export default function ProfilePage({
                 </p>
               </div>
               <div className="profile-hero-actions">
-                <Button variant="secondary" size="default" className="profile-hero-btn" onClick={() => onEditProfile?.()}>
+                <Button variant="secondary" size="default" className="profile-hero-btn" onClick={openEditProfile}>
                   Edit Profile
                 </Button>
                 <Button variant="outline" size="default" className="profile-hero-btn" onClick={() => onSettings?.()}>
@@ -296,7 +444,43 @@ export default function ProfilePage({
               </>
             )}
             {activeTab === 'reviews' && (
-              <p className="profile-content-muted">Your reviews will appear here.</p>
+              reviewsLoading ? (
+                <p className="profile-content-muted">Loading reviews…</p>
+              ) : reviews.length === 0 ? (
+                <p className="profile-content-muted">No reviews yet.</p>
+              ) : (
+                <div className="profile-reviews-list">
+                  {reviews.map((review, idx) => {
+                    const ratingValue = Number(review.rating || 0);
+                    const dateText = review.created_at
+                      ? new Date(review.created_at).toLocaleDateString()
+                      : 'Recently';
+                    return (
+                      <article className="profile-review-card" key={`${review.created_at || idx}-${idx}`}>
+                        <div className="profile-review-header">
+                          <div className="profile-reviewer">
+                            <Avatar className="profile-review-avatar">
+                              <AvatarImage src={review.reviewer_profile_image} alt={review.reviewer_name || 'Reviewer'} />
+                              <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="profile-reviewer-name">{review.reviewer_name || `Buyer ${idx + 1}`}</p>
+                              <p className="profile-review-date">{dateText}</p>
+                            </div>
+                          </div>
+                          <div className="profile-review-rating">
+                            <Star className="h-4 w-4 profile-review-star" />
+                            {ratingValue.toFixed(1)}
+                          </div>
+                        </div>
+                        <p className="profile-review-text">
+                          {review.review?.trim() ? review.review : 'No written review provided.'}
+                        </p>
+                      </article>
+                    );
+                  })}
+                </div>
+              )
             )}
             {activeTab === 'about' && (
               <p className="profile-content-muted">{user?.bio || 'Add a short bio in Edit Profile.'}</p>
@@ -304,6 +488,132 @@ export default function ProfilePage({
           </div>
         </div>
       </main>
+      {editOpen && (
+        <div className="profile-edit-overlay" onClick={() => !savingProfile && setEditOpen(false)}>
+          <div className="profile-edit-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="profile-edit-title">Edit Profile</h3>
+            <p className="profile-edit-subtitle">Update your public seller details.</p>
+            {profileError ? (
+              <div className="profile-edit-error">{profileError}</div>
+            ) : null}
+
+            <div className="profile-edit-image-wrap">
+              <Avatar className="profile-edit-avatar">
+                <AvatarImage src={editImagePreview || undefined} alt={editName || displayName} />
+                <AvatarFallback><User className="h-8 w-8" /></AvatarFallback>
+              </Avatar>
+              <label className="profile-edit-image-btn">
+                <Camera className="h-4 w-4" />
+                Change Photo
+                <input type="file" accept="image/*" onChange={handleImageFileChange} />
+              </label>
+            </div>
+
+            <div className="profile-edit-field">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Enter your name"
+              />
+            </div>
+
+            <div className="profile-edit-field">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" value={user?.email || ''} disabled />
+              <p className="profile-edit-note">Email cannot be changed.</p>
+            </div>
+
+            <div className="profile-edit-field">
+              <Label htmlFor="edit-bio">Bio</Label>
+              <textarea
+                id="edit-bio"
+                className="profile-edit-textarea"
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+                maxLength={BIO_MAX_LENGTH}
+                placeholder="Tell buyers about you."
+              />
+              <p className="profile-edit-note">{editBio.length}/{BIO_MAX_LENGTH}</p>
+            </div>
+
+            {user?.provider !== 'google' && (
+              <div className="profile-password-section">
+                <div className="profile-password-head">
+                  <div>
+                    <h4 className="profile-password-title">Password</h4>
+                    <p className="profile-password-subtitle">Leave this unchanged if you do not want to update your password.</p>
+                  </div>
+                  {!passwordOpen && (
+                    <Button variant="outline" size="sm" onClick={() => setPasswordOpen(true)}>
+                      Edit Password
+                    </Button>
+                  )}
+                </div>
+                {passwordError ? <p className="profile-password-error">{passwordError}</p> : null}
+                {passwordSuccess ? <p className="profile-password-success">{passwordSuccess}</p> : null}
+                {passwordOpen && (
+                  <div className="profile-password-fields">
+                    <p className="profile-password-helper">Enter all fields below to replace your current password.</p>
+                    <Input
+                      type="password"
+                      placeholder="Current password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      placeholder="New password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Re-enter new password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    />
+                    <div className="profile-password-actions">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setPasswordOpen(false);
+                          setCurrentPassword('');
+                          setNewPassword('');
+                          setConfirmNewPassword('');
+                          setPasswordError('');
+                        }}
+                        disabled={savingPassword}
+                      >
+                        Keep Current Password
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="profile-password-update-btn"
+                        onClick={handleChangePassword}
+                        disabled={savingPassword}
+                      >
+                        {savingPassword ? 'Updating…' : 'Update Password'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="profile-edit-actions">
+              <Button variant="outline" onClick={() => setEditOpen(false)} disabled={savingProfile}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveProfile} disabled={savingProfile}>
+                {savingProfile ? 'Saving…' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

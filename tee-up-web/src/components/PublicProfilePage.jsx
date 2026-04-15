@@ -4,7 +4,7 @@ import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert } from './ui/alert';
-import { getPublicUserProfile } from '../api/usersApi';
+import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { getListings } from '../api/userListingsApi';
 import ListingSearchFilters from './ListingSearchFilters';
 import { cn } from '@/lib/utils';
@@ -58,6 +58,8 @@ export default function PublicProfilePage({
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('listings');
   const [following, setFollowing] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [listingsSearch, setListingsSearch] = useState('');
   const [listingsCategory, setListingsCategory] = useState('');
   const [listingsSort, setListingsSort] = useState('newest');
@@ -89,6 +91,15 @@ export default function PublicProfilePage({
       .catch(() => setListings([]))
       .finally(() => setLoading(false));
   }, [profileUserId, activeTab, listingsSearch, listingsCategory, listingsSort]);
+
+  useEffect(() => {
+    if (!profileUserId || activeTab !== 'reviews') return;
+    setReviewsLoading(true);
+    getUserRatings(profileUserId)
+      .then((data) => setReviews(Array.isArray(data) ? data : []))
+      .catch(() => setReviews([]))
+      .finally(() => setReviewsLoading(false));
+  }, [profileUserId, activeTab]);
 
   const handleFollow = () => {
     setFollowing((prev) => !prev);
@@ -276,7 +287,43 @@ export default function PublicProfilePage({
               </>
             )}
             {activeTab === 'reviews' && (
-              <p className="profile-content-muted">Reviews for this seller will appear here.</p>
+              reviewsLoading ? (
+                <p className="profile-content-muted">Loading reviews…</p>
+              ) : reviews.length === 0 ? (
+                <p className="profile-content-muted">No reviews yet for this seller.</p>
+              ) : (
+                <div className="profile-reviews-list">
+                  {reviews.map((review, idx) => {
+                    const ratingValue = Number(review.rating || 0);
+                    const dateText = review.created_at
+                      ? new Date(review.created_at).toLocaleDateString()
+                      : 'Recently';
+                    return (
+                      <article className="profile-review-card" key={`${review.created_at || idx}-${idx}`}>
+                        <div className="profile-review-header">
+                          <div className="profile-reviewer">
+                            <Avatar className="profile-review-avatar">
+                              <AvatarImage src={review.reviewer_profile_image} alt={review.reviewer_name || 'Reviewer'} />
+                              <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="profile-reviewer-name">{review.reviewer_name || `Buyer ${idx + 1}`}</p>
+                              <p className="profile-review-date">{dateText}</p>
+                            </div>
+                          </div>
+                          <div className="profile-review-rating">
+                            <Star className="h-4 w-4 profile-review-star" />
+                            {ratingValue.toFixed(1)}
+                          </div>
+                        </div>
+                        <p className="profile-review-text">
+                          {review.review?.trim() ? review.review : 'No written review provided.'}
+                        </p>
+                      </article>
+                    );
+                  })}
+                </div>
+              )
             )}
             {activeTab === 'about' && (
               <p className="profile-content-muted">{profile?.bio || 'No bio yet.'}</p>

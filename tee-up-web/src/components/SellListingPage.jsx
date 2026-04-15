@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import UserHeader from './UserHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Alert } from './ui/alert';
-import { createListing } from '../api/userListingsApi';
+import { ChevronLeft } from 'lucide-react';
+import { createListing, updateListing } from '../api/userListingsApi';
+import { PHILIPPINE_CITIES_BY_REGION, PHILIPPINE_LOCATION_OPTIONS } from '../constants/philippineLocations';
 import './SellListingPage.css';
 
 const CATEGORY_OPTIONS = ['Driver', 'Woods', 'Iron', 'Putters', 'Apparel', 'Accessories', 'Others'];
 const FLEX_OPTIONS = ['Ladies', 'Senior', 'Medium', 'Regular', 'Stiff', 'Extra Stiff'];
 const HAND_OPTIONS = ['Right Hand', 'Left Hand'];
 const CONDITION_OPTIONS = ['New', 'Slightly Used', 'Well Used'];
+const MAX_PHOTOS = 10;
 
 function SellListingPage({
   user,
@@ -25,6 +28,10 @@ function SellListingPage({
   onGoHome,
   onViewAllNotifications,
   onListingCreated,
+  mode = 'create',
+  initialListing = null,
+  onListingUpdated,
+  onBack,
 }) {
   const [title, setTitle] = useState('');
   const [brand, setBrand] = useState('');
@@ -35,6 +42,7 @@ function SellListingPage({
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [existingPhotos, setExistingPhotos] = useState([]);
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -42,10 +50,50 @@ function SellListingPage({
   const showFlexSection = category === 'Driver' || category === 'Woods' || category === 'Iron';
   const showHandSection =
     category === 'Driver' || category === 'Woods' || category === 'Iron' || category === 'Putters';
+  const hasCustomLocation = location && !PHILIPPINE_LOCATION_OPTIONS.includes(location);
+
+  useEffect(() => {
+    if (!initialListing || mode !== 'edit') return;
+    setTitle(initialListing.title || '');
+    setBrand(initialListing.brand || '');
+    setCategory(initialListing.category || '');
+    setCondition(initialListing.condition || '');
+    setFlex(initialListing.flex || '');
+    setHand(initialListing.hand || '');
+    setPrice(initialListing.price != null ? String(initialListing.price) : '');
+    setLocation(initialListing.location || '');
+    setDescription(initialListing.description || '');
+    setExistingPhotos(Array.isArray(initialListing.photos) ? initialListing.photos.filter(Boolean) : []);
+    setFiles([]);
+    setError(null);
+  }, [initialListing, mode]);
 
   const handleFilesChange = (e) => {
-    const list = Array.from(e.target.files || []).slice(0, 5);
-    setFiles(list);
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
+    const remainingSlots = Math.max(0, MAX_PHOTOS - existingPhotos.length);
+    setFiles((prev) => [...prev, ...selectedFiles].slice(0, remainingSlots));
+    e.target.value = '';
+  };
+
+  const handleRemoveFile = (indexToRemove) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const previewUrls = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
+  const allPhotoPreviews = [...existingPhotos, ...previewUrls];
+
+  useEffect(() => () => {
+    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [previewUrls]);
+
+  const handleRemovePhotoAt = (indexToRemove) => {
+    if (indexToRemove < existingPhotos.length) {
+      setExistingPhotos((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+      return;
+    }
+    const fileIndex = indexToRemove - existingPhotos.length;
+    handleRemoveFile(fileIndex);
   };
 
   const priceNumber = price ? Number(price.replace(/,/g, '')) : 0;
@@ -76,9 +124,22 @@ function SellListingPage({
         status,
         location: location.trim() || null,
       };
-      const created = await createListing(listingData, files);
-      if (onListingCreated) {
-        onListingCreated(created, status);
+      if (mode === 'edit' && initialListing?.listing_id) {
+        const updated = await updateListing(
+          initialListing.listing_id,
+          {
+            ...listingData,
+            status: initialListing.status || 'available',
+          },
+          files,
+          existingPhotos
+        );
+        onListingUpdated?.(updated);
+      } else {
+        const created = await createListing(listingData, files);
+        if (onListingCreated) {
+          onListingCreated(created, status);
+        }
       }
     } catch (err) {
       setError(
@@ -108,11 +169,28 @@ function SellListingPage({
       />
 
       <main className="sell-page-main">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="sell-back-btn"
+          onClick={() => {
+            if (onBack) {
+              onBack();
+              return;
+            }
+            onGoHome?.();
+          }}
+        >
+          <ChevronLeft className="h-4 w-4" /> Back
+        </Button>
         <Card className="sell-card">
           <CardHeader className="sell-card-header">
-            <CardTitle>List Your Gear</CardTitle>
+            <CardTitle>{mode === 'edit' ? 'Edit Listing' : 'List Your Gear'}</CardTitle>
             <CardDescription>
-              Fill in the details to get your equipment in front of local golfers.
+              {mode === 'edit'
+                ? 'Update your listing details and keep your photos in sync.'
+                : 'Fill in the details to get your equipment in front of local golfers.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="sell-card-content">
@@ -126,30 +204,57 @@ function SellListingPage({
               <section className="sell-section">
                 <h3 className="sell-section-title">Photos</h3>
                 <p className="sell-section-subtitle">
-                  Add up to five photos. Use clear, natural lighting.
+                  Add up to ten photos. Use clear, natural lighting.
                 </p>
                 <div className="sell-photos-row">
-                  {Array.from({ length: 3 }).map((_, idx) => (
-                    <div key={idx} className="sell-photo-placeholder" />
+                  {Array.from({ length: MAX_PHOTOS }).map((_, idx) => (
+                    <div key={idx} className="sell-photo-slot">
+                      {allPhotoPreviews[idx] ? (
+                        <>
+                          <img
+                            src={allPhotoPreviews[idx]}
+                            alt={`Selected upload ${idx + 1}`}
+                            className="sell-photo-preview"
+                          />
+                          <button
+                            type="button"
+                            className="sell-photo-remove"
+                            aria-label={`Remove photo ${idx + 1}`}
+                            onClick={() => handleRemovePhotoAt(idx)}
+                          >
+                            x
+                          </button>
+                        </>
+                      ) : (
+                        <div className="sell-photo-placeholder" />
+                      )}
+                    </div>
                   ))}
-                  <label className="sell-photo-upload">
-                    <span>Upload photos</span>
+                  <label
+                    className={`sell-photo-upload ${allPhotoPreviews.length >= MAX_PHOTOS ? 'sell-photo-upload-disabled' : ''}`}
+                  >
+                    <span>{allPhotoPreviews.length >= MAX_PHOTOS ? 'Max photos reached' : 'Upload photos'}</span>
                     <input
                       type="file"
                       accept="image/*"
                       multiple
                       onChange={handleFilesChange}
+                      disabled={allPhotoPreviews.length >= MAX_PHOTOS}
                     />
                   </label>
                 </div>
-                {files.length > 0 && (
+                {allPhotoPreviews.length > 0 && (
                   <p className="sell-photos-count">
-                    {files.length} photo{files.length > 1 ? 's' : ''} selected
+                    {allPhotoPreviews.length} photo{allPhotoPreviews.length > 1 ? 's' : ''} selected
                   </p>
                 )}
               </section>
 
               <section className="sell-grid">
+                <div className="sell-form-header span-2">
+                  <h3 className="sell-section-title">Listing Details</h3>
+                  <p className="sell-section-subtitle">Describe your gear clearly so buyers can decide faster.</p>
+                </div>
                 <div className="sell-field span-2">
                 <Label htmlFor="title">Listing Title</Label>
                 <Input
@@ -256,12 +361,29 @@ function SellListingPage({
 
               <div className="sell-field">
                 <Label htmlFor="location">Location</Label>
-                <Input
+                <select
                   id="location"
-                  placeholder="City, Region"
+                  className="sell-select"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
+                  onChange={(e) => setLocation(e.target.value || '')}
+                >
+                  <option value="">Select location (Region, City)</option>
+                  {hasCustomLocation ? (
+                    <option value={location}>{location}</option>
+                  ) : null}
+                  {Object.entries(PHILIPPINE_CITIES_BY_REGION).map(([region, cities]) => (
+                    <optgroup key={region} label={region}>
+                      {cities.map((city) => {
+                        const value = `${region}, ${city}`;
+                        return (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
 
               <div className="sell-field span-2">
@@ -279,22 +401,24 @@ function SellListingPage({
             </div>
           </CardContent>
           <CardFooter className="sell-card-footer">
-            <Button
-              variant="outline"
-              size="lg"
-              className="sell-btn-secondary"
-              disabled={submitting}
-              onClick={() => handleSubmit('pending')}
-            >
-              Save Draft
-            </Button>
+            {mode !== 'edit' && (
+              <Button
+                variant="outline"
+                size="lg"
+                className="sell-btn-secondary"
+                disabled={submitting}
+                onClick={() => handleSubmit('pending')}
+              >
+                Save Draft
+              </Button>
+            )}
             <Button
               size="lg"
               className="sell-btn-primary"
               disabled={!isFormValid || submitting}
-              onClick={() => handleSubmit('available')}
+              onClick={() => handleSubmit(mode === 'edit' ? (initialListing?.status || 'available') : 'available')}
             >
-              {submitting ? 'Posting…' : 'Post to Marketplace'}
+              {submitting ? (mode === 'edit' ? 'Saving…' : 'Posting…') : mode === 'edit' ? 'Save Changes' : 'Post to Marketplace'}
             </Button>
           </CardFooter>
         </Card>

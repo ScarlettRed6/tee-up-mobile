@@ -25,8 +25,8 @@ router.get("/", getAllListingItems);
 router.get("/:id", getListingItemById);
 
 //VERY IMPORTANT ROUTE MUST PROTEC!
-router.post("/", verifyToken, upload.array("photos", 5), createListing);
-router.put("/:id", verifyToken, upload.array("photos", 5), updateListingItem);
+router.post("/", verifyToken, upload.array("photos", 10), createListing);
+router.put("/:id", verifyToken, upload.array("photos", 10), updateListingItem);
 router.delete("/:id", verifyToken, deleteListingItem);
 router.patch("/:listing_id/status", verifyToken, changeListingStatus);
 

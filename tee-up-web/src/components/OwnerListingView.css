@@ -323,6 +323,55 @@
   margin: var(--spacing-sm) 0 0;
 }
 
+.owner-listing-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.owner-listing-confirm-modal {
+  width: min(440px, 100%);
+  background: var(--color-white);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-xl);
+}
+
+.owner-listing-confirm-title {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-h4);
+  font-weight: var(--font-weight-semibold);
+}
+
+.owner-listing-confirm-message {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body-small);
+  line-height: var(--line-height-body);
+}
+
+.owner-listing-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+}
+
+.owner-listing-confirm-primary {
+  background: var(--color-dark-gray) !important;
+  color: var(--color-white) !important;
+}
+
+.owner-listing-confirm-primary:hover:not(:disabled) {
+  background: var(--color-text-primary) !important;
+}
+
 @media (max-width: 600px) {
   .owner-listing-container {
     padding: var(--spacing-md) var(--spacing-lg);
