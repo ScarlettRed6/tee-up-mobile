@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import Logo from './Logo';
 import { ChevronRight } from 'lucide-react';
+import { getListings } from '../api/userListingsApi';
 import './HomePage.css';
 
 // Golf scenery for hero slideshow – only URLs that load reliably (full Unsplash photo-id-hash format)
@@ -17,16 +18,30 @@ const HERO_SLIDES = [
   'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',
 ];
 
-// Placeholder trending items (replace with API later)
-const TRENDING_PLACEHOLDER = [
-  { id: 1, title: 'TaylorMade SIM2 Driver', price: '₱18,500', merchant: 'Golf Pro Shop', image: null },
-  { id: 2, title: 'Titleist Pro V1 Golf Balls (12 pack)', price: '₱3,200', merchant: 'Big White Ralph Ball Merchandise', image: null },
-  { id: 3, title: 'Callaway Apex Iron Set', price: '₱35,000', merchant: 'Fairway Finds', image: null },
-  { id: 4, title: 'RalphMade Balls 2', price: '₱69.00', merchant: 'Big White Ralph Ball Merchandise', image: null },
-];
+function normalizeListing(item) {
+  const photos = item.photos != null
+    ? (
+      Array.isArray(item.photos)
+        ? item.photos
+        : (typeof item.photos === 'string'
+          ? (() => {
+            try { return JSON.parse(item.photos); } catch { return []; }
+          })()
+          : [])
+    )
+    : [];
+  return {
+    ...item,
+    id: item.listing_id ?? item.id,
+    listing_id: item.listing_id ?? item.id,
+    photos,
+  };
+}
 
 function HomePage({ onOpenLogin, onOpenSignUp }) {
   const [heroIndex, setHeroIndex] = useState(0);
+  const [trendingItems, setTrendingItems] = useState([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
   const handleOpenLogin = () => (onOpenLogin ? onOpenLogin() : null);
   const handleOpenSignUp = () => (onOpenSignUp ? onOpenSignUp() : onOpenLogin?.());
 
@@ -44,6 +59,28 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
       setHeroIndex((i) => (i + 1) % HERO_SLIDES.length);
     }, 6500);
     return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadTrending = async () => {
+      setTrendingLoading(true);
+      try {
+        const data = await getListings({ status: 'available', sort: 'newest' });
+        if (!cancelled) {
+          const normalized = Array.isArray(data) ? data.map(normalizeListing) : [];
+          setTrendingItems(normalized.slice(0, 4));
+        }
+      } catch {
+        if (!cancelled) setTrendingItems([]);
+      } finally {
+        if (!cancelled) setTrendingLoading(false);
+      }
+    };
+    loadTrending();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -119,29 +156,57 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
             <h2 id="home-trending-title" className="home-section-title">Trending gear</h2>
           </header>
           <div className="home-trending-grid">
-            {TRENDING_PLACEHOLDER.map((item) => (
-              <article key={item.id} className="home-product-card">
-                <div className="home-product-image">
-                  {item.image ? (
-                    <img src={item.image} alt="" />
-                  ) : (
-                    <div
-                      className="home-product-image-placeholder"
-                      style={{ backgroundColor: 'var(--color-light-gray)' }}
-                    />
-                  )}
-                </div>
-                <div className="home-product-info">
-                  <h3 className="home-product-title">{item.title}</h3>
-                  <p className="home-product-price">{item.price}</p>
-                  <p className="home-product-merchant">
-                    <span className="home-product-merchant-dot" />
-                    {item.merchant}
-                  </p>
-                  <span className="home-product-view-hint">View details <ChevronRight className="home-product-view-icon" /></span>
-                </div>
-              </article>
-            ))}
+            {trendingLoading ? (
+              Array.from({ length: 4 }).map((_, idx) => (
+                <article key={idx} className="home-product-card home-product-card-skeleton">
+                  <div className="home-product-image home-product-image-placeholder" />
+                  <div className="home-product-info">
+                    <div className="home-product-skeleton-line home-product-skeleton-title" />
+                    <div className="home-product-skeleton-line home-product-skeleton-price" />
+                    <div className="home-product-skeleton-line home-product-skeleton-merchant" />
+                  </div>
+                </article>
+              ))
+            ) : trendingItems.length === 0 ? (
+              <p className="home-trending-empty">No trending listings yet.</p>
+            ) : (
+              trendingItems.map((item) => {
+                const imageUrl = item.photos?.[0] || null;
+                const price = item.price != null ? Number(item.price) : 0;
+                const formattedPrice = new Intl.NumberFormat('en-PH', {
+                  style: 'currency',
+                  currency: 'PHP',
+                  minimumFractionDigits: 0,
+                }).format(price);
+                return (
+                  <article key={item.id} className="home-product-card">
+                    <div className="home-product-image">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={item.title || 'Trending gear'} />
+                      ) : (
+                        <div
+                          className="home-product-image-placeholder"
+                          style={{ backgroundColor: 'var(--color-light-gray)' }}
+                        />
+                      )}
+                    </div>
+                    <div className="home-product-info">
+                      <h3 className="home-product-title">{item.title || 'Untitled listing'}</h3>
+                      <p className="home-product-price">{formattedPrice}</p>
+                      <p className="home-product-merchant">
+                        <span className="home-product-merchant-dot" />
+                        {item.seller_name || 'Marketplace seller'}
+                      </p>
+                      <button type="button" className="home-product-view-hint-btn" onClick={handleOpenLogin}>
+                        <span className="home-product-view-hint">
+                          View details <ChevronRight className="home-product-view-icon" />
+                        </span>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
         </div>
       </section>

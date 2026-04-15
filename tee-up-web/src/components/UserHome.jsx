@@ -16,6 +16,7 @@ import { Skeleton } from './ui/skeleton';
 import { ChevronRight } from 'lucide-react';
 import SearchResultsPage from './SearchResultsPage';
 import NotificationsPage from './NotificationsPage';
+import LogoutConfirmModal from './LogoutConfirmModal';
 import './UserHome.css';
 
 // Golf slideshow for logged-in hero (same style as landing)
@@ -54,6 +55,7 @@ function UserHome() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [messagesListingContext, setMessagesListingContext] = useState(null);
   const [initialMessagesConversationId, setInitialMessagesConversationId] = useState(null);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     HERO_SLIDES.forEach((src) => { const img = new Image(); img.src = src; });
@@ -278,8 +280,10 @@ function UserHome() {
     setView('profile');
   };
 
-  const handleLogout = () => {
-    if (window.confirm('Sign out?')) logout();
+  const handleLogout = () => setLogoutModalOpen(true);
+  const confirmLogout = () => {
+    setLogoutModalOpen(false);
+    logout();
   };
 
   const handleGoHome = () => {
@@ -698,6 +702,12 @@ function UserHome() {
       </main>
         </>
       )}
+      <LogoutConfirmModal
+        open={logoutModalOpen}
+        roleLabel="user"
+        onCancel={() => setLogoutModalOpen(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

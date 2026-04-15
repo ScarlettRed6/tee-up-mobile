@@ -12,6 +12,7 @@ import UserHome from './components/UserHome';
 import HomePage from './components/HomePage';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NotificationsProvider } from './context/NotificationsContext';
+import LogoutConfirmModal from './components/LogoutConfirmModal';
 import './App.css';
 
 function AppContent() {
@@ -19,11 +20,13 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [authView, setAuthView] = useState('home'); // 'home' | 'login'
   const [loginInitialView, setLoginInitialView] = useState('login'); // 'login' | 'signup'
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
     logout();
+    setLogoutModalOpen(false);
     setCurrentPage('dashboard');
   };
 
@@ -95,10 +98,16 @@ function AppContent() {
       <Sidebar
         onNavigate={setCurrentPage}
         currentPage={currentPage}
-        onLogout={handleLogout}
+        onLogout={() => setLogoutModalOpen(true)}
         user={user}
       />
       {renderPage()}
+      <LogoutConfirmModal
+        open={logoutModalOpen}
+        roleLabel={user?.role === 'superadmin' ? 'super admin' : 'admin'}
+        onCancel={() => setLogoutModalOpen(false)}
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

@@ -209,6 +209,23 @@ function Listings() {
     setOpenDropdown(null);
   };
 
+  const handleDelete = async (listingId) => {
+    setOpenDropdown(null);
+    if (!window.confirm('Delete this listing? This action cannot be undone.')) {
+      return;
+    }
+    setActionLoading(listingId);
+    try {
+      await deleteAdminListing(listingId);
+      await fetchListings();
+    } catch (err) {
+      console.error('Error deleting listing:', err);
+      alert(err.response?.data?.error || err.message || 'Failed to delete listing');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleApprove = async (listingId) => {
     setActionLoading(listingId);
     setOpenDropdown(null);
@@ -464,10 +481,10 @@ function Listings() {
                                   View
                                 </button>
                           <button 
-                            className="dropdown-item edit-item"
-                            onClick={() => handleEdit(listing.id)}
+                            className="dropdown-item delete-item"
+                            onClick={() => handleDelete(listing.id)}
                           >
-                            Edit
+                            Delete
                           </button>
                           {listing.status === 'pending' && (
                             <button 
