@@ -56,6 +56,9 @@ function UserHome() {
   const [messagesListingContext, setMessagesListingContext] = useState(null);
   const [initialMessagesConversationId, setInitialMessagesConversationId] = useState(null);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const previewLimit = 10;
+  const recommendedPreview = recommended.slice(0, previewLimit);
+  const latestArrivals = recent.slice(0, previewLimit);
 
   useEffect(() => {
     HERO_SLIDES.forEach((src) => { const img = new Image(); img.src = src; });
@@ -521,6 +524,98 @@ function UserHome() {
             setView('ownerListing');
           }}
         />
+      ) : view === 'recommendedAll' ? (
+        <>
+          <UserHeader
+            user={user}
+            onSearch={handleSearch}
+            onSell={handleSell}
+            onMessages={handleMessages}
+            onMyListings={handleMyListings}
+            onNotifications={() => {}}
+            onViewAllNotifications={handleViewAllNotifications}
+            onNotificationClick={handleNotificationClick}
+            onOpenProfile={handleOpenProfile}
+            onLogout={handleLogout}
+            onGoHome={handleGoHome}
+          />
+          <main className="user-home-main">
+            <div className="user-home-container user-home-list-page">
+              <Button variant="ghost" size="sm" className="user-home-list-back" onClick={handleGoHome}>
+                Back to feed
+              </Button>
+              <section className="user-home-section">
+                <header className="user-home-section-head">
+                  <span className="user-home-section-label">Picked for you</span>
+                  <h2 className="user-home-section-title">All Recommendations</h2>
+                </header>
+                <div className="user-home-grid">
+                  {recommended.length === 0 ? (
+                    <p className="user-home-empty user-home-empty-grid">No recommendations yet. Check out recent posts.</p>
+                  ) : (
+                    recommended.map((listing) => (
+                      <ListingCard
+                        key={listing.listing_id ?? listing.id}
+                        listing={listing}
+                        tagline={listing.seller_name}
+                        onFavorite={handleFavorite}
+                        isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                        onClick={() => handleListingClick(listing)}
+                        variant="grid"
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            </div>
+          </main>
+        </>
+      ) : view === 'recentAll' ? (
+        <>
+          <UserHeader
+            user={user}
+            onSearch={handleSearch}
+            onSell={handleSell}
+            onMessages={handleMessages}
+            onMyListings={handleMyListings}
+            onNotifications={() => {}}
+            onViewAllNotifications={handleViewAllNotifications}
+            onNotificationClick={handleNotificationClick}
+            onOpenProfile={handleOpenProfile}
+            onLogout={handleLogout}
+            onGoHome={handleGoHome}
+          />
+          <main className="user-home-main">
+            <div className="user-home-container user-home-list-page">
+              <Button variant="ghost" size="sm" className="user-home-list-back" onClick={handleGoHome}>
+                Back to feed
+              </Button>
+              <section className="user-home-section">
+                <header className="user-home-section-head">
+                  <span className="user-home-section-label">Latest arrivals</span>
+                  <h2 className="user-home-section-title">All Recently Posted</h2>
+                </header>
+                <div className="user-home-grid">
+                  {recent.length === 0 ? (
+                    <p className="user-home-empty user-home-empty-grid">No listings yet. List something to get started.</p>
+                  ) : (
+                    recent.map((listing) => (
+                      <ListingCard
+                        key={listing.listing_id ?? listing.id}
+                        listing={listing}
+                        tagline={listing.seller_name}
+                        onFavorite={handleFavorite}
+                        isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                        onClick={() => handleListingClick(listing)}
+                        variant="grid"
+                      />
+                    ))
+                  )}
+                </div>
+              </section>
+            </div>
+          </main>
+        </>
       ) : selectedListingId != null ? (
         <ListingView
           listingId={selectedListingId}
@@ -609,9 +704,9 @@ function UserHome() {
               <div className="user-home-section">
                 <Skeleton className="h-6 w-32 mb-1" />
                 <Skeleton className="h-8 w-40 mb-4" />
-                <div className="user-home-grid">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <Skeleton key={i} className="h-[280px] w-full rounded-xl" />
+                <div className="user-home-scroll">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-[280px] w-[220px] shrink-0 rounded-xl" />
                   ))}
                 </div>
               </div>
@@ -633,19 +728,32 @@ function UserHome() {
                   <h2 className="user-home-section-title">Recommended</h2>
                 </header>
                 <div className="user-home-scroll">
-                  {recommended.length === 0 ? (
+                  {recommendedPreview.length === 0 ? (
                     <p className="user-home-empty">No recommendations yet. Check out recently posted below.</p>
                   ) : (
-                    recommended.map((listing) => (
-                      <ListingCard
-                        key={listing.listing_id ?? listing.id}
-                        listing={listing}
-                        tagline={listing.seller_name}
-                        onFavorite={handleFavorite}
-                        isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
-                        onClick={() => handleListingClick(listing)}
-                      />
-                    ))
+                    <>
+                      {recommendedPreview.map((listing) => (
+                        <ListingCard
+                          key={listing.listing_id ?? listing.id}
+                          listing={listing}
+                          tagline={listing.seller_name}
+                          onFavorite={handleFavorite}
+                          isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                          onClick={() => handleListingClick(listing)}
+                        />
+                      ))}
+                      {recommended.length > previewLimit && (
+                        <button
+                          type="button"
+                          className="user-home-more-card"
+                          onClick={() => setView('recommendedAll')}
+                        >
+                          <span className="user-home-more-title">More Recommendations</span>
+                          <span className="user-home-more-subtitle">See all picks for you</span>
+                          <ChevronRight className="user-home-more-icon" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </section>
@@ -655,21 +763,33 @@ function UserHome() {
                   <span className="user-home-section-label">Latest arrivals</span>
                   <h2 className="user-home-section-title">Recently Posted</h2>
                 </header>
-                <div className="user-home-grid">
-                  {recent.length === 0 ? (
-                    <p className="user-home-empty user-home-empty-grid">No listings yet. List something to get started.</p>
+                <div className="user-home-scroll">
+                  {latestArrivals.length === 0 ? (
+                    <p className="user-home-empty">No listings yet. List something to get started.</p>
                   ) : (
-                    recent.map((listing) => (
-                      <ListingCard
-                        key={listing.listing_id ?? listing.id}
-                        listing={listing}
-                        tagline={listing.seller_name}
-                        onFavorite={handleFavorite}
-                        isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
-                        onClick={() => handleListingClick(listing)}
-                        variant="grid"
-                      />
-                    ))
+                    <>
+                      {latestArrivals.map((listing) => (
+                        <ListingCard
+                          key={listing.listing_id ?? listing.id}
+                          listing={listing}
+                          tagline={listing.seller_name}
+                          onFavorite={handleFavorite}
+                          isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                          onClick={() => handleListingClick(listing)}
+                        />
+                      ))}
+                      {recent.length > previewLimit && (
+                        <button
+                          type="button"
+                          className="user-home-more-card"
+                          onClick={() => setView('recentAll')}
+                        >
+                          <span className="user-home-more-title">More Recent Posts</span>
+                          <span className="user-home-more-subtitle">Browse all latest arrivals</span>
+                          <ChevronRight className="user-home-more-icon" />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </section>
