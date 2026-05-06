@@ -108,12 +108,29 @@ export async function getAllListings(filters = {}, sort = "newest"){
     }
 
     if(filters.search){
-        values.push(`%${filters.search}%`);
+        const rawSearch = String(filters.search).trim();
+        const normalizedSearch = rawSearch.toLowerCase();
+        const singularSearch = normalizedSearch.endsWith('s')
+            ? normalizedSearch.slice(0, -1)
+            : normalizedSearch;
+        const pluralSearch = singularSearch.endsWith('s')
+            ? singularSearch
+            : `${singularSearch}s`;
+
+        values.push(`%${rawSearch}%`);
         const searchIndex = values.length;
+        values.push(singularSearch);
+        const singularIndex = values.length;
+        values.push(pluralSearch);
+        const pluralIndex = values.length;
+
         whereClauses.push(`(
             l.title ILIKE $${searchIndex}
             OR l.description ILIKE $${searchIndex}
             OR l.brand ILIKE $${searchIndex}
+            OR l.category ILIKE $${searchIndex}
+            OR LOWER(TRIM(l.category)) = LOWER(TRIM($${singularIndex}))
+            OR LOWER(TRIM(l.category)) = LOWER(TRIM($${pluralIndex}))
         )`);
     }
 
