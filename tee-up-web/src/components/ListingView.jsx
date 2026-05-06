@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, Star, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, MapPin, Star, User } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -27,7 +27,7 @@ function normalizeListing(row) {
   };
 }
 
-export default function ListingView({ listingId, onBack, user, onSearch, onSell, onMessages, onMyListings, onNotifications, onViewAllNotifications, onNotificationClick, onOpenProfile, onLogout, onViewSellerProfile, onGoHome }) {
+export default function ListingView({ listingId, onBack, user, onSearch, onSell, onMessages, onMyListings, onNotifications, onViewAllNotifications, onNotificationClick, onOpenProfile, onLogout, onViewSellerProfile, onGoHome, onToggleFavorite, isFavorite }) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -267,7 +267,21 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
 
           {/* Info column */}
           <div className="listing-view-info">
-            <h1 className="listing-view-title">{listing.title || 'Untitled'}</h1>
+            <div className="listing-view-title-row">
+              <h1 className="listing-view-title">{listing.title || 'Untitled'}</h1>
+              {onToggleFavorite ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="listing-view-favorite-btn"
+                  onClick={onToggleFavorite}
+                  aria-label={isFavorite ? 'Remove from saved' : 'Save listing'}
+                >
+                  <Heart className={isFavorite ? 'fill-current' : ''} />
+                </Button>
+              ) : null}
+            </div>
             <PriceDisplay
               listing={listing}
               className="listing-view-price"

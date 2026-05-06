@@ -153,6 +153,17 @@
   margin: 0;
 }
 
+.listing-view-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+
+.listing-view-favorite-btn {
+  flex-shrink: 0;
+}
+
 .listing-view-price {
   font-size: var(--font-size-h3);
   font-weight: var(--font-weight-bold);

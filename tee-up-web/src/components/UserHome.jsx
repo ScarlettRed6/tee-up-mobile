@@ -783,6 +783,8 @@ function UserHome() {
             setSelectedProfileUserId(String(userId));
             setView('publicProfile');
           }}
+          onToggleFavorite={() => handleFavorite(selectedListingId)}
+          isFavorite={savedIds.has(String(selectedListingId))}
           onGoHome={handleGoHome}
         />
       ) : (
