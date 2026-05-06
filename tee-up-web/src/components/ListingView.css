@@ -285,6 +285,33 @@
   opacity: 0.95;
 }
 
+.listing-view-offer-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.listing-view-offer-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.listing-view-offer-input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  padding: 0 var(--spacing-md);
+  height: 44px;
+  background: var(--color-white);
+  color: var(--color-text-primary);
+}
+
+.listing-view-offer-error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: var(--font-size-small);
+}
+
 /* Product Reviews */
 .listing-view-reviews {
   margin-top: var(--spacing-3xl);

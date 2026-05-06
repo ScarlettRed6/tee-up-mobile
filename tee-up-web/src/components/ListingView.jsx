@@ -10,6 +10,7 @@ import { getListingById } from '../api/userListingsApi';
 import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
 import PriceDisplay from './PriceDisplay';
+import { buildOfferMessage } from '../utils/chatOffers';
 import './ListingView.css';
 
 function normalizeListing(row) {
@@ -34,6 +35,8 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
   const [sellerReviews, setSellerReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [offerAmount, setOfferAmount] = useState('');
+  const [offerError, setOfferError] = useState('');
 
   useEffect(() => {
     if (!listingId) return;
@@ -324,8 +327,43 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
                 });
               }}
             >
-              Make Offer / Message Seller
+              Chat with Seller
             </Button>
+            <div className="listing-view-offer-box">
+              <div className="listing-view-offer-row">
+                <input
+                  type="number"
+                  min="1"
+                  className="listing-view-offer-input"
+                  placeholder="Enter your offer amount"
+                  value={offerAmount}
+                  onChange={(e) => setOfferAmount(e.target.value)}
+                />
+                <Button
+                  size="lg"
+                  className="listing-view-make-offer"
+                  onClick={() => {
+                    setOfferError('');
+                    const payload = buildOfferMessage(offerAmount);
+                    if (!payload) {
+                      setOfferError('Please enter a valid offer amount.');
+                      return;
+                    }
+                    onMessages?.({
+                      sellerId: listing.user_id,
+                      listingId: listing.listing_id ?? listing.id,
+                      listingTitle: listing.title,
+                      intent: 'offer',
+                      offerRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      initialMessage: payload,
+                    });
+                  }}
+                >
+                  Make Offer
+                </Button>
+              </div>
+              {offerError ? <p className="listing-view-offer-error">{offerError}</p> : null}
+            </div>
           </div>
         </div>
 

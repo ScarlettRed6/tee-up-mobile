@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { getConversations, getMessages, findOrCreateConversation } from '../api/chatApi';
 import { getSocket } from '../utils/socketClient';
+import { parseOfferMessage, formatOfferMessage } from '../utils/chatOffers';
 import './MessagesPage.css';
 
 function normalizeConversation(conv) {
@@ -115,11 +116,13 @@ export default function MessagesPage({
           // ensure newest message surfaces for list; rely on backend sorting on reload for now
           return prev;
         });
-        if (convId !== selectedConversationId) return;
-        setMessages((prev) => [
-          ...prev,
-          normalizeMessage(payload, currentUserId),
-        ]);
+        if (String(convId) !== String(selectedConversationId)) return;
+        const normalizedIncoming = normalizeMessage(payload, currentUserId);
+        setMessages((prev) => {
+          const alreadyExists = prev.some((m) => String(m.id) === String(normalizedIncoming.id));
+          if (alreadyExists) return prev;
+          return [...prev, normalizedIncoming];
+        });
       });
     } catch (err) {
       console.error('Failed to init websocket for messages page', err);
@@ -131,6 +134,11 @@ export default function MessagesPage({
       }
     };
   }, [currentUserId, selectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversationId || !socketRef.current) return;
+    socketRef.current.emit('join_conversation', { conversationId: selectedConversationId });
+  }, [selectedConversationId]);
 
   useEffect(() => {
     if (!listingContext || !listingContext.sellerId || !listingContext.listingId) return;
@@ -186,16 +194,6 @@ export default function MessagesPage({
 
     setSending(true);
     let conversationId = activeConversation?.conversation_id ?? null;
-    let tempId = `temp-${Date.now()}`;
-    let optimistic = {
-      id: tempId,
-      text,
-      imageUrl: null,
-      sender: 'me',
-      timestamp: new Date().toISOString(),
-      senderName: user?.name ?? '',
-      senderAvatar: user?.profile_image ?? null,
-    };
 
     try {
       if (!conversationId) {
@@ -211,11 +209,11 @@ export default function MessagesPage({
         if (!conversationId) {
           throw new Error('Failed to create conversation');
         }
+        socketRef.current.emit('join_conversation', { conversationId });
         await loadConversations();
         setSelectedConversationId(conversationId);
       }
 
-      setMessages((prev) => [...prev, optimistic]);
       setMessageInput('');
 
       socketRef.current.emit('send_message', {
@@ -225,8 +223,6 @@ export default function MessagesPage({
       });
     } catch (err) {
       console.error('Failed to send message over websocket', err);
-      // roll back optimistic message
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setMessageInput(text);
     } finally {
       setSending(false);
@@ -401,7 +397,9 @@ export default function MessagesPage({
                               m.sender === 'me' ? 'messages-bubble-me' : 'messages-bubble-other'
                             }`}
                           >
-                            {m.text}
+                            {parseOfferMessage(m.text) != null
+                              ? formatOfferMessage(parseOfferMessage(m.text))
+                              : m.text}
                           </div>
                         </div>
                       ))}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getListings, getRecommendations, getFavorites, addFavorite, removeFavorite, getListingById } from '../api/userListingsApi';
 import { followUser, unfollowUser } from '../api/followerApi';
+import { findOrCreateConversation } from '../api/chatApi';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import ListingView from './ListingView';
@@ -18,6 +19,7 @@ import { ChevronRight } from 'lucide-react';
 import SearchResultsPage from './SearchResultsPage';
 import NotificationsPage from './NotificationsPage';
 import LogoutConfirmModal from './LogoutConfirmModal';
+import { getSocket } from '../utils/socketClient';
 import './UserHome.css';
 
 // Golf slideshow for logged-in hero (same style as landing)
@@ -61,6 +63,7 @@ function UserHome() {
   const recommendedPreview = recommended.slice(0, previewLimit);
   const latestArrivals = recent.slice(0, previewLimit);
   const isApplyingHistoryRef = useRef(false);
+  const sendingOfferRef = useRef(false);
 
   const getRouteState = useCallback(() => {
     if (selectedListingId != null) {
@@ -296,14 +299,54 @@ function UserHome() {
     setEditingListing(null);
   };
 
-  const handleMessages = (listingContext = null) => {
-    setInitialMessagesConversationId(null);
-    setMessagesListingContext(listingContext);
+  const handleMessages = useCallback(async (listingContext = null) => {
+    const hasOfferIntent = Boolean(listingContext?.initialMessage);
+
+    if (hasOfferIntent && !sendingOfferRef.current) {
+      sendingOfferRef.current = true;
+      try {
+        const conversation = await findOrCreateConversation(
+          listingContext.sellerId,
+          listingContext.listingId
+        );
+        const conversationId = conversation?.conversation_id ?? null;
+        if (conversationId) {
+          const socket = getSocket();
+          socket.emit('send_message', {
+            conversationId,
+            message: listingContext.initialMessage,
+            image_url: null,
+          });
+          setInitialMessagesConversationId(conversationId);
+        } else {
+          setInitialMessagesConversationId(null);
+        }
+        setMessagesListingContext({
+          sellerId: listingContext.sellerId,
+          listingId: listingContext.listingId,
+          listingTitle: listingContext.listingTitle,
+        });
+      } catch (err) {
+        console.error('Failed to send offer from listing', err);
+        setInitialMessagesConversationId(null);
+        setMessagesListingContext({
+          sellerId: listingContext.sellerId,
+          listingId: listingContext.listingId,
+          listingTitle: listingContext.listingTitle,
+        });
+      } finally {
+        sendingOfferRef.current = false;
+      }
+    } else {
+      setInitialMessagesConversationId(listingContext?.conversationId ?? null);
+      setMessagesListingContext(listingContext);
+    }
+
     setView('messages');
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
     setSelectedProfileUserId(null);
-  };
+  }, []);
 
   const handleMyListings = () => {
     setView('myListings');

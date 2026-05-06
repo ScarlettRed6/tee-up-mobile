@@ -7,8 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { getListingById, updateListingStatus, deleteListing } from '../api/userListingsApi';
+import { getConversations, getMessages } from '../api/chatApi';
 import { cn } from '@/lib/utils';
 import PriceDisplay from './PriceDisplay';
+import { parseOfferMessage } from '../utils/chatOffers';
 import './OwnerListingView.css';
 
 function normalizeListing(row) {
@@ -51,6 +53,8 @@ export default function OwnerListingView({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [actionLoading, setActionLoading] = useState(null);
   const [pendingConfirmAction, setPendingConfirmAction] = useState(null);
+  const [currentOffers, setCurrentOffers] = useState([]);
+  const [offersLoading, setOffersLoading] = useState(false);
 
   useEffect(() => {
     if (!listingId) return;
@@ -205,9 +209,47 @@ export default function OwnerListingView({
     return isNaN(num) ? '—' : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(num);
   };
 
-  const currentOffers = [
-    { id: '1', buyerName: 'Hockeyops', offerAmount: 7500, buyerImage: null },
-  ];
+  useEffect(() => {
+    const loadOffers = async () => {
+      if (!listing?.listing_id || !user?.id) {
+        setCurrentOffers([]);
+        return;
+      }
+      setOffersLoading(true);
+      try {
+        const data = await getConversations();
+        const listingConversations = (data?.conversations || []).filter(
+          (conv) =>
+            String(conv.listing_id) === String(listing.listing_id) &&
+            String(conv.seller_id) === String(user.id)
+        );
+
+        const offers = [];
+        for (const conv of listingConversations) {
+          const messagesRes = await getMessages(conv.conversation_id);
+          const messages = messagesRes?.messages || [];
+          const latestOffer = [...messages]
+            .reverse()
+            .find((m) => parseOfferMessage(m.message) != null);
+          if (!latestOffer) continue;
+          offers.push({
+            id: `${conv.conversation_id}-${latestOffer.id}`,
+            buyerName: conv.other_user_name || 'Buyer',
+            buyerImage: conv.other_user_profile_image || null,
+            offerAmount: parseOfferMessage(latestOffer.message),
+            conversationId: conv.conversation_id,
+          });
+        }
+        setCurrentOffers(offers);
+      } catch (err) {
+        setCurrentOffers([]);
+      } finally {
+        setOffersLoading(false);
+      }
+    };
+
+    loadOffers();
+  }, [listing?.listing_id, user?.id]);
 
   const openSoldConfirmation = () => setPendingConfirmAction(SOLD_CONFIRM_ACTION);
   const openAvailableConfirmation = () => setPendingConfirmAction(AVAILABLE_CONFIRM_ACTION);
@@ -346,7 +388,9 @@ export default function OwnerListingView({
             <section className="owner-listing-offers">
               <h2 className="owner-listing-section-title">Current Offers</h2>
               <div className="owner-listing-offers-list">
-                {currentOffers.length === 0 ? (
+                {offersLoading ? (
+                  <p className="owner-listing-offers-empty">Loading offers…</p>
+                ) : currentOffers.length === 0 ? (
                   <p className="owner-listing-offers-empty">No offers yet.</p>
                 ) : (
                   currentOffers.map((offer) => (
@@ -364,7 +408,10 @@ export default function OwnerListingView({
                           variant="secondary"
                           size="sm"
                           className="owner-listing-offer-btn"
-                          onClick={() => onReviewOffer?.(offer, listing)}
+                          onClick={() => {
+                            onReviewOffer?.(offer, listing);
+                            onMessages?.({ conversationId: offer.conversationId });
+                          }}
                         >
                           Review Offer
                         </Button>
