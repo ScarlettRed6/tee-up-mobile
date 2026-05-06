@@ -239,6 +239,15 @@
   margin: 0;
 }
 
+.owner-listing-price-original {
+  font-size: var(--font-size-body);
+}
+
+.owner-listing-price-current {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-bold);
+}
+
 .owner-listing-meta {
   font-size: var(--font-size-body-small);
   color: var(--color-text-muted);

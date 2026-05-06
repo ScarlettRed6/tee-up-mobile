@@ -8,6 +8,7 @@ import { Alert } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { getListingById } from '../api/userListingsApi';
 import { cn } from '@/lib/utils';
+import PriceDisplay from './PriceDisplay';
 import './ListingView.css';
 
 function normalizeListing(row) {
@@ -115,11 +116,6 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  const formatPrice = (p) => {
-    const num = Number(p);
-    return isNaN(num) ? '—' : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(num);
-  };
-
   const sellerName = listing.seller || 'Seller';
   const sellerRating = 4.9;
   const sellerReviewCount = 120;
@@ -224,7 +220,12 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
           {/* Info column */}
           <div className="listing-view-info">
             <h1 className="listing-view-title">{listing.title || 'Untitled'}</h1>
-            <p className="listing-view-price">{formatPrice(listing.price)}</p>
+            <PriceDisplay
+              listing={listing}
+              className="listing-view-price"
+              currentClassName="listing-view-price-current"
+              originalClassName="listing-view-price-original"
+            />
             <p className="listing-view-meta">
               <MapPin className="listing-view-meta-icon" aria-hidden />
               {listing.location || '—'} | Posted on {formatDate(listing.postedDate)}

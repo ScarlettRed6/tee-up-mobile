@@ -140,6 +140,15 @@
   letter-spacing: -0.01em;
 }
 
+.listing-card-price-original {
+  font-size: 0.875rem;
+}
+
+.listing-card-price-current {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
+}
+
 .listing-card-subtitle {
   font-size: var(--font-size-small);
   color: var(--color-text-muted);

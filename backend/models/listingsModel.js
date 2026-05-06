@@ -1,10 +1,25 @@
 import pool from "../config/db.js";
 
+let ensureOriginalPriceColumnPromise = null;
+
+async function ensureOriginalPriceColumn() {
+    if (!ensureOriginalPriceColumnPromise) {
+        ensureOriginalPriceColumnPromise = pool.query(
+            `ALTER TABLE listings ADD COLUMN IF NOT EXISTS original_price NUMERIC(10,2) NULL`
+        ).catch((err) => {
+            ensureOriginalPriceColumnPromise = null;
+            throw err;
+        });
+    }
+    await ensureOriginalPriceColumnPromise;
+}
+
 /**
  * Get distinct category values from listings (for filters/dropdowns).
  * Returns array of strings, sorted.
  */
 export async function getDistinctCategories() {
+  await ensureOriginalPriceColumn();
   const result = await pool.query(
     `SELECT DISTINCT TRIM(category) AS category
      FROM listings
@@ -16,9 +31,10 @@ export async function getDistinctCategories() {
 
 //Create a new listing
 export async function insertListing(user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location){
+   await ensureOriginalPriceColumn();
    const newListing = await pool.query(
-        `INSERT INTO listings (user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+        `INSERT INTO listings (user_id, title, description, category, brand, flex, hand, condition, price, original_price, status, photos, location)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, $10, $11, $12) RETURNING *`,
         [user_id, title, description, category, brand, flex, hand, condition, price, status, photos, location || null]
    );
    return newListing.rows[0];
@@ -26,6 +42,7 @@ export async function insertListing(user_id, title, description, category, brand
 
 //GETS
 export async function getAllListings(filters = {}, sort = "newest"){
+    await ensureOriginalPriceColumn();
     let query = `SELECT 
         l.*,
         u.name as seller_name,
@@ -128,6 +145,7 @@ export async function getAllListings(filters = {}, sort = "newest"){
 }
 
 export async function getListingById(id) {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(
         `SELECT 
             l.*,
@@ -155,16 +173,18 @@ export async function getListingById(id) {
 }
 
 //UPDATES
-export async function updateListing(id, title, description, category, brand, flex, hand, condition, price, status, photos, location) {
+export async function updateListing(id, title, description, category, brand, flex, hand, condition, price, original_price, status, photos, location) {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(
-        `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, flex = $5, hand = $6, condition = $7, price = $8, status = $9, photos = $10, location = $11
-        WHERE listing_id = $12 RETURNING *`,
-        [title, description, category, brand, flex, hand, condition, price, status, photos, location || null, id]
+        `UPDATE listings SET title = $1, description = $2, category = $3, brand = $4, flex = $5, hand = $6, condition = $7, price = $8, original_price = $9, status = $10, photos = $11, location = $12
+        WHERE listing_id = $13 RETURNING *`,
+        [title, description, category, brand, flex, hand, condition, price, original_price, status, photos, location || null, id]
     );
     return result.rows[0];
 }
 
 export async function updateListingStatus(listing_id, user_id, status) {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(
         `UPDATE listings SET status = $1
         WHERE listing_id = $2 AND user_id = $3
@@ -175,12 +195,14 @@ export async function updateListingStatus(listing_id, user_id, status) {
 
 //DELETES
 export async function deleteListing(id) {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(`DELETE FROM listings WHERE listing_id = $1 RETURNING *`, [id]);
     return result.rows[0];
 }
 
 //For recommendations
 export async function getAllListingsExceptOwn(userId) {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(
         `SELECT 
             l.*,
@@ -203,6 +225,7 @@ export async function getAllListingsExceptOwn(userId) {
 
 //ADMIN QUERIES
 export async function getAdminListingsQuery(search, category, condition, status, location){
+    await ensureOriginalPriceColumn();
     let query = 
         `SELECT l.*,
             u.name as seller_name, u.email as seller_email,
@@ -255,6 +278,7 @@ export async function getAdminListingsQuery(search, category, condition, status,
 }//End of getAdminListingsQuery method
 
 export async function adminUpdateListingStatusQuery(listingId, status) {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(
         `UPDATE listings SET status = $1 WHERE listing_id = $2 RETURNING *`,
         [status, listingId]
@@ -263,6 +287,7 @@ export async function adminUpdateListingStatusQuery(listingId, status) {
 }//End of adminUpdateListingStatusQuery
 
 export async function getListingCount() {
+    await ensureOriginalPriceColumn();
     const result = await pool.query(`SELECT COUNT(*) FROM listings`);
     return result.rows[0].count;
 }//End of getTotalListingCount query

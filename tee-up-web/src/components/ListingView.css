@@ -160,6 +160,15 @@
   margin: 0;
 }
 
+.listing-view-price-original {
+  font-size: var(--font-size-body);
+}
+
+.listing-view-price-current {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-bold);
+}
+
 .listing-view-meta {
   font-size: var(--font-size-body-small);
   color: var(--color-text-muted);

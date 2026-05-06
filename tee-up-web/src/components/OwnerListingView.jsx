@@ -8,6 +8,7 @@ import { Alert } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { getListingById, updateListingStatus, deleteListing } from '../api/userListingsApi';
 import { cn } from '@/lib/utils';
+import PriceDisplay from './PriceDisplay';
 import './OwnerListingView.css';
 
 function normalizeListing(row) {
@@ -377,7 +378,12 @@ export default function OwnerListingView({
 
           <div className="owner-listing-info">
             <h1 className="owner-listing-title">{listing.title || 'Untitled'}</h1>
-            <p className="owner-listing-price">{formatPrice(listing.price)}</p>
+            <PriceDisplay
+              listing={listing}
+              className="owner-listing-price"
+              currentClassName="owner-listing-price-current"
+              originalClassName="owner-listing-price-original"
+            />
             <p className="owner-listing-meta">
               <MapPin className="owner-listing-meta-icon" aria-hidden />
               {listing.location || '—'} | Posted on {formatDate(listing.postedDate)}

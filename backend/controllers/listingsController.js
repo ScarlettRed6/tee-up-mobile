@@ -212,19 +212,49 @@ export async function updateListingItem(req, res) {
             }
         }
 
-        const updatedListing = await updateListing(id, title, description, category, brand, flex, hand, condition, price, status, photosUrls, location);
-        
-        // Ensure photos are parsed correctly
-        if (updatedListing.photos && typeof updatedListing.photos === 'string') {
-            try {
-                updatedListing.photos = JSON.parse(updatedListing.photos);
-            } catch (e) {
-                console.error("Error parsing photos:", e);
-                updatedListing.photos = [];
+        const nextPrice = Number(price);
+        const currentPrice = Number(listing.price);
+        const currentOriginalPrice = Number(listing.original_price);
+        let nextOriginalPrice = null;
+
+        if (Number.isFinite(nextPrice)) {
+            if (Number.isFinite(currentPrice) && nextPrice < currentPrice) {
+                // First markdown keeps previous price; later markdowns keep the highest old "was" value.
+                nextOriginalPrice = Number.isFinite(currentOriginalPrice)
+                    ? Math.max(currentOriginalPrice, currentPrice)
+                    : currentPrice;
+            } else if (Number.isFinite(currentOriginalPrice) && nextPrice < currentOriginalPrice) {
+                nextOriginalPrice = currentOriginalPrice;
             }
         }
 
-        res.status(200).json({ message: "Listing updated successfully!",  listing: updatedListing});
+        const updatedListingWithOriginal = await updateListing(
+            id,
+            title,
+            description,
+            category,
+            brand,
+            flex,
+            hand,
+            condition,
+            price,
+            nextOriginalPrice,
+            status,
+            photosUrls,
+            location
+        );
+        
+        // Ensure photos are parsed correctly
+        if (updatedListingWithOriginal.photos && typeof updatedListingWithOriginal.photos === 'string') {
+            try {
+                updatedListingWithOriginal.photos = JSON.parse(updatedListingWithOriginal.photos);
+            } catch (e) {
+                console.error("Error parsing photos:", e);
+                updatedListingWithOriginal.photos = [];
+            }
+        }
+
+        res.status(200).json({ message: "Listing updated successfully!",  listing: updatedListingWithOriginal});
     }catch(err){
         res.status(500).json({ error: err.message });
     }

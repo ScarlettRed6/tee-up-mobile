@@ -4,13 +4,12 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Heart, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PriceDisplay from './PriceDisplay';
 import './ListingCard.css';
 
 function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, variant }) {
   const photos = Array.isArray(listing.photos) ? listing.photos : (listing.photos ? JSON.parse(listing.photos || '[]') : []);
   const imageUrl = photos[0] || null;
-  const price = listing.price != null ? Number(listing.price) : 0;
-  const formattedPrice = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2 }).format(price);
   const subtitle = listing.seller_name || tagline || listing.brand || '';
 
   const handleClick = () => {
@@ -57,7 +56,13 @@ function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, varian
       </CardHeader>
       <CardContent className="listing-card-body">
         <h3 className="listing-card-title">{listing.title || 'Untitled'}</h3>
-        <p className="listing-card-price">{formattedPrice}</p>
+        <PriceDisplay
+          listing={listing}
+          minimumFractionDigits={2}
+          className="listing-card-price"
+          currentClassName="listing-card-price-current"
+          originalClassName="listing-card-price-original"
+        />
         {subtitle && (
           <p className="listing-card-subtitle">
             <span className="listing-card-dot" aria-hidden="true" />

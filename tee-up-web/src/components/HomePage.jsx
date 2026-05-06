@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import Logo from './Logo';
 import { ChevronRight } from 'lucide-react';
 import { getListings } from '../api/userListingsApi';
+import PriceDisplay from './PriceDisplay';
 import './HomePage.css';
 
 // Golf scenery for hero slideshow – only URLs that load reliably (full Unsplash photo-id-hash format)
@@ -172,12 +173,6 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
             ) : (
               trendingItems.map((item) => {
                 const imageUrl = item.photos?.[0] || null;
-                const price = item.price != null ? Number(item.price) : 0;
-                const formattedPrice = new Intl.NumberFormat('en-PH', {
-                  style: 'currency',
-                  currency: 'PHP',
-                  minimumFractionDigits: 0,
-                }).format(price);
                 return (
                   <article key={item.id} className="home-product-card">
                     <div className="home-product-image">
@@ -192,7 +187,12 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
                     </div>
                     <div className="home-product-info">
                       <h3 className="home-product-title">{item.title || 'Untitled listing'}</h3>
-                      <p className="home-product-price">{formattedPrice}</p>
+                      <PriceDisplay
+                        listing={item}
+                        className="home-product-price"
+                        currentClassName="home-product-price-current"
+                        originalClassName="home-product-price-original"
+                      />
                       <p className="home-product-merchant">
                         <span className="home-product-merchant-dot" />
                         {item.seller_name || 'Marketplace seller'}

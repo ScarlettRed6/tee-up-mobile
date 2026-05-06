@@ -1,0 +1,16 @@
+.price-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.price-display-original {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  font-weight: var(--font-weight-medium);
+}
+
+.price-display-current {
+  color: inherit;
+}

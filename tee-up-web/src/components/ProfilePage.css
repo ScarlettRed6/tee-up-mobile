@@ -266,6 +266,15 @@
   margin: 0 0 var(--spacing-md);
 }
 
+.profile-listing-price-original {
+  font-size: var(--font-size-small);
+}
+
+.profile-listing-price-current {
+  font-size: var(--font-size-body-small);
+  font-weight: var(--font-weight-bold);
+}
+
 .profile-listing-view-btn {
   width: 100%;
 }

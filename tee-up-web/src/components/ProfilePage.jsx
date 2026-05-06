@@ -10,6 +10,7 @@ import { Label } from './ui/label';
 import ListingSearchFilters from './ListingSearchFilters';
 import { getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
+import PriceDisplay from './PriceDisplay';
 import './ProfilePage.css';
 
 const TABS = [
@@ -359,8 +360,6 @@ export default function ProfilePage({
                   myListings.map((listing) => {
                     const photos = listing.photos ?? [];
                     const imageUrl = photos[0] || null;
-                    const price = listing.price != null ? Number(listing.price) : 0;
-                    const formattedPrice = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(price);
                     return (
                       <div key={listing.listing_id ?? listing.id} className="profile-listing-card">
                         <div className="profile-listing-image-wrap">
@@ -374,7 +373,12 @@ export default function ProfilePage({
                         </div>
                         <div className="profile-listing-body">
                           <h3 className="profile-listing-title">{listing.title || 'Untitled'}</h3>
-                          <p className="profile-listing-price">{formattedPrice}</p>
+                          <PriceDisplay
+                            listing={listing}
+                            className="profile-listing-price"
+                            currentClassName="profile-listing-price-current"
+                            originalClassName="profile-listing-price-original"
+                          />
                           <Button
                             variant="secondary"
                             size="sm"
@@ -407,12 +411,6 @@ export default function ProfilePage({
                     {savedItems.map((listing) => {
                       const photos = listing.photos ?? [];
                       const imageUrl = photos[0] || null;
-                      const price = listing.price != null ? Number(listing.price) : 0;
-                      const formattedPrice = new Intl.NumberFormat('en-PH', {
-                        style: 'currency',
-                        currency: 'PHP',
-                        minimumFractionDigits: 0,
-                      }).format(price);
                       return (
                         <div key={listing.listing_id ?? listing.id} className="profile-listing-card">
                           <div className="profile-listing-image-wrap">
@@ -426,7 +424,12 @@ export default function ProfilePage({
                           </div>
                           <div className="profile-listing-body">
                             <h3 className="profile-listing-title">{listing.title || 'Untitled'}</h3>
-                            <p className="profile-listing-price">{formattedPrice}</p>
+                            <PriceDisplay
+                              listing={listing}
+                              className="profile-listing-price"
+                              currentClassName="profile-listing-price-current"
+                              originalClassName="profile-listing-price-original"
+                            />
                             <Button
                               variant="secondary"
                               size="sm"

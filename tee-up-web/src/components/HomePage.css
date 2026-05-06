@@ -314,6 +314,15 @@
   letter-spacing: -0.01em;
 }
 
+.home-product-price-original {
+  font-size: var(--font-size-small);
+}
+
+.home-product-price-current {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
+}
+
 .home-product-merchant {
   font-size: var(--font-size-small);
   color: var(--color-text-muted);
