@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getAllReports, reviewReport } from '../api/reportsApi';
 import './Reports.css';
+import PageLoadingSkeleton from './PageLoadingSkeleton';
 
 function Reports() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -246,16 +247,7 @@ function Reports() {
   if (loading) {
     return (
       <div className="reports-page">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '400px',
-          fontSize: '16px',
-          color: '#666'
-        }}>
-          Loading reports...
-        </div>
+        <PageLoadingSkeleton titleWidth="w-56" subtitleWidth="w-72" rows={6} />
       </div>
     );
   }

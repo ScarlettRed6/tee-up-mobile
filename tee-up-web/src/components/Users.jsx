@@ -3,6 +3,7 @@ import './Users.css';
 import { getAllUsers, suspendUser, unsuspendUser, deleteUser, getUserById, updateUser, getSuspensionLogs } from '../api/usersApi';
 import { createAdmin } from '../api/adminApi';
 import { useAuth } from '../context/AuthContext';
+import PageLoadingSkeleton from './PageLoadingSkeleton';
 
 function Users() {
   const { user: currentUser } = useAuth();
@@ -613,16 +614,7 @@ function Users() {
   if (loading) {
     return (
       <div className="users-page">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '400px',
-          fontSize: '16px',
-          color: '#666'
-        }}>
-          Loading users...
-        </div>
+        <PageLoadingSkeleton titleWidth="w-56" subtitleWidth="w-72" rows={7} />
       </div>
     );
   }

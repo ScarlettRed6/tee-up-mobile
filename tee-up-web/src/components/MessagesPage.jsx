@@ -133,19 +133,16 @@ export default function MessagesPage({
   }, [currentUserId, selectedConversationId]);
 
   useEffect(() => {
-    const startFromListing = async () => {
-      if (!listingContext || !listingContext.sellerId || !listingContext.listingId) return;
-      try {
-        const conv = await findOrCreateConversation(listingContext.sellerId, listingContext.listingId);
-        const normalized = normalizeConversation(conv);
-        setSelectedConversationId(normalized.conversation_id);
-        await loadConversations();
-      } catch (err) {
-        console.error('Failed to start conversation from listing', err);
-      }
-    };
-    startFromListing();
-  }, [listingContext, loadConversations]);
+    if (!listingContext || !listingContext.sellerId || !listingContext.listingId) return;
+    const existingConversation = conversations.find(
+      (conv) =>
+        String(conv.otherUserId) === String(listingContext.sellerId) &&
+        String(conv.listingId) === String(listingContext.listingId)
+    );
+    if (existingConversation) {
+      setSelectedConversationId(existingConversation.conversation_id);
+    }
+  }, [listingContext, conversations]);
 
   const loadMessages = useCallback(
     async (conversationId) => {
@@ -185,11 +182,12 @@ export default function MessagesPage({
 
   const handleSend = async () => {
     const text = messageInput.trim();
-    if (!text || !activeConversation || !socketRef.current || sending) return;
+    if (!text || !socketRef.current || sending) return;
 
     setSending(true);
-    const tempId = `temp-${Date.now()}`;
-    const optimistic = {
+    let conversationId = activeConversation?.conversation_id ?? null;
+    let tempId = `temp-${Date.now()}`;
+    let optimistic = {
       id: tempId,
       text,
       imageUrl: null,
@@ -198,12 +196,30 @@ export default function MessagesPage({
       senderName: user?.name ?? '',
       senderAvatar: user?.profile_image ?? null,
     };
-    setMessages((prev) => [...prev, optimistic]);
-    setMessageInput('');
 
     try {
+      if (!conversationId) {
+        if (!listingContext?.sellerId || !listingContext?.listingId) {
+          setSending(false);
+          return;
+        }
+        const conversation = await findOrCreateConversation(
+          listingContext.sellerId,
+          listingContext.listingId
+        );
+        conversationId = conversation?.conversation_id ?? null;
+        if (!conversationId) {
+          throw new Error('Failed to create conversation');
+        }
+        await loadConversations();
+        setSelectedConversationId(conversationId);
+      }
+
+      setMessages((prev) => [...prev, optimistic]);
+      setMessageInput('');
+
       socketRef.current.emit('send_message', {
-        conversationId: activeConversation.conversation_id,
+        conversationId,
         message: text,
         image_url: null,
       });
@@ -295,7 +311,11 @@ export default function MessagesPage({
           <section className="messages-thread">
             {!activeConversation ? (
               <div className="messages-thread-empty">
-                <p>Select a conversation on the left to start chatting.</p>
+                {listingContext?.listingId ? (
+                  <p>Type a message below to start a conversation for this listing.</p>
+                ) : (
+                  <p>Select a conversation on the left to start chatting.</p>
+                )}
               </div>
             ) : (
               <>
@@ -389,29 +409,31 @@ export default function MessagesPage({
                   )}
                 </div>
 
-                <footer className="messages-thread-input">
-                  <Input
-                    type="text"
-                    placeholder="Type your message…"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    className="messages-thread-input-field"
-                  />
-                  <Button
-                    size="sm"
-                    disabled={!messageInput.trim() || sending}
-                    onClick={handleSend}
-                  >
-                    Send
-                  </Button>
-                </footer>
               </>
+            )}
+            {(activeConversation || listingContext?.listingId) && (
+              <footer className="messages-thread-input">
+                <Input
+                  type="text"
+                  placeholder="Type your message…"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  className="messages-thread-input-field"
+                />
+                <Button
+                  size="sm"
+                  disabled={!messageInput.trim() || sending}
+                  onClick={handleSend}
+                >
+                  Send
+                </Button>
+              </footer>
             )}
           </section>
         </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import './Listings.css';
 import ListingDetailModal from './ListingDetailModal';
 import { getAdminListings, getAdminListingById, updateAdminListingStatus, deleteAdminListing } from '../api/listingsApi';
+import PageLoadingSkeleton from './PageLoadingSkeleton';
 
 // Normalize backend listing row to UI shape (id, seller, postedDate, saves, images, etc.)
 function normalizeListing(row) {
@@ -257,12 +258,7 @@ function Listings() {
   if (loading) {
     return (
       <div className="listings-page">
-        <div className="listings-header">
-          <h1 className="page-title">Listings Management</h1>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400, color: 'var(--color-text-muted)' }}>
-          Loading listings…
-        </div>
+        <PageLoadingSkeleton titleWidth="w-64" subtitleWidth="w-80" rows={7} />
       </div>
     );
   }

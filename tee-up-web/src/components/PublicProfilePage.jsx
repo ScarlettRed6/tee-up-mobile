@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Star, User, MessageCircle, UserPlus, ChevronLeft } from 'lucide-react';
+import { Star, User, UserPlus, ChevronLeft } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert } from './ui/alert';
 import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { getListings } from '../api/userListingsApi';
+import { getFollowStatus } from '../api/followerApi';
 import ListingSearchFilters from './ListingSearchFilters';
 import PriceDisplay from './PriceDisplay';
 import { cn } from '@/lib/utils';
@@ -48,7 +49,6 @@ export default function PublicProfilePage({
   onNotificationClick,
   onOpenProfile,
   onLogout,
-  onMessageUser,
   onFollowUser,
   onViewListing,
   onGoHome,
@@ -59,6 +59,8 @@ export default function PublicProfilePage({
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('listings');
   const [following, setFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [actionError, setActionError] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [listingsSearch, setListingsSearch] = useState('');
@@ -102,9 +104,34 @@ export default function PublicProfilePage({
       .finally(() => setReviewsLoading(false));
   }, [profileUserId, activeTab]);
 
-  const handleFollow = () => {
-    setFollowing((prev) => !prev);
-    onFollowUser?.(profileUserId, !following);
+  useEffect(() => {
+    if (!profileUserId || !currentUser?.id) return;
+    let cancelled = false;
+    getFollowStatus(profileUserId)
+      .then((res) => {
+        if (!cancelled) setFollowing(Boolean(res?.isFollowing));
+      })
+      .catch(() => {
+        if (!cancelled) setFollowing(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileUserId, currentUser?.id]);
+
+  const handleFollow = async () => {
+    if (followLoading) return;
+    setActionError(null);
+    const nextFollowing = !following;
+    setFollowLoading(true);
+    try {
+      await onFollowUser?.(profileUserId, nextFollowing);
+      setFollowing(nextFollowing);
+    } catch (err) {
+      setActionError(err?.message ?? 'Failed to update follow status.');
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   if (!profileUserId) return null;
@@ -127,6 +154,7 @@ export default function PublicProfilePage({
         />
         <main className="profile-page-main">
           <div className="profile-page-container">
+            {actionError ? <Alert variant="destructive">{actionError}</Alert> : null}
             {onBack && (
               <Button variant="ghost" size="sm" className="profile-back-link" onClick={onBack}>
                 <ChevronLeft className="h-4 w-4" /> Back
@@ -189,22 +217,14 @@ export default function PublicProfilePage({
               </div>
               <div className="profile-hero-actions public-profile-actions">
                 <Button
-                  variant="outline"
-                  size="default"
-                  className="profile-hero-btn"
-                  onClick={() => onMessageUser?.(profileUserId)}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Message
-                </Button>
-                <Button
                   variant={following ? 'secondary' : 'outline'}
                   size="default"
                   className="profile-hero-btn"
                   onClick={handleFollow}
+                  disabled={followLoading}
                 >
                   <UserPlus className="h-4 w-4" />
-                  {following ? 'Following' : 'Follow'}
+                  {followLoading ? 'Please wait…' : following ? 'Following' : 'Follow'}
                 </Button>
               </div>
             </div>

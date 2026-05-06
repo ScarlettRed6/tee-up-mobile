@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 import { getListingById } from '../api/userListingsApi';
+import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
 import PriceDisplay from './PriceDisplay';
 import './ListingView.css';
@@ -29,6 +30,9 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sellerStats, setSellerStats] = useState({ rating: null, totalRatings: 0 });
+  const [sellerReviews, setSellerReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -43,6 +47,49 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
       .catch((err) => setError(err?.message ?? 'Failed to load listing'))
       .finally(() => setLoading(false));
   }, [listingId]);
+
+  useEffect(() => {
+    if (!listing?.user_id) {
+      setSellerStats({ rating: null, totalRatings: 0 });
+      setSellerReviews([]);
+      return;
+    }
+
+    let cancelled = false;
+    setReviewsLoading(true);
+    getPublicUserProfile(listing.user_id)
+      .then((profile) => {
+        if (cancelled) return;
+        const ratingValue = Number(profile?.rating);
+        const totalRatingsValue = Number(profile?.total_ratings);
+        setSellerStats({
+          rating: Number.isFinite(ratingValue) ? ratingValue : null,
+          totalRatings: Number.isFinite(totalRatingsValue) ? totalRatingsValue : 0,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSellerStats({ rating: null, totalRatings: 0 });
+        }
+      });
+
+    getUserRatings(listing.user_id)
+      .then((ratings) => {
+        if (!cancelled) {
+          setSellerReviews(Array.isArray(ratings) ? ratings : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSellerReviews([]);
+      })
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [listing?.user_id]);
 
   if (!listingId) return null;
 
@@ -117,11 +164,9 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
   };
 
   const sellerName = listing.seller || 'Seller';
-  const sellerRating = 4.9;
-  const sellerReviewCount = 120;
-  const reviews = [
-    { id: 1, text: 'Loved it! The seller is very trustworthy and the product was exactly as described.', reviewer: { name: 'Hockeyops' } },
-  ];
+  const sellerRatingText = sellerStats.rating == null ? 'New' : sellerStats.rating.toFixed(1);
+  const sellerReviewCount = sellerStats.totalRatings;
+  const reviews = sellerReviews.slice(0, 6);
 
   return (
     <div className="listing-view" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -254,7 +299,7 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
                   <div className="listing-view-seller-name">{sellerName}</div>
                   <div className="listing-view-seller-rating">
                     <Star className="listing-view-star" aria-hidden />
-                    {sellerRating} ({sellerReviewCount})
+                    {sellerRatingText} ({sellerReviewCount})
                   </div>
                 </div>
                 <Button
@@ -268,8 +313,18 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
               </CardContent>
             </Card>
 
-            <Button className="listing-view-make-offer" size="lg" onClick={() => { /* TODO: open make offer / message */ }}>
-              Make Offer
+            <Button
+              className="listing-view-make-offer"
+              size="lg"
+              onClick={() => {
+                onMessages?.({
+                  sellerId: listing.user_id,
+                  listingId: listing.listing_id ?? listing.id,
+                  listingTitle: listing.title,
+                });
+              }}
+            >
+              Make Offer / Message Seller
             </Button>
           </div>
         </div>
@@ -278,18 +333,23 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
         <section className="listing-view-reviews">
           <h2 className="listing-view-section-title">Product Reviews</h2>
           <div className="listing-view-reviews-list">
-            {reviews.length === 0 ? (
+            {reviewsLoading ? (
+              <p className="listing-view-reviews-empty">Loading reviews…</p>
+            ) : reviews.length === 0 ? (
               <p className="listing-view-reviews-empty">No reviews yet.</p>
             ) : (
-              reviews.map((review) => (
-                <Card key={review.id} className="listing-view-review-card">
+              reviews.map((review, idx) => (
+                <Card key={`${review.created_at || idx}-${idx}`} className="listing-view-review-card">
                   <CardContent className="listing-view-review-content">
-                    <p className="listing-view-review-text">{review.text}</p>
+                    <p className="listing-view-review-text">
+                      {review.review?.trim() ? review.review : 'No written review provided.'}
+                    </p>
                     <div className="listing-view-reviewer">
                       <Avatar className="listing-view-reviewer-avatar">
+                        <AvatarImage src={review.reviewer_profile_image} alt={review.reviewer_name || 'Reviewer'} />
                         <AvatarFallback><User className="h-3 w-3" /></AvatarFallback>
                       </Avatar>
-                      <span className="listing-view-reviewer-name">{review.reviewer?.name ?? '—'}</span>
+                      <span className="listing-view-reviewer-name">{review.reviewer_name || `Buyer ${idx + 1}`}</span>
                     </div>
                   </CardContent>
                 </Card>

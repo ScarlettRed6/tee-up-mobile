@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getListings, getRecommendations, getFavorites, addFavorite, removeFavorite, getListingById } from '../api/userListingsApi';
+import { followUser, unfollowUser } from '../api/followerApi';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import ListingView from './ListingView';
@@ -59,6 +60,97 @@ function UserHome() {
   const previewLimit = 10;
   const recommendedPreview = recommended.slice(0, previewLimit);
   const latestArrivals = recent.slice(0, previewLimit);
+  const isApplyingHistoryRef = useRef(false);
+
+  const getRouteState = useCallback(() => {
+    if (selectedListingId != null) {
+      return { route: 'listing', listingId: String(selectedListingId) };
+    }
+    if (view === 'ownerListing' && selectedOwnerListingId != null) {
+      return {
+        route: 'ownerListing',
+        listingId: String(selectedOwnerListingId),
+        from: ownerListingFromView,
+      };
+    }
+    if (view === 'publicProfile' && selectedProfileUserId != null) {
+      return { route: 'publicProfile', userId: String(selectedProfileUserId) };
+    }
+    if (view === 'search' && searchQuery) {
+      return { route: 'search', query: searchQuery };
+    }
+    return { route: view };
+  }, [
+    selectedListingId,
+    view,
+    selectedOwnerListingId,
+    ownerListingFromView,
+    selectedProfileUserId,
+    searchQuery,
+  ]);
+
+  const applyRouteState = useCallback((routeState) => {
+    const route = routeState?.route || 'feed';
+    isApplyingHistoryRef.current = true;
+
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
+    setInitialMessagesConversationId(null);
+
+    if (route === 'listing' && routeState?.listingId) {
+      setView('feed');
+      setSelectedListingId(String(routeState.listingId));
+      return;
+    }
+    if (route === 'ownerListing' && routeState?.listingId) {
+      setView('ownerListing');
+      setSelectedOwnerListingId(String(routeState.listingId));
+      setOwnerListingFromView(routeState.from || 'feed');
+      return;
+    }
+    if (route === 'publicProfile' && routeState?.userId) {
+      setView('publicProfile');
+      setSelectedProfileUserId(String(routeState.userId));
+      return;
+    }
+    if (route === 'search' && routeState?.query) {
+      setSearchQuery(String(routeState.query));
+      setView('search');
+      return;
+    }
+
+    setView(route);
+    if (route === 'feed') {
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchError(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onPopState = (event) => {
+      const routeState = event.state?.userHomeRoute;
+      if (routeState) {
+        applyRouteState(routeState);
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    window.history.replaceState({ userHomeRoute: getRouteState() }, '');
+
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, [applyRouteState, getRouteState]);
+
+  useEffect(() => {
+    if (isApplyingHistoryRef.current) {
+      isApplyingHistoryRef.current = false;
+      return;
+    }
+    window.history.pushState({ userHomeRoute: getRouteState() }, '');
+  }, [getRouteState]);
 
   useEffect(() => {
     HERO_SLIDES.forEach((src) => { const img = new Image(); img.src = src; });
@@ -204,8 +296,9 @@ function UserHome() {
     setEditingListing(null);
   };
 
-  const handleMessages = () => {
+  const handleMessages = (listingContext = null) => {
     setInitialMessagesConversationId(null);
+    setMessagesListingContext(listingContext);
     setView('messages');
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
@@ -262,6 +355,7 @@ function UserHome() {
 
   const handleOpenMessages = (conversationId) => {
     if (conversationId) setInitialMessagesConversationId(conversationId);
+    setMessagesListingContext(null);
     setView('messages');
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
@@ -297,6 +391,8 @@ function UserHome() {
     setSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
+    setMessagesListingContext(null);
+    setInitialMessagesConversationId(null);
     setSearchFilters({
       category: null,
       condition: null,
@@ -345,6 +441,15 @@ function UserHome() {
     [recent, recommended, saved, searchResults, handleListingClick]
   );
 
+  const handlePublicProfileFollowUser = useCallback(async (targetUserId, shouldFollow) => {
+    if (!targetUserId) return;
+    if (shouldFollow) {
+      await followUser(targetUserId);
+      return;
+    }
+    await unfollowUser(targetUserId);
+  }, []);
+
   return (
     <div className="user-home" style={{ backgroundColor: 'var(--color-background)' }}>
       {view === 'profile' ? (
@@ -384,6 +489,7 @@ function UserHome() {
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
+          onFollowUser={handlePublicProfileFollowUser}
           onViewListing={(id) => {
             setSelectedListingId(String(id));
             setView('feed');
