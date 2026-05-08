@@ -108,6 +108,58 @@ export default function OwnerListingView({
     }
   };
 
+  const formatDate = (d) => {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  const formatPrice = (p) => {
+    const num = Number(p);
+    return isNaN(num) ? '—' : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(num);
+  };
+
+  useEffect(() => {
+    const loadOffers = async () => {
+      if (!listing?.listing_id || !user?.id) {
+        setCurrentOffers([]);
+        return;
+      }
+      setOffersLoading(true);
+      try {
+        const data = await getConversations();
+        const listingConversations = (data?.conversations || []).filter(
+          (conv) =>
+            String(conv.listing_id) === String(listing.listing_id) &&
+            String(conv.seller_id) === String(user.id)
+        );
+
+        const offers = [];
+        for (const conv of listingConversations) {
+          const messagesRes = await getMessages(conv.conversation_id);
+          const messages = messagesRes?.messages || [];
+          const latestOffer = [...messages]
+            .reverse()
+            .find((m) => parseOfferMessage(m.message) != null);
+          if (!latestOffer) continue;
+          offers.push({
+            id: `${conv.conversation_id}-${latestOffer.id}`,
+            buyerName: conv.other_user_name || 'Buyer',
+            buyerImage: conv.other_user_profile_image || null,
+            offerAmount: parseOfferMessage(latestOffer.message),
+            conversationId: conv.conversation_id,
+          });
+        }
+        setCurrentOffers(offers);
+      } catch (err) {
+        setCurrentOffers([]);
+      } finally {
+        setOffersLoading(false);
+      }
+    };
+
+    loadOffers();
+  }, [listing?.listing_id, user?.id]);
+
   if (!listingId) return null;
 
   if (loading) {
@@ -199,57 +251,6 @@ export default function OwnerListingView({
   const currentImageUrl = images[currentImageIndex];
   const hasMultiple = images.length > 1;
 
-  const formatDate = (d) => {
-    if (!d) return '';
-    return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  };
-
-  const formatPrice = (p) => {
-    const num = Number(p);
-    return isNaN(num) ? '—' : new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(num);
-  };
-
-  useEffect(() => {
-    const loadOffers = async () => {
-      if (!listing?.listing_id || !user?.id) {
-        setCurrentOffers([]);
-        return;
-      }
-      setOffersLoading(true);
-      try {
-        const data = await getConversations();
-        const listingConversations = (data?.conversations || []).filter(
-          (conv) =>
-            String(conv.listing_id) === String(listing.listing_id) &&
-            String(conv.seller_id) === String(user.id)
-        );
-
-        const offers = [];
-        for (const conv of listingConversations) {
-          const messagesRes = await getMessages(conv.conversation_id);
-          const messages = messagesRes?.messages || [];
-          const latestOffer = [...messages]
-            .reverse()
-            .find((m) => parseOfferMessage(m.message) != null);
-          if (!latestOffer) continue;
-          offers.push({
-            id: `${conv.conversation_id}-${latestOffer.id}`,
-            buyerName: conv.other_user_name || 'Buyer',
-            buyerImage: conv.other_user_profile_image || null,
-            offerAmount: parseOfferMessage(latestOffer.message),
-            conversationId: conv.conversation_id,
-          });
-        }
-        setCurrentOffers(offers);
-      } catch (err) {
-        setCurrentOffers([]);
-      } finally {
-        setOffersLoading(false);
-      }
-    };
-
-    loadOffers();
-  }, [listing?.listing_id, user?.id]);
 
   const openSoldConfirmation = () => setPendingConfirmAction(SOLD_CONFIRM_ACTION);
   const openAvailableConfirmation = () => setPendingConfirmAction(AVAILABLE_CONFIRM_ACTION);

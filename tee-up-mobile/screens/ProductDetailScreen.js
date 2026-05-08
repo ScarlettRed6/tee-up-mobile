@@ -7,6 +7,7 @@ import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { fetchListingById } from '../api/listingsApi';
+import { extractPhotos } from '../utils/categoryUtils';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { findConversation } from '../api/chatApi';
 import { authContext } from '../context/authContext';
@@ -27,11 +28,32 @@ export default function ProductDetailScreen({ navigation, route }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const routeProduct = route?.params?.product;
+  const routeListingId = route?.params?.listingId || route?.params?.listing_id || route?.params?.id;
   const [sellerRatingSummary, setSellerRatingSummary] = useState({ average_rating: '0.00', total_raters: 0 });
   const [sellerRecentRatings, setSellerRecentRatings] = useState([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const { isFavorite, toggleFavorite, pendingActions } = useContext(favoritesContext);
   
+  const getPhotoUri = (photo) => {
+    if (!photo) return null;
+    if (typeof photo === 'string') return photo;
+    if (typeof photo === 'object') {
+      return photo.uri || photo.url || photo.secure_url || photo.path || null;
+    }
+    return null;
+  };
+
+  const normalizeImages = (photos) => {
+    const extracted = extractPhotos(photos);
+    if (!extracted || extracted.length === 0) {
+      return [{ id: 1, uri: null }];
+    }
+    return extracted.map((photo, index) => ({
+      id: index + 1,
+      uri: getPhotoUri(photo),
+    }));
+  };
+
   // Get current user ID from token
   const getCurrentUserId = () => {
     if (!accessToken) return null;
@@ -77,18 +99,16 @@ export default function ProductDetailScreen({ navigation, route }) {
             reviewCount: Number(routeProduct.seller_review_count || 0),
           },
           seller_name: routeProduct.seller_name,
-          images: routeProduct.photos && Array.isArray(routeProduct.photos) && routeProduct.photos.length > 0
-            ? routeProduct.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
-            : [{ id: 1, uri: null }], // Default placeholder
+          images: normalizeImages(routeProduct.photos),
           reviews: [], // TODO: Fetch reviews from API
         };
         setProduct(transformedProduct);
         fetchSellerRatings(transformedProduct.user_id);
         setLoading(false);
-      } else if (route?.params?.listingId) {
+      } else if (routeListingId) {
         // If only ID is passed, fetch from API
         try {
-          const listingData = await fetchListingById(route.params.listingId);
+          const listingData = await fetchListingById(routeListingId);
           const transformedProduct = {
             id: listingData.listing_id,
             listing_id: listingData.listing_id,
@@ -117,9 +137,7 @@ export default function ProductDetailScreen({ navigation, route }) {
               reviewCount: Number(listingData.seller_review_count || 0),
             },
             seller_name: listingData.seller_name,
-            images: listingData.photos && Array.isArray(listingData.photos) && listingData.photos.length > 0
-              ? listingData.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
-              : [{ id: 1, uri: null }],
+            images: normalizeImages(listingData.photos),
             reviews: [],
           };
           setProduct(transformedProduct);
@@ -156,7 +174,7 @@ export default function ProductDetailScreen({ navigation, route }) {
     };
 
     loadProduct();
-  }, [routeProduct, route?.params?.listingId]);
+  }, [routeProduct, routeListingId]);
 
   const fetchSellerRatings = async (sellerId) => {
     if (!sellerId) return;
