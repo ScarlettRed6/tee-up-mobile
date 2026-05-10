@@ -190,7 +190,7 @@ function HomePage({
                         originalClassName="home-product-price-original"
                       />
                       <p className="home-product-merchant">
-                        <Avatar className="home-product-merchant-avatar">
+                        <Avatar className="home-product-merchant-avatar h-6 w-6 shrink-0">
                           <AvatarImage src={resolveMediaUrl(item.seller_profile_image)} alt="" />
                           <AvatarFallback className="home-product-merchant-fallback">
                             {(item.seller_name || 'S').trim().charAt(0).toUpperCase()}

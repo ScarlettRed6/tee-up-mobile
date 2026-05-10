@@ -286,7 +286,7 @@ export default function ProfilePage({
               <div className="profile-avatar-wrap">
                 <Avatar className="profile-avatar">
                   <AvatarImage src={resolveMediaUrl(user?.profile_image)} alt={displayName} />
-                  <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
+                  <AvatarFallback />
                 </Avatar>
               </div>
               <div className="profile-hero-text">
@@ -465,7 +465,7 @@ export default function ProfilePage({
                           <div className="profile-reviewer">
                             <Avatar className="profile-review-avatar">
                               <AvatarImage src={resolveMediaUrl(review.reviewer_profile_image)} alt={review.reviewer_name || 'Reviewer'} />
-                              <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                              <AvatarFallback />
                             </Avatar>
                             <div>
                               <p className="profile-reviewer-name">{review.reviewer_name || `Buyer ${idx + 1}`}</p>
@@ -504,7 +504,7 @@ export default function ProfilePage({
             <div className="profile-edit-image-wrap">
               <Avatar className="profile-edit-avatar">
                 <AvatarImage src={editImagePreview || undefined} alt={editName || displayName} />
-                <AvatarFallback><User className="h-8 w-8" /></AvatarFallback>
+                <AvatarFallback />
               </Avatar>
               <label className="profile-edit-image-btn">
                 <Camera className="h-4 w-4" />

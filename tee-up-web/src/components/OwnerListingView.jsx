@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -401,7 +401,7 @@ export default function OwnerListingView({
                       <CardContent className="owner-listing-offer-content">
                         <Avatar className="owner-listing-offer-avatar">
                           <AvatarImage src={resolveMediaUrl(offer.buyerImage)} alt={offer.buyerName} />
-                          <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                          <AvatarFallback />
                         </Avatar>
                         <div className="owner-listing-offer-info">
                           <span className="owner-listing-offer-name">{offer.buyerName}</span>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Heart, MapPin, Star, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, MapPin, Star } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -310,7 +310,7 @@ export default function ListingView({
               <CardContent className="listing-view-seller-content">
                 <Avatar className="listing-view-seller-avatar">
                   <AvatarImage src={resolveMediaUrl(listing.seller_profile_image)} alt={sellerName} />
-                  <AvatarFallback><User className="h-6 w-6" /></AvatarFallback>
+                  <AvatarFallback />
                 </Avatar>
                 <div className="listing-view-seller-text">
                   <div className="listing-view-seller-name">{sellerName}</div>
@@ -403,7 +403,7 @@ export default function ListingView({
                     <div className="listing-view-reviewer">
                       <Avatar className="listing-view-reviewer-avatar">
                         <AvatarImage src={resolveMediaUrl(review.reviewer_profile_image)} alt={review.reviewer_name || 'Reviewer'} />
-                        <AvatarFallback><User className="h-3 w-3" /></AvatarFallback>
+                        <AvatarFallback />
                       </Avatar>
                       <span className="listing-view-reviewer-name">{review.reviewer_name || `Buyer ${idx + 1}`}</span>
                     </div>

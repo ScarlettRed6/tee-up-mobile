@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import UserHeader from './UserHeader';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { cn } from '@/lib/utils';
@@ -412,15 +413,12 @@ export default function MessagesPage({
                             }`}
                           >
                             {m.sender !== 'me' ? (
-                              <div className="messages-bubble-avatar" aria-hidden>
-                                {otherPic ? (
-                                  <img src={otherPic} alt="" />
-                                ) : (
-                                  <div className="messages-bubble-avatar-fallback">
-                                    {(activeConversation?.username || '?').charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
+                              <Avatar className="messages-bubble-avatar h-7 w-7 shrink-0" aria-hidden>
+                                <AvatarImage src={otherPic} alt="" />
+                                <AvatarFallback className="messages-bubble-avatar-fallback">
+                                  {(activeConversation?.username || '?').trim().charAt(0).toUpperCase() || '?'}
+                                </AvatarFallback>
+                              </Avatar>
                             ) : null}
                             <div
                               className={`messages-bubble ${
@@ -430,15 +428,12 @@ export default function MessagesPage({
                               {formatChatSnippet(m.text)}
                             </div>
                             {m.sender === 'me' ? (
-                              <div className="messages-bubble-avatar" aria-hidden>
-                                {mePic ? (
-                                  <img src={mePic} alt="" />
-                                ) : (
-                                  <div className="messages-bubble-avatar-fallback">
-                                    {(user?.name || '?').trim().charAt(0).toUpperCase() || '?'}
-                                  </div>
-                                )}
-                              </div>
+                              <Avatar className="messages-bubble-avatar h-7 w-7 shrink-0" aria-hidden>
+                                <AvatarImage src={mePic} alt="" />
+                                <AvatarFallback className="messages-bubble-avatar-fallback">
+                                  {(user?.name || '?').trim().charAt(0).toUpperCase() || '?'}
+                                </AvatarFallback>
+                              </Avatar>
                             ) : null}
                           </div>
                         );

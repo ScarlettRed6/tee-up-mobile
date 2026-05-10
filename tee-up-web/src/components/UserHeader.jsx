@@ -274,9 +274,7 @@ function UserHeader({
               >
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={resolveMediaUrl(user?.profile_image)} alt="" />
-                  <AvatarFallback>
-                    <User className="h-5 w-5" />
-                  </AvatarFallback>
+                  <AvatarFallback />
                 </Avatar>
               </Button>
               {dropdownOpen ? (

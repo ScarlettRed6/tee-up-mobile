@@ -69,7 +69,7 @@ function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, varian
         />
         {subtitle && (
           <p className="listing-card-subtitle">
-            <Avatar className="listing-card-seller-avatar">
+            <Avatar className="listing-card-seller-avatar h-[26px] w-[26px] shrink-0">
               <AvatarImage src={sellerPic} alt="" />
               <AvatarFallback className="listing-card-seller-fallback">{sellerInitial}</AvatarFallback>
             </Avatar>
