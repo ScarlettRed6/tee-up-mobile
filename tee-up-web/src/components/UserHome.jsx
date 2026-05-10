@@ -23,7 +23,7 @@ import LogoutConfirmModal from './LogoutConfirmModal';
 import { getSocket } from '../utils/socketClient';
 import './UserHome.css';
 
-// Golf slideshow for logged-in hero (same style as landing)
+// Golf slideshow for feed hero
 const HERO_SLIDES = [
   'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80',
   'https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=1200&q=80',

@@ -1,6 +1,6 @@
 /**
  * Shared Tee Up logo: golf ball on tee + "Tee Up" text.
- * Used on HomePage and Admin Header.
+ * Used on browse header and admin chrome.
  */
 function Logo({ className = '', size = 36, showText = true }) {
   return (

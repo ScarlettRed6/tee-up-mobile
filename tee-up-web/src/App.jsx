@@ -10,7 +10,6 @@ import Listings from './components/Listings';
 import Reports from './components/Reports';
 import Login from './components/Login';
 import UserHome from './components/UserHome';
-import HomePage from './components/HomePage';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NotificationsProvider } from './context/NotificationsContext';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
@@ -20,15 +19,13 @@ import './App.css';
 function AppContent() {
   const { isAuthenticated, loading, logout, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  /** Guest path: landing vs auth form vs browsing marketplace without an account */
-  const [authView, setAuthView] = useState('home'); // 'home' | 'login' | 'browse'
-  const [loginBackDestination, setLoginBackDestination] = useState('home'); // 'home' | 'browse'
+  /** Guest: marketplace (browse) or auth form */
+  const [authView, setAuthView] = useState('browse'); // 'login' | 'browse'
   const [loginInitialView, setLoginInitialView] = useState('login'); // 'login' | 'signup'
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
-  const goLogin = useCallback((fromBrowse, tab) => {
+  const goLogin = useCallback((_fromBrowse, tab) => {
     if (loading || isAuthenticated) return;
-    setLoginBackDestination(fromBrowse ? 'browse' : 'home');
     setLoginInitialView(tab === 'signup' ? 'signup' : 'login');
     setAuthView('login');
   }, [loading, isAuthenticated]);
@@ -41,8 +38,8 @@ function AppContent() {
   );
 
   const handleLoginScreenBack = useCallback(() => {
-    setAuthView(loginBackDestination === 'browse' ? 'browse' : 'home');
-  }, [loginBackDestination]);
+    setAuthView('browse');
+  }, []);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
@@ -115,47 +112,14 @@ function AppContent() {
         </LoginPromptProvider>
       );
     }
-    if (authView === 'browse') {
-      return (
-        <LoginPromptProvider value={loginPromptApi}>
-          <NotificationsProvider>
-            <>
-              <UserHome guest />
-              <ThemeToggle />
-            </>
-          </NotificationsProvider>
-        </LoginPromptProvider>
-      );
-    }
     return (
       <LoginPromptProvider value={loginPromptApi}>
-        <>
-          <HomePage
-            onBrowseMarketplace={() => setAuthView('browse')}
-            onBrowseListing={(listingId) => {
-              if (listingId == null) return;
-              try {
-                sessionStorage.setItem('teeup_guest_open_listing', String(listingId));
-              } catch {
-                /* ignore */
-              }
-              setAuthView('browse');
-            }}
-            onBrowseSearch={(query) => {
-              const q = (query || '').trim();
-              if (!q) return;
-              try {
-                sessionStorage.setItem('teeup_guest_search_query', q);
-              } catch {
-                /* ignore */
-              }
-              setAuthView('browse');
-            }}
-            onOpenLogin={() => goLogin(false, 'login')}
-            onOpenSignUp={() => goLogin(false, 'signup')}
-          />
-          <ThemeToggle />
-        </>
+        <NotificationsProvider>
+          <>
+            <UserHome guest />
+            <ThemeToggle />
+          </>
+        </NotificationsProvider>
       </LoginPromptProvider>
     );
   }
