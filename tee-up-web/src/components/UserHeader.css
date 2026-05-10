@@ -128,12 +128,20 @@
 }
 
 .user-header-profile-btn {
-  overflow: hidden;
-  padding: 0;
+  overflow: visible;
+  padding: 2px;
+  border-radius: 999px;
 }
 
-.user-header-profile-wrap {
-  position: relative;
+.user-header-profile-btn:hover {
+  background: var(--color-background-alt);
+}
+
+.user-header-profile-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px var(--color-primary);
 }
 
 .user-header-profile-btn-open {
@@ -141,79 +149,143 @@
   box-shadow: inset 0 0 0 1px rgba(66, 122, 67, 0.35);
 }
 
-.user-header-dropdown {
+/* Account menu (custom panel — no Radix/shadcn dropdown) */
+.user-header-account-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-header-account-panel {
   position: absolute;
-  top: calc(100% + var(--spacing-xs));
+  top: calc(100% + 10px);
   right: 0;
-  min-width: 160px;
-  padding: var(--spacing-xs);
-  background: var(--color-white);
+  width: min(296px, calc(100vw - 1.5rem));
+  min-width: 240px;
+  margin: 0;
+  padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  box-shadow: var(--shadow-modal);
+  border-radius: 16px;
+  background: var(--color-white);
+  box-shadow:
+    0 10px 15px rgba(15, 23, 42, 0.08),
+    0 28px 50px rgba(15, 23, 42, 0.14);
   z-index: 200;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  overflow: hidden;
 }
 
-.user-header-dropdown-item {
-  justify-content: flex-start;
-  gap: var(--spacing-sm);
-  width: 100%;
+.user-header-account-head {
+  padding: 1.125rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.user-header-account-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
   color: var(--color-text-primary);
+  word-break: break-word;
 }
 
-.user-header-dropdown-item:hover {
+.user-header-account-email {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+
+.user-header-account-option {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.875rem 1.125rem;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  text-align: left;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.user-header-account-option:first-of-type {
+  border-top: none;
+}
+
+.user-header-account-option:hover {
   background: var(--color-background-alt);
+}
+
+.user-header-account-option:focus-visible {
+  outline: none;
+  background: var(--color-background-alt);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+.user-header-account-option-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.user-header-account-option:hover .user-header-account-option-icon {
   color: var(--color-primary);
 }
 
-.user-header-dropdown-item-logout {
-  color: var(--color-error);
+.user-header-account-option-logout {
+  color: var(--color-error, #dc2626);
 }
 
-.user-header-dropdown-item-logout:hover {
-  background: rgba(239, 68, 68, 0.08);
-  color: var(--color-error);
+.user-header-account-option-logout .user-header-account-option-icon {
+  color: var(--color-error, #dc2626);
 }
 
-.user-header-profile-dropdown {
-  min-width: 240px;
-  border-radius: 14px;
-  border: 1px solid var(--color-border);
-  background: linear-gradient(180deg, var(--color-white), var(--color-background-alt));
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.18);
+.user-header-account-option-logout:hover {
+  background: color-mix(in srgb, var(--color-error, #ef4444) 9%, transparent);
+  color: var(--color-error, #b91c1c);
 }
 
-.user-header-profile-dropdown-label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--spacing-sm) var(--spacing-md);
+.user-header-account-option-logout:hover .user-header-account-option-icon {
+  color: inherit;
 }
 
-.user-header-profile-name {
-  font-size: var(--font-size-body-small);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  line-height: 1.2;
+.user-header-account-option-logout:focus-visible {
+  background: color-mix(in srgb, var(--color-error, #ef4444) 11%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-error) 35%, transparent);
 }
 
-.user-header-profile-email {
-  font-size: var(--font-size-small);
-  color: var(--color-text-muted);
-  line-height: 1.2;
+[data-theme="dark"] .user-header-account-panel {
+  background: #2a2a2a;
+  border-color: #404040;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
 }
 
-.user-header-profile-dropdown-item {
-  border-radius: 10px;
+[data-theme="dark"] .user-header-account-head {
+  border-bottom-color: #404040;
 }
 
-[data-theme="dark"] .user-header-profile-dropdown {
-  background: linear-gradient(180deg, #262626, #202020);
-  border-color: #3d3d3d;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+[data-theme="dark"] .user-header-account-option:hover {
+  background: #363636;
+}
+
+[data-theme="dark"] .user-header-account-option:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+
+[data-theme="dark"] .user-header-account-option-logout:hover {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+[data-theme="dark"] .user-header-account-option-logout:focus-visible {
+  background: rgba(239, 68, 68, 0.18);
 }
 
 /* Notifications dropdown */

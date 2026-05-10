@@ -3,14 +3,6 @@ import Logo from './Logo';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
 import { Bell, User, LogOut, MessageCircle, Star, Tag, Heart, Megaphone, UserPlus } from 'lucide-react';
 import { useNotifications } from '../context/NotificationsContext';
 import { formatChatSnippet } from '../utils/chatOffers';
@@ -48,6 +40,7 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { notifications, unreadCount, refreshNotifications, markNotificationAsRead } = useNotifications();
   const notifDropdownRef = useRef(null);
+  const profileDropdownRef = useRef(null);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -55,18 +48,28 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
         setNotifDropdownOpen(false);
       }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setNotifDropdownOpen(false);
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     onSearch?.(searchValue.trim());
-  };
-
-  const handleProfileClick = () => {
-    setDropdownOpen((prev) => !prev);
   };
 
   const handleOpenProfile = () => {
@@ -80,6 +83,7 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
   };
 
   const handleBellClick = () => {
+    setDropdownOpen(false);
     setNotifDropdownOpen((prev) => {
       const next = !prev;
       if (!prev && !next) return next;
@@ -88,6 +92,11 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
       }
       return next;
     });
+  };
+
+  const handleProfileMenuToggle = () => {
+    setNotifDropdownOpen(false);
+    setDropdownOpen((prev) => !prev);
   };
 
   const handleNotificationItemClick = (n) => {
@@ -223,51 +232,65 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
             </div>
           )}
           {onOpenProfile != null || onLogout != null ? (
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn('user-header-profile-btn', dropdownOpen && 'user-header-profile-btn-open')}
-                  aria-label="Profile menu"
+            <div className="user-header-account-wrap" ref={profileDropdownRef}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                id="user-header-account-trigger"
+                className={cn('user-header-profile-btn', dropdownOpen && 'user-header-profile-btn-open')}
+                aria-label="Account menu"
+                aria-expanded={dropdownOpen}
+                aria-controls="user-header-account-panel"
+                aria-haspopup="menu"
+                onClick={handleProfileMenuToggle}
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user?.profile_image} alt="" />
+                  <AvatarFallback>
+                    <User className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+              {dropdownOpen ? (
+                <div
+                  id="user-header-account-panel"
+                  className="user-header-account-panel"
+                  role="menu"
+                  aria-labelledby="user-header-account-trigger"
+                  tabIndex={-1}
                 >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.profile_image} alt={user?.name} />
-                    <AvatarFallback>
-                      <User className="h-5 w-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={8} className="user-header-profile-dropdown">
-                <DropdownMenuLabel className="user-header-profile-dropdown-label">
-                  <span className="user-header-profile-name">{user?.name || 'Profile'}</span>
-                  {user?.email ? <span className="user-header-profile-email">{user.email}</span> : null}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="cursor-pointer user-header-profile-dropdown-item"
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    handleOpenProfile();
-                  }}
-                >
-                  <User className="h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  className="cursor-pointer user-header-profile-dropdown-item user-header-dropdown-item-logout"
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    handleLogout();
-                  }}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <div className="user-header-account-head">
+                    <p className="user-header-account-name">{user?.name || 'Account'}</p>
+                    {user?.email ? (
+                      <p className="user-header-account-email">{user.email}</p>
+                    ) : null}
+                  </div>
+                  {onOpenProfile != null ? (
+                    <button
+                      type="button"
+                      className="user-header-account-option"
+                      role="menuitem"
+                      onClick={handleOpenProfile}
+                    >
+                      <User className="user-header-account-option-icon" aria-hidden strokeWidth={2} />
+                      <span>Profile</span>
+                    </button>
+                  ) : null}
+                  {onLogout != null ? (
+                    <button
+                      type="button"
+                      className="user-header-account-option user-header-account-option-logout"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="user-header-account-option-icon" aria-hidden strokeWidth={2} />
+                      <span>Log out</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </nav>
       </div>

@@ -16,11 +16,16 @@ export default function LogoutConfirmModal({ open, roleLabel = 'account', onCanc
           You are about to sign out of your {roleLabel} session.
         </p>
         <div className="logout-modal-actions">
-          <Button variant="outline" onClick={onCancel}>
-            Stay Logged In
+          <Button variant="outline" size="lg" type="button" className="logout-modal-action-btn" onClick={onCancel}>
+            Stay logged in
           </Button>
-          <Button className="logout-modal-confirm-btn" onClick={onConfirm}>
-            Sign Out
+          <Button
+            type="button"
+            size="lg"
+            className="logout-modal-confirm-btn logout-modal-action-btn"
+            onClick={onConfirm}
+          >
+            Sign out
           </Button>
         </div>
       </div>

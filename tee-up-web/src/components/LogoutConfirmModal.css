@@ -49,7 +49,15 @@
   margin-top: var(--spacing-xl);
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.logout-modal-action-btn {
+  min-height: 2.75rem;
+  min-width: 8.5rem;
+  padding-left: 1.375rem;
+  padding-right: 1.375rem;
 }
 
 .logout-modal-confirm-btn {
@@ -74,5 +82,11 @@
 
   .logout-modal-actions {
     flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .logout-modal-actions .logout-modal-action-btn {
+    width: 100%;
+    min-width: 0;
   }
 }
