@@ -1,0 +1,286 @@
+.brand-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1350;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(4px);
+}
+
+.brand-picker-modal {
+  width: min(480px, 100%);
+  max-height: min(720px, calc(100vh - 2rem));
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  box-shadow: 0 26px 60px rgba(15, 23, 42, 0.26);
+  overflow: hidden;
+}
+
+[data-theme="dark"] .brand-picker-modal {
+  background: #262626;
+  border-color: #404040;
+  box-shadow: 0 26px 56px rgba(0, 0, 0, 0.65);
+}
+
+.brand-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-sm);
+}
+
+.brand-picker-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.brand-picker-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.brand-picker-close:hover {
+  background: var(--color-background-alt);
+  color: var(--color-text-primary);
+}
+
+.brand-picker-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+}
+
+.brand-picker-help {
+  margin: 0;
+  padding: 0 var(--spacing-xl) var(--spacing-md);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.brand-picker-category-hint strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.brand-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 var(--spacing-xl) var(--spacing-md);
+}
+
+.brand-picker-chip {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-background-alt);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.brand-picker-chip:hover {
+  border-color: rgba(66, 122, 67, 0.45);
+  color: var(--color-text-primary);
+}
+
+.brand-picker-chip-active {
+  border-color: var(--color-primary);
+  background: rgba(66, 122, 67, 0.12);
+  color: var(--color-primary);
+}
+
+.brand-picker-search-row {
+  position: relative;
+  margin: 0 var(--spacing-xl) var(--spacing-sm);
+}
+
+.brand-picker-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.brand-picker-search-input {
+  padding-left: 2.75rem !important;
+}
+
+.brand-picker-current {
+  margin: 0 var(--spacing-xl) var(--spacing-sm);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.brand-picker-current strong {
+  color: var(--color-text-primary);
+}
+
+.brand-picker-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 var(--spacing-md);
+  padding: 0 var(--spacing-sm) var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.brand-picker-empty {
+  margin: 0;
+  padding: var(--spacing-xl) var(--spacing-md);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.brand-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing-xs) 0 var(--spacing-md);
+}
+
+.brand-picker-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  width: 100%;
+  padding: 0.75rem 0.875rem;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.brand-picker-row:hover {
+  background: var(--color-background-alt);
+}
+
+.brand-picker-row:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 38%, transparent);
+}
+
+.brand-picker-row-selected {
+  background: rgba(66, 122, 67, 0.1);
+  color: var(--color-primary);
+}
+
+.brand-picker-footer {
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background-alt);
+}
+
+[data-theme="dark"] .brand-picker-footer {
+  background: #1f1f1f;
+  border-top-color: #333;
+}
+
+.brand-picker-not-listed {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.brand-picker-not-listed:hover {
+  color: var(--color-text-primary);
+}
+
+.brand-picker-custom-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.brand-picker-custom-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.brand-picker-custom-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.brand-picker-custom-row > input:first-of-type {
+  flex: 1;
+  min-width: 140px;
+}
+
+.brand-picker-back {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.brand-picker-back:hover {
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 520px) {
+  .brand-picker-modal {
+    max-height: calc(100vh - 1rem);
+    border-radius: 16px;
+  }
+
+  .brand-picker-header,
+  .brand-picker-help,
+  .brand-picker-chips,
+  .brand-picker-search-row,
+  .brand-picker-current,
+  .brand-picker-footer {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+}

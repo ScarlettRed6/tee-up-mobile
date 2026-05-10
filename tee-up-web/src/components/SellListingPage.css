@@ -254,6 +254,72 @@
   box-shadow: 0 0 0 3px var(--sell-ring);
 }
 
+.sell-brand-controls {
+  display: flex;
+  align-items: stretch;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.sell-brand-trigger {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding-y) var(--input-padding-x);
+  border-radius: 14px;
+  border: 1px solid var(--sell-border-soft);
+  background: var(--sell-input-bg);
+  font-size: var(--font-size-body-small);
+  line-height: 1.35;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sell-brand-trigger:hover {
+  border-color: var(--sell-accent-border);
+}
+
+.sell-brand-trigger:focus-visible {
+  outline: none;
+  border-color: var(--sell-accent-border);
+  box-shadow: 0 0 0 3px var(--sell-ring);
+}
+
+.sell-brand-trigger-placeholder {
+  color: var(--color-text-muted);
+}
+
+.sell-brand-trigger-value {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.sell-brand-trigger-chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.sell-brand-clear-btn {
+  flex-shrink: 0;
+}
+
+.sell-brand-hint {
+  margin: 0;
+  font-size: var(--font-size-caption, 0.8125rem);
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
 .sell-select {
   box-sizing: border-box;
   min-height: var(--input-min-height);

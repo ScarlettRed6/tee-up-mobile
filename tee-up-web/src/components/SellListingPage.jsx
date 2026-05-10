@@ -5,7 +5,8 @@ import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Alert } from './ui/alert';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronDown, ChevronLeft } from 'lucide-react';
+import BrandPickerModal from './BrandPickerModal';
 import { createListing, updateListing } from '../api/userListingsApi';
 import { PHILIPPINE_CITIES_BY_REGION, PHILIPPINE_LOCATION_OPTIONS } from '../constants/philippineLocations';
 import './SellListingPage.css';
@@ -47,6 +48,7 @@ function SellListingPage({
   const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [brandPickerOpen, setBrandPickerOpen] = useState(false);
 
   const showFlexSection = category === 'Driver' || category === 'Woods' || category === 'Iron';
   const showHandSection =
@@ -268,13 +270,33 @@ function SellListingPage({
               </div>
 
               <div className="sell-field span-2">
-                <Label htmlFor="brand">Brand</Label>
-                <Input
-                  id="brand"
-                  placeholder="e.g. TaylorMade"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                />
+                <Label id="sell-brand-label">Brand</Label>
+                <div className="sell-brand-controls" aria-labelledby="sell-brand-label">
+                  <button
+                    type="button"
+                    className="sell-brand-trigger"
+                    aria-haspopup="dialog"
+                    aria-expanded={brandPickerOpen}
+                    onClick={() => setBrandPickerOpen(true)}
+                  >
+                    <span className={brand ? 'sell-brand-trigger-value' : 'sell-brand-trigger-placeholder'}>
+                      {brand || 'Search golf brands…'}
+                    </span>
+                    <ChevronDown className="sell-brand-trigger-chevron" aria-hidden strokeWidth={2} />
+                  </button>
+                  {brand ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="sell-brand-clear-btn"
+                      onClick={() => setBrand('')}
+                    >
+                      Clear
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="sell-brand-hint">Pick from curated brands to reduce typos, or enter a rare brand manually inside the picker.</p>
               </div>
 
               <div className="sell-field">
@@ -425,6 +447,14 @@ function SellListingPage({
           </CardFooter>
         </Card>
       </main>
+
+      <BrandPickerModal
+        open={brandPickerOpen}
+        onOpenChange={setBrandPickerOpen}
+        listingCategory={category}
+        value={brand}
+        onSelect={(name) => setBrand(name)}
+      />
     </div>
   );
 }
