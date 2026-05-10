@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './Listings.css';
 import ListingDetailModal from './ListingDetailModal';
 import { getAdminListings, getAdminListingById, updateAdminListingStatus, deleteAdminListing } from '../api/listingsApi';
+import { PHILIPPINE_CITIES_BY_REGION } from '../constants/philippineLocations';
 import PageLoadingSkeleton from './PageLoadingSkeleton';
 
 // Normalize backend listing row to UI shape (id, seller, postedDate, saves, images, etc.)
@@ -40,10 +42,32 @@ function Listings() {
   const [locationFilter, setLocationFilter] = useState('all');
   const [sortBy, setSortBy] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownMenuBox, setDropdownMenuBox] = useState(null);
   const [selectedListing, setSelectedListing] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const dropdownRefs = useRef({});
+
+  const closeActionsDropdown = useCallback(() => {
+    setOpenDropdown(null);
+    setDropdownMenuBox(null);
+  }, []);
+
+  const computeActionsMenuBox = useCallback((buttonEl) => {
+    if (!buttonEl?.getBoundingClientRect || typeof window === 'undefined') return null;
+    const rect = buttonEl.getBoundingClientRect();
+    const menuWidth = Math.max(200, 180);
+    const vw = window.innerWidth;
+    const preferredLeft = rect.right - menuWidth;
+    const left = Math.max(8, Math.min(preferredLeft, vw - menuWidth - 8));
+    return {
+      top: rect.bottom + 8,
+      left,
+      width: menuWidth,
+    };
+  }, []);
 
   const fetchListings = useCallback(async () => {
     try {
@@ -71,33 +95,30 @@ function Listings() {
     fetchListings();
   }, [fetchListings]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      // Check if click is on a dropdown item - if so, don't close
-      const isDropdownItem = event.target.closest('.dropdown-item');
-      if (isDropdownItem) {
-        return; // Don't close dropdown when clicking on items
-      }
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, conditionFilter, statusFilter, locationFilter]);
 
-      Object.keys(dropdownRefs.current).forEach(key => {
-        const ref = dropdownRefs.current[key];
-        if (ref && !ref.contains(event.target)) {
-          setOpenDropdown(null);
-        }
-      });
+  useEffect(() => {
+    if (!openDropdown) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (event.target.closest('.dropdown-item')) return;
+      if (event.target.closest('.listings-actions-menu-portal')) return;
+      const root = dropdownRefs.current[openDropdown];
+      if (root?.contains(event.target)) return;
+      closeActionsDropdown();
     };
 
-    // Use a small delay to allow button clicks to fire first
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 100);
+    const t = window.setTimeout(() => {
+      document.addEventListener('mousedown', handlePointerDown);
+    }, 0);
 
     return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener('mousedown', handleClickOutside);
+      window.clearTimeout(t);
+      document.removeEventListener('mousedown', handlePointerDown);
     };
-  }, []);
+  }, [openDropdown, closeActionsDropdown]);
 
   // List is already filtered by the API when fetchListings runs with current filters
   const listToSort = listings;
@@ -136,6 +157,42 @@ function Listings() {
 
     return sortDirection === 'asc' ? comparison : -comparison;
   });
+
+  const totalPages = Math.ceil(sortedListings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedListings = sortedListings.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    if (sortedListings.length === 0) {
+      if (currentPage !== 1) setCurrentPage(1);
+      return;
+    }
+    const tp = Math.ceil(sortedListings.length / itemsPerPage);
+    if (tp > 0 && currentPage > tp) setCurrentPage(tp);
+  }, [sortedListings.length, currentPage, itemsPerPage]);
+
+  useLayoutEffect(() => {
+    if (!openDropdown) return undefined;
+
+    const reposition = () => {
+      const root = dropdownRefs.current[openDropdown];
+      const btn = root?.querySelector?.('.actions-dropdown-toggle');
+      if (!btn) {
+        closeActionsDropdown();
+        return;
+      }
+      setDropdownMenuBox(computeActionsMenuBox(btn));
+    };
+
+    reposition();
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [openDropdown, sortBy, sortDirection, computeActionsMenuBox, closeActionsDropdown]);
 
   // Get sort arrow icon
   const getSortArrow = (column) => {
@@ -191,27 +248,41 @@ function Listings() {
     return <span className={`condition-badge condition-${conditionClass}`}>{condition}</span>;
   };
 
-  const toggleDropdown = (listingId) => {
-    setOpenDropdown(openDropdown === listingId ? null : listingId);
+  const toggleDropdown = (listingId, event) => {
+    if (openDropdown === listingId) {
+      closeActionsDropdown();
+      return;
+    }
+    const box = computeActionsMenuBox(event?.currentTarget);
+    setDropdownMenuBox(box);
+    setOpenDropdown(listingId);
+  };
+
+  const handleListingsPrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleListingsNextPage = () => {
+    if (totalPages > 0 && currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
   const handleView = async (listingId) => {
     const listing = listings.find(l => l.id === listingId || l.listing_id === listingId);
     if (listing) {
       setSelectedListing(listing);
-      setOpenDropdown(null);
+      closeActionsDropdown();
       return;
     }
-    setOpenDropdown(null);
+    closeActionsDropdown();
   };
 
   const handleEdit = (listingId) => {
     console.log('Edit listing:', listingId);
-    setOpenDropdown(null);
+    closeActionsDropdown();
   };
 
   const handleDelete = async (listingId) => {
-    setOpenDropdown(null);
+    closeActionsDropdown();
     if (!window.confirm('Delete this listing? This action cannot be undone.')) {
       return;
     }
@@ -229,7 +300,7 @@ function Listings() {
 
   const handleApprove = async (listingId) => {
     setActionLoading(listingId);
-    setOpenDropdown(null);
+    closeActionsDropdown();
     try {
       await updateAdminListingStatus(listingId, 'active');
       await fetchListings();
@@ -243,7 +314,7 @@ function Listings() {
 
   const handleMarkSold = async (listingId) => {
     setActionLoading(listingId);
-    setOpenDropdown(null);
+    closeActionsDropdown();
     try {
       await updateAdminListingStatus(listingId, 'sold');
       await fetchListings();
@@ -254,6 +325,9 @@ function Listings() {
       setActionLoading(null);
     }
   };
+
+  const actionMenuListing =
+    openDropdown != null ? sortedListings.find((l) => l.id === openDropdown) : null;
 
   if (loading) {
     return (
@@ -284,20 +358,14 @@ function Listings() {
         </div>
       )}
 
-      <div className="listings-filters">
-        <div className="search-container">
-          <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
-            <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by title, seller username, or listing ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+      <div className="listings-controls">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search by title, seller username, or listing ID..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
 
         <div className="filters-row">
           <div className="filter-group">
@@ -354,11 +422,18 @@ function Listings() {
               onChange={(e) => setLocationFilter(e.target.value)}
             >
               <option value="all">All Locations</option>
-              <option value="Los Angeles, CA">Los Angeles, CA</option>
-              <option value="New York, NY">New York, NY</option>
-              <option value="Miami, FL">Miami, FL</option>
-              <option value="Chicago, IL">Chicago, IL</option>
-              <option value="Phoenix, AZ">Phoenix, AZ</option>
+              {Object.entries(PHILIPPINE_CITIES_BY_REGION).map(([region, cities]) => (
+                <optgroup key={region} label={region}>
+                  {cities.map((city) => {
+                    const value = `${region}, ${city}`;
+                    return (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              ))}
             </select>
           </div>
         </div>
@@ -421,7 +496,7 @@ function Listings() {
                 </td>
               </tr>
             ) : (
-              sortedListings.map((listing) => (
+              paginatedListings.map((listing) => (
                 <tr key={listing.id}>
                   <td className="listing-id">{listing.id}</td>
                   <td className="listing-title">{listing.title}</td>
@@ -445,7 +520,7 @@ function Listings() {
                               className="actions-dropdown-toggle"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleDropdown(listing.id);
+                                toggleDropdown(listing.id, e);
                               }}
                               aria-label="Actions"
                             >
@@ -455,51 +530,6 @@ function Listings() {
                                 <circle cx="12" cy="19" r="2" fill="currentColor"/>
                               </svg>
                             </button>
-                            {openDropdown === listing.id && (
-                              <div 
-                                className="actions-dropdown-menu"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <button 
-                                  className="dropdown-item view-item"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('View button clicked for:', listing.id);
-                                    // Close dropdown first
-                                    setOpenDropdown(null);
-                                    // Then handle view
-                                    setTimeout(() => {
-                                      handleView(listing.id);
-                                    }, 0);
-                                  }}
-                                >
-                                  View
-                                </button>
-                          <button 
-                            className="dropdown-item delete-item"
-                            onClick={() => handleDelete(listing.id)}
-                          >
-                            Delete
-                          </button>
-                          {listing.status === 'pending' && (
-                            <button 
-                              className="dropdown-item approve-item"
-                              onClick={() => handleApprove(listing.id)}
-                            >
-                              Approve
-                            </button>
-                          )}
-                          {listing.status === 'active' && (
-                            <button 
-                              className="dropdown-item sold-item"
-                              onClick={() => handleMarkSold(listing.id)}
-                            >
-                              Mark as Sold
-                            </button>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </td>
                 </tr>
@@ -511,19 +541,99 @@ function Listings() {
 
       <div className="listings-footer">
         <div className="results-count">
-          Showing {sortedListings.length} listing{sortedListings.length !== 1 ? 's' : ''}
+          Showing{' '}
+          {sortedListings.length === 0
+            ? '0 '
+            : `${startIndex + 1}-${Math.min(endIndex, sortedListings.length)} `}
+          of {sortedListings.length} listing{sortedListings.length !== 1 ? 's' : ''}
         </div>
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={handleListingsPrevPage}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <span className="pagination-info">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={handleListingsNextPage}
+              disabled={currentPage >= totalPages}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {selectedListing && (
-        <ListingDetailModal 
-          listing={selectedListing} 
+        <ListingDetailModal
+          listing={selectedListing}
           onClose={() => {
             console.log('Closing modal');
             setSelectedListing(null);
-          }} 
+          }}
         />
       )}
+
+      {typeof document !== 'undefined' &&
+        actionMenuListing &&
+        dropdownMenuBox &&
+        createPortal(
+          <div
+            className="actions-dropdown-menu listings-actions-menu-portal"
+            style={{
+              top: dropdownMenuBox.top,
+              left: dropdownMenuBox.left,
+              width: dropdownMenuBox.width,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="dropdown-item view-item"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleView(actionMenuListing.id);
+              }}
+            >
+              View
+            </button>
+            <button
+              type="button"
+              className="dropdown-item delete-item"
+              onClick={() => handleDelete(actionMenuListing.id)}
+            >
+              Delete
+            </button>
+            {actionMenuListing.status === 'pending' && (
+              <button
+                type="button"
+                className="dropdown-item approve-item"
+                onClick={() => handleApprove(actionMenuListing.id)}
+              >
+                Approve
+              </button>
+            )}
+            {actionMenuListing.status === 'active' && (
+              <button
+                type="button"
+                className="dropdown-item sold-item"
+                onClick={() => handleMarkSold(actionMenuListing.id)}
+              >
+                Mark as Sold
+              </button>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

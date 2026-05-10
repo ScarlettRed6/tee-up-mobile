@@ -56,7 +56,9 @@
 
 .user-header-search-input {
   width: 100%;
-  padding: 10px 18px;
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding-y) calc(var(--input-padding-x) + 4px);
   font-size: var(--font-size-body-small);
   font-family: var(--font-family);
   color: var(--color-text-primary);

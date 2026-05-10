@@ -90,6 +90,7 @@
 }
 
 .theme-toggle {
+  border: none;
   background-color: var(--color-light-gray);
   border-radius: var(--radius-medium);
   padding: var(--spacing-sm) var(--spacing-md);
@@ -101,6 +102,7 @@
   color: var(--color-text-primary);
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
 }
 
 .theme-toggle:hover {

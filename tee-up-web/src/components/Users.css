@@ -59,8 +59,10 @@
 
 .search-input {
   width: 100%;
+  box-sizing: border-box;
   max-width: 500px;
-  padding: 16px 20px;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding-y) 20px;
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-regular);
   font-family: var(--font-family);
@@ -88,7 +90,7 @@
   background-color: var(--color-white);
   border-bottom-color: var(--color-primary);
   border-bottom-width: 3px;
-  padding-bottom: 15px;
+  padding-bottom: calc(var(--input-padding-y) - 1px);
 }
 
 .filters-row {
@@ -123,7 +125,7 @@
   background-color: var(--color-white);
   border-bottom-color: var(--color-primary);
   border-bottom-width: 3px;
-  padding-bottom: 15px;
+  padding-bottom: calc(var(--input-padding-y) - 1px);
 }
 
 .users-table-container {
@@ -753,7 +755,9 @@
 
 .form-input {
   width: 100%;
-  padding: 14px 16px;
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
   font-size: var(--font-size-body);
@@ -777,6 +781,17 @@
 
 .form-input::placeholder {
   color: var(--color-text-muted);
+}
+
+textarea.form-input {
+  min-height: 0;
+  padding: var(--textarea-padding);
+  line-height: var(--line-height-body);
+}
+
+input[type="file"].form-input {
+  min-height: 0;
+  padding: var(--spacing-sm) var(--input-padding-x);
 }
 
 /* User Profile Modal Styles */

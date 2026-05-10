@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+
+const MIN_TOGGLE_INTERVAL_MS = 450;
 
 const ThemeContext = createContext(null);
 
@@ -25,9 +27,14 @@ export function ThemeProvider({ children }) {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const lastToggleAtRef = useRef(0);
+
+  const toggleTheme = useCallback(() => {
+    const now = Date.now();
+    if (now - lastToggleAtRef.current < MIN_TOGGLE_INTERVAL_MS) return;
+    lastToggleAtRef.current = now;
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

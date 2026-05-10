@@ -86,30 +86,39 @@ function AppContent() {
   if (!isAuthenticated) {
     if (authView === 'login') {
       return (
-        <Login
-          initialView={loginInitialView}
-          onBackToHome={() => setAuthView('home')}
-        />
+        <>
+          <Login
+            initialView={loginInitialView}
+            onBackToHome={() => setAuthView('home')}
+          />
+          <ThemeToggle />
+        </>
       );
     }
     return (
-      <HomePage
-        onOpenLogin={() => {
-          setLoginInitialView('login');
-          setAuthView('login');
-        }}
-        onOpenSignUp={() => {
-          setLoginInitialView('signup');
-          setAuthView('login');
-        }}
-      />
+      <>
+        <HomePage
+          onOpenLogin={() => {
+            setLoginInitialView('login');
+            setAuthView('login');
+          }}
+          onOpenSignUp={() => {
+            setLoginInitialView('signup');
+            setAuthView('login');
+          }}
+        />
+        <ThemeToggle />
+      </>
     );
   }
 
   if (!isAdmin) {
     return (
       <NotificationsProvider>
-        <UserHome />
+        <>
+          <UserHome />
+          <ThemeToggle />
+        </>
       </NotificationsProvider>
     );
   }
@@ -139,7 +148,6 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <AppContent />
-        <ThemeToggle />
       </AuthProvider>
     </ThemeProvider>
   );

@@ -239,10 +239,14 @@
 }
 
 .sell-field input {
-  height: 46px;
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding);
   border-radius: 14px;
   border: 1px solid var(--sell-border-soft);
   background: var(--sell-input-bg);
+  font-size: var(--font-size-body-small);
+  line-height: 1.35;
 }
 
 .sell-field input:focus {
@@ -251,11 +255,12 @@
 }
 
 .sell-select {
-  height: 46px;
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
   width: 100%;
   border-radius: 14px;
   border: 1px solid var(--sell-border-soft);
-  padding: 0 var(--spacing-xl) 0 var(--spacing-md);
+  padding: var(--input-padding-y) calc(var(--spacing-xl) + 8px) var(--input-padding-y) var(--input-padding-x);
   font-size: var(--font-size-body-small);
   background: var(--sell-input-bg);
   color: var(--color-text-primary);
@@ -275,7 +280,7 @@
   width: 100%;
   border-radius: 14px;
   border: 1px solid var(--sell-border-soft);
-  padding: var(--spacing-md);
+  padding: var(--textarea-padding);
   font-size: var(--font-size-body);
   font-family: var(--font-family);
   resize: vertical;

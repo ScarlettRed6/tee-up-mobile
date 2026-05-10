@@ -15,7 +15,7 @@
 
 .listing-filters-search-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   width: 18px;
@@ -25,7 +25,9 @@
 }
 
 .listing-filters-search-input {
-  padding-left: 42px;
+  padding: var(--input-padding-y) var(--input-padding-x);
+  padding-left: 44px;
+  min-height: var(--input-min-height);
 }
 
 .listing-filters-selects {
@@ -49,8 +51,9 @@
 
 .listing-filters-select {
   min-width: 160px;
-  height: 42px;
-  padding: 0 var(--spacing-md);
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding-y) 36px var(--input-padding-y) var(--input-padding-x);
   font-size: var(--font-size-body-small);
   font-family: var(--font-family);
   color: var(--color-text-primary);

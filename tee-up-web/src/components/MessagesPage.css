@@ -321,7 +321,7 @@
 }
 
 .messages-thread-input {
-  padding: 10px 18px 14px;
+  padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-lg);
   border-top: 1px solid var(--color-border);
   display: flex;
   gap: 10px;
@@ -332,6 +332,7 @@
 .messages-thread-input-field {
   flex: 1;
   border-radius: var(--radius-pill);
+  min-height: var(--input-min-height);
 }
 
 @media (max-width: 960px) {

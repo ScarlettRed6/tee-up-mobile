@@ -1,14 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert } from './ui/alert';
 import { Sun, Moon, ArrowLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const authInputPad = { paddingInline: '1rem', paddingBlock: '0.875rem' };
+
+function AuthTextField({ className, style, ...props }) {
+  return (
+    <Input
+      className={cn(
+        'min-h-[52px] text-[17px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50',
+        className
+      )}
+      style={{ ...authInputPad, ...style }}
+      {...props}
+    />
+  );
+}
 
 function Login({ initialView = 'login', onBackToHome }) {
-  const [theme, toggleTheme] = useTheme();
   const { login, register } = useAuth();
   const [view, setView] = useState(initialView);
 
@@ -121,23 +135,14 @@ function Login({ initialView = 'login', onBackToHome }) {
           backgroundSize: '24px 24px',
         }}
       >
-        <div className="absolute top-6 right-6 flex items-center gap-2">
-          {onBackToHome && (
+        {onBackToHome ? (
+          <div className="absolute top-6 right-6 flex items-center gap-2">
             <Button type="button" variant="outline" size="sm" onClick={onBackToHome}>
               <ArrowLeft className="h-4 w-4 mr-1.5" />
               Back to home
             </Button>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          </Button>
-        </div>
+          </div>
+        ) : null}
 
         <div className="w-full max-w-[400px] login-form-enter">
           {success && (
@@ -154,106 +159,100 @@ function Login({ initialView = 'login', onBackToHome }) {
           )}
 
           {view === 'login' ? (
-              <form key="login" onSubmit={handleLoginSubmit} className="flex flex-col gap-8 login-form-stagger">
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="email" className="text-base">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="email"
-                    className="h-12 text-[17px] transition-all duration-200 hover:border-[var(--color-primary)]/50"
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="password" className="text-base">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="current-password"
-                    className="h-12 text-[17px] transition-all duration-200 hover:border-[var(--color-primary)]/50"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="h-12 w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
-                  size="lg"
+            <form key="login" onSubmit={handleLoginSubmit} className="flex flex-col gap-8 login-form-stagger">
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="email" className="text-base">Email</Label>
+                <AuthTextField
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   disabled={loading}
-                >
-                  {loading ? 'Signing in…' : 'Sign In'}
-                </Button>
-              </form>
-            ) : (
-              <form key="signup" onSubmit={handleSignUpSubmit} className="flex flex-col gap-8 login-form-stagger">
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="name" className="text-base">Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="name"
-                    className="h-12 text-[17px] transition-all duration-200 hover:border-[var(--color-primary)]/50"
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="signup-email" className="text-base">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="email"
-                    className="h-12 text-[17px] transition-all duration-200 hover:border-[var(--color-primary)]/50"
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="signup-password" className="text-base">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="new-password"
-                    className="h-12 text-[17px] transition-all duration-200 hover:border-[var(--color-primary)]/50"
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    autoComplete="new-password"
-                    className="h-12 text-[17px] transition-all duration-200 hover:border-[var(--color-primary)]/50"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="h-12 w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
-                  size="lg"
+                  autoComplete="email"
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="password" className="text-base">Password</Label>
+                <AuthTextField
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   disabled={loading}
-                >
-                  {loading ? 'Signing up…' : 'Sign Up'}
-                </Button>
-              </form>
-            )}
+                  autoComplete="current-password"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="h-[52px] w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? 'Signing in…' : 'Sign In'}
+              </Button>
+            </form>
+          ) : (
+            <form key="signup" onSubmit={handleSignUpSubmit} className="flex flex-col gap-8 login-form-stagger">
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="name" className="text-base">Name</Label>
+                <AuthTextField
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoComplete="name"
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="signup-email" className="text-base">Email</Label>
+                <AuthTextField
+                  id="signup-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoComplete="email"
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="signup-password" className="text-base">Password</Label>
+                <AuthTextField
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
+                <AuthTextField
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="h-[52px] w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? 'Signing up…' : 'Sign Up'}
+              </Button>
+            </form>
+          )}
 
           <p className="text-center text-[var(--color-text-muted)] mt-10 text-base">
             {view === 'login' ? (

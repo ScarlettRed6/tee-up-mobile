@@ -3,8 +3,27 @@ import { useTheme } from '../context/ThemeContext';
 import { Button } from './ui/button';
 import './ThemeToggle.css';
 
-export function ThemeToggle() {
+export function ThemeToggle({ variant = 'floating' }) {
   const [theme, toggleTheme] = useTheme();
+  const label =
+    theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+
+  if (variant === 'header') {
+    return (
+      <button
+        type="button"
+        className="theme-toggle"
+        onClick={toggleTheme}
+        aria-label={label}
+      >
+        {theme === 'light' ? (
+          <Moon aria-hidden />
+        ) : (
+          <Sun aria-hidden />
+        )}
+      </button>
+    );
+  }
 
   return (
     <Button
@@ -13,7 +32,7 @@ export function ThemeToggle() {
       size="icon"
       className="theme-toggle-floating"
       onClick={toggleTheme}
-      aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+      aria-label={label}
     >
       {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
     </Button>

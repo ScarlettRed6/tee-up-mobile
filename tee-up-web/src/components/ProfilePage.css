@@ -455,9 +455,14 @@
 }
 
 .profile-edit-field input {
+  box-sizing: border-box;
+  min-height: var(--input-min-height);
+  padding: var(--input-padding);
   border-radius: 12px;
   background: color-mix(in srgb, var(--color-background-alt) 60%, var(--color-white));
   border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+  font-size: var(--font-size-body-small);
+  line-height: 1.4;
 }
 
 .profile-edit-field input:focus {
@@ -466,6 +471,7 @@
 }
 
 .profile-edit-textarea {
+  box-sizing: border-box;
   width: 100%;
   min-height: 122px;
   border-radius: 12px;
@@ -474,7 +480,7 @@
   color: var(--color-text-primary);
   font-family: var(--font-family);
   font-size: var(--font-size-body-small);
-  padding: 12px 14px;
+  padding: var(--textarea-padding);
   resize: vertical;
 }
 

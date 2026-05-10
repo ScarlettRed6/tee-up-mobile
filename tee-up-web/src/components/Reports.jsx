@@ -14,6 +14,8 @@ function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const [showReportDetailsModal, setShowReportDetailsModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -45,6 +47,10 @@ function Reports() {
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, typeFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [searchTerm, statusFilter, typeFilter]);
 
   // Close dropdown when clicking outside
@@ -244,6 +250,28 @@ function Reports() {
       return 0;
     });
 
+  const totalPages = Math.ceil(sortedReports.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedReports = sortedReports.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    if (sortedReports.length === 0) {
+      if (currentPage !== 1) setCurrentPage(1);
+      return;
+    }
+    const tp = Math.ceil(sortedReports.length / itemsPerPage);
+    if (tp > 0 && currentPage > tp) setCurrentPage(tp);
+  }, [sortedReports.length, currentPage, itemsPerPage]);
+
+  const handleReportsPrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleReportsNextPage = () => {
+    if (totalPages > 0 && currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
   if (loading) {
     return (
       <div className="reports-page">
@@ -344,7 +372,7 @@ function Reports() {
                 </td>
               </tr>
             ) : (
-              sortedReports.map((report) => (
+              paginatedReports.map((report) => (
                 <tr key={report.id}>
                   <td className="report-id">R{report.report_id}</td>
                   <td>
@@ -468,6 +496,39 @@ function Reports() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="reports-pagination-footer">
+        <div className="results-count">
+          Showing{' '}
+          {sortedReports.length === 0
+            ? '0 '
+            : `${startIndex + 1}-${Math.min(endIndex, sortedReports.length)} `}
+          of {sortedReports.length} report{sortedReports.length !== 1 ? 's' : ''}
+        </div>
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={handleReportsPrevPage}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <span className="pagination-info">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={handleReportsNextPage}
+              disabled={currentPage >= totalPages}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="reports-summary">
