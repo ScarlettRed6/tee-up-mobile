@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLoginPrompt } from '../context/LoginPromptContext';
 import { getListings, getRecommendations, getFavorites, addFavorite, removeFavorite, getListingById } from '../api/userListingsApi';
 import { followUser, unfollowUser } from '../api/followerApi';
 import { findOrCreateConversation } from '../api/chatApi';
@@ -30,8 +31,9 @@ const HERO_SLIDES = [
   'https://images.unsplash.com/photo-1593111774240-d2b1dc2b16e2?w=1200&q=80',
 ];
 
-function UserHome() {
+function UserHome({ guest = false }) {
   const { user, logout, refreshProfile } = useAuth();
+  const { openLogin } = useLoginPrompt();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -180,13 +182,13 @@ function UserHome() {
     setError(null);
     try {
       const [rec, listRes, favRes] = await Promise.all([
-        getRecommendations().catch(() => []),
+        guest ? Promise.resolve([]) : getRecommendations().catch(() => []),
         getListings({ sort: 'newest', status: 'available' }).catch(() => []),
-        getFavorites().catch(() => []),
+        guest ? Promise.resolve([]) : getFavorites().catch(() => []),
       ]);
       setRecommended(Array.isArray(rec) ? rec.map(normalizeListing) : []);
       setRecent(Array.isArray(listRes) ? listRes.map(normalizeListing) : []);
-      const favList = Array.isArray(favRes) ? favRes.map(normalizeListing) : [];
+      const favList = guest ? [] : Array.isArray(favRes) ? favRes.map(normalizeListing) : [];
       setSaved(favList);
       setSavedIds(new Set(favList.map((f) => String(f.listing_id ?? f.id))));
     } catch (err) {
@@ -194,11 +196,34 @@ function UserHome() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [guest]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!guest) return;
+    let listingId = null;
+    let searchQ = null;
+    try {
+      listingId = sessionStorage.getItem('teeup_guest_open_listing');
+      if (listingId) sessionStorage.removeItem('teeup_guest_open_listing');
+      searchQ = sessionStorage.getItem('teeup_guest_search_query');
+      if (searchQ) sessionStorage.removeItem('teeup_guest_search_query');
+    } catch {
+      /* ignore */
+    }
+    if (listingId) {
+      setSelectedListingId(String(listingId));
+      setSelectedOwnerListingId(null);
+      return;
+    }
+    if (searchQ) {
+      setSearchQuery(searchQ);
+      setView('search');
+    }
+  }, [guest]);
 
   // Load search results whenever we have a query and are in the search view
   useEffect(() => {
@@ -259,6 +284,10 @@ function UserHome() {
   }, [searchQuery, view, searchFilters]);
 
   const handleFavorite = async (listingId) => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     const id = String(listingId);
     const isCurrentlySaved = savedIds.has(id);
     try {
@@ -303,6 +332,10 @@ function UserHome() {
   };
 
   const handleSell = () => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     setView('sell');
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
@@ -311,6 +344,10 @@ function UserHome() {
   };
 
   const handleMessages = useCallback(async (listingContext = null) => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     const hasOfferIntent = Boolean(listingContext?.initialMessage);
 
     if (hasOfferIntent && !sendingOfferRef.current) {
@@ -357,14 +394,22 @@ function UserHome() {
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
     setSelectedProfileUserId(null);
-  }, []);
+  }, [guest, openLogin]);
 
   const handleMyListings = () => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     setView('myListings');
     setSelectedOwnerListingId(null);
   };
 
   const handleViewAllNotifications = () => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     setView('notifications');
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
@@ -372,6 +417,10 @@ function UserHome() {
   };
 
   const handleNotificationClick = (notification) => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     const { type, data } = notification;
     if (type === 'new_message' && data?.conversationId) {
       setInitialMessagesConversationId(data.conversationId);
@@ -408,6 +457,10 @@ function UserHome() {
   };
 
   const handleOpenMessages = (conversationId) => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     if (conversationId) setInitialMessagesConversationId(conversationId);
     setMessagesListingContext(null);
     setView('messages');
@@ -428,10 +481,17 @@ function UserHome() {
   };
 
   const handleOpenProfile = () => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     setView('profile');
   };
 
-  const handleLogout = () => setLogoutModalOpen(true);
+  const handleLogout = () => {
+    if (guest) return;
+    setLogoutModalOpen(true);
+  };
   const confirmLogout = () => {
     setLogoutModalOpen(false);
     logout();
@@ -496,13 +556,33 @@ function UserHome() {
   );
 
   const handlePublicProfileFollowUser = useCallback(async (targetUserId, shouldFollow) => {
+    if (guest) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     if (!targetUserId) return;
     if (shouldFollow) {
       await followUser(targetUserId);
       return;
     }
     await unfollowUser(targetUserId);
-  }, []);
+  }, [guest, openLogin]);
+
+  const marketplaceHeaderProps = guest
+    ? {
+        guest: true,
+        onGuestLogin: () => openLogin({ fromBrowse: true }),
+        onGuestSignUp: () => openLogin({ fromBrowse: true, tab: 'signup' }),
+      }
+    : {
+        onSell: handleSell,
+        onMessages: handleMessages,
+        onMyListings: handleMyListings,
+        onNotifications: () => {},
+        onViewAllNotifications: handleViewAllNotifications,
+        onOpenProfile: handleOpenProfile,
+        onLogout: handleLogout,
+      };
 
   return (
     <div className="user-home" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -532,6 +612,7 @@ function UserHome() {
         <PublicProfilePage
           profileUserId={selectedProfileUserId}
           currentUser={user}
+          userHeaderExtras={marketplaceHeaderProps}
           onBack={() => setView('feed')}
           onSearch={handleSearch}
           onSell={handleSell}
@@ -574,15 +655,10 @@ function UserHome() {
           listingId={selectedListingId}
           onBack={() => setSelectedListingId(null)}
           user={user}
+          userHeaderExtras={marketplaceHeaderProps}
           onSearch={handleSearch}
-          onSell={handleSell}
           onMessages={handleMessages}
-          onMyListings={handleMyListings}
-          onNotifications={() => {}}
-          onViewAllNotifications={handleViewAllNotifications}
           onNotificationClick={handleNotificationClick}
-          onOpenProfile={handleOpenProfile}
-          onLogout={handleLogout}
           onViewSellerProfile={(userId) => {
             setSelectedProfileUserId(String(userId));
             setView('publicProfile');
@@ -594,6 +670,7 @@ function UserHome() {
       ) : view === 'search' && searchQuery ? (
         <SearchResultsPage
           user={user}
+          userHeaderExtras={marketplaceHeaderProps}
           query={searchQuery}
           results={searchResults}
           loading={searchLoading}
@@ -602,14 +679,7 @@ function UserHome() {
           onFiltersChange={setSearchFilters}
           onBack={handleGoHome}
           onSearch={handleSearch}
-          onSell={handleSell}
-          onMessages={handleMessages}
-          onMyListings={handleMyListings}
-          onNotifications={() => {}}
-          onViewAllNotifications={handleViewAllNotifications}
           onNotificationClick={handleNotificationClick}
-          onOpenProfile={handleOpenProfile}
-          onLogout={handleLogout}
           onGoHome={handleGoHome}
           onViewListing={openListingById}
           favoritePropsForListing={listingCardFavoriteProps}
@@ -716,15 +786,9 @@ function UserHome() {
           <UserHeader
             user={user}
             onSearch={handleSearch}
-            onSell={handleSell}
-            onMessages={handleMessages}
-            onMyListings={handleMyListings}
-            onNotifications={() => {}}
-            onViewAllNotifications={handleViewAllNotifications}
             onNotificationClick={handleNotificationClick}
-            onOpenProfile={handleOpenProfile}
-            onLogout={handleLogout}
             onGoHome={handleGoHome}
+            {...marketplaceHeaderProps}
           />
           <main className="user-home-main">
             <div className="user-home-container user-home-list-page">
@@ -761,15 +825,9 @@ function UserHome() {
           <UserHeader
             user={user}
             onSearch={handleSearch}
-            onSell={handleSell}
-            onMessages={handleMessages}
-            onMyListings={handleMyListings}
-            onNotifications={() => {}}
-            onViewAllNotifications={handleViewAllNotifications}
             onNotificationClick={handleNotificationClick}
-            onOpenProfile={handleOpenProfile}
-            onLogout={handleLogout}
             onGoHome={handleGoHome}
+            {...marketplaceHeaderProps}
           />
           <main className="user-home-main">
             <div className="user-home-container user-home-list-page">
@@ -806,15 +864,9 @@ function UserHome() {
       <UserHeader
         user={user}
         onSearch={handleSearch}
-        onSell={handleSell}
-        onMessages={handleMessages}
-        onMyListings={handleMyListings}
-        onNotifications={() => {}}
-        onViewAllNotifications={handleViewAllNotifications}
         onNotificationClick={handleNotificationClick}
-        onOpenProfile={handleOpenProfile}
-        onLogout={handleLogout}
         onGoHome={handleGoHome}
+        {...marketplaceHeaderProps}
       />
 
       <main className="user-home-main">
@@ -834,7 +886,9 @@ function UserHome() {
                 <p className="user-home-hero-label">Pre-owned golf gear</p>
                 <h2 className="user-home-hero-text">Find your next club</h2>
                 <p className="user-home-hero-sub">
-                  Browse listings from sellers in your community. Make an offer and get fitted for your game.
+                  {guest
+                    ? 'Browse listings from local sellers. Sign in to message sellers, save items, and sell your own gear.'
+                    : 'Browse listings from sellers in your community. Make an offer and get fitted for your game.'}
                 </p>
                 <Button
                   size="lg"
@@ -887,6 +941,7 @@ function UserHome() {
             </div>
           ) : (
             <>
+              {!guest && (
               <section className="user-home-section user-home-section-recommended">
                 <header className="user-home-section-head">
                   <span className="user-home-section-label">Picked for you</span>
@@ -921,6 +976,7 @@ function UserHome() {
                   )}
                 </div>
               </section>
+              )}
 
               <section id="user-home-recent" className="user-home-section user-home-section-recent">
                 <header className="user-home-section-head">
@@ -957,6 +1013,7 @@ function UserHome() {
                 </div>
               </section>
 
+              {!guest && (
               <section className="user-home-section user-home-section-saved">
                 <header className="user-home-section-head">
                   <span className="user-home-section-label">Your list</span>
@@ -978,18 +1035,21 @@ function UserHome() {
                   )}
                 </div>
               </section>
+              )}
             </>
           )}
         </div>
       </main>
         </>
       )}
-      <LogoutConfirmModal
-        open={logoutModalOpen}
-        roleLabel="user"
-        onCancel={() => setLogoutModalOpen(false)}
-        onConfirm={confirmLogout}
-      />
+      {!guest && (
+        <LogoutConfirmModal
+          open={logoutModalOpen}
+          roleLabel="user"
+          onCancel={() => setLogoutModalOpen(false)}
+          onConfirm={confirmLogout}
+        />
+      )}
     </div>
   );
 }

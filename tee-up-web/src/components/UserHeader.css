@@ -454,7 +454,8 @@
     max-width: 200px;
   }
 
-  .user-header-link {
+  /* Keep guest Log in visible; hide Messages / My Listings on small screens */
+  .user-header-link:not(.user-header-guest-link) {
     display: none;
   }
 }

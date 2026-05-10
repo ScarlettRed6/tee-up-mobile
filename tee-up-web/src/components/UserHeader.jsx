@@ -7,6 +7,7 @@ import { Bell, User, LogOut, MessageCircle, Star, Tag, Heart, Megaphone, UserPlu
 import { useNotifications } from '../context/NotificationsContext';
 import { formatChatSnippet } from '../utils/chatOffers';
 import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import './UserHeader.css';
 
 const NOTIFICATION_ICON_MAP = {
@@ -35,7 +36,23 @@ function formatRelativeTime(timestamp) {
   return parsed.toLocaleDateString();
 }
 
-function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifications, onViewAllNotifications, onNotificationClick, onOpenProfile, onLogout, onGoHome }) {
+function UserHeader({
+  user,
+  guest = false,
+  onGuestLogin,
+  onGuestSignUp,
+  onSearch,
+  searchPlaceholder = 'Search clubs, balls, rangefinders...',
+  onSell,
+  onMessages,
+  onMyListings,
+  onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
+  onOpenProfile,
+  onLogout,
+  onGoHome,
+}) {
   const [searchValue, setSearchValue] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { notifications, unreadCount, refreshNotifications, markNotificationAsRead } = useNotifications();
@@ -128,7 +145,7 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
         <form className="user-header-search-wrap" onSubmit={handleSearchSubmit}>
           <Input
             type="search"
-            placeholder="Find your next favorite club..."
+            placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             className="user-header-search-input"
@@ -137,22 +154,32 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
         </form>
 
         <nav className="user-header-right">
-          {onMessages && (
+          {guest ? (
+            <>
+              <Button variant="ghost" size="sm" className="user-header-link user-header-guest-link" type="button" onClick={() => onGuestLogin?.()}>
+                Log in
+              </Button>
+              <Button variant="secondary" size="sm" className="user-header-btn-sell user-header-btn-join" type="button" onClick={() => onGuestSignUp?.()}>
+                Join free
+              </Button>
+            </>
+          ) : null}
+          {!guest && onMessages ? (
             <Button variant="ghost" size="sm" className="user-header-link" onClick={onMessages}>
               Messages
             </Button>
-          )}
-          {onMyListings && (
+          ) : null}
+          {!guest && onMyListings ? (
             <Button variant="ghost" size="sm" className="user-header-link" onClick={onMyListings}>
               My Listings
             </Button>
-          )}
-          {onSell && (
+          ) : null}
+          {!guest && onSell ? (
             <Button variant="secondary" size="sm" className="user-header-btn-sell" onClick={onSell}>
               + Sell
             </Button>
-          )}
-          {onNotifications != null && (
+          ) : null}
+          {!guest && onNotifications != null ? (
             <div className="user-header-notif-wrap" ref={notifDropdownRef}>
               <Button
                 variant="ghost"
@@ -230,8 +257,8 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
                 </div>
               )}
             </div>
-          )}
-          {onOpenProfile != null || onLogout != null ? (
+          ) : null}
+          {!guest && (onOpenProfile != null || onLogout != null) ? (
             <div className="user-header-account-wrap" ref={profileDropdownRef}>
               <Button
                 type="button"
@@ -246,7 +273,7 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
                 onClick={handleProfileMenuToggle}
               >
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user?.profile_image} alt="" />
+                  <AvatarImage src={resolveMediaUrl(user?.profile_image)} alt="" />
                   <AvatarFallback>
                     <User className="h-5 w-5" />
                   </AvatarFallback>

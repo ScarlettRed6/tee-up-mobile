@@ -10,6 +10,7 @@ import { Label } from './ui/label';
 import ListingSearchFilters from './ListingSearchFilters';
 import { getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import './ProfilePage.css';
 
@@ -284,7 +285,7 @@ export default function ProfilePage({
             <div className="profile-hero-inner">
               <div className="profile-avatar-wrap">
                 <Avatar className="profile-avatar">
-                  <AvatarImage src={user?.profile_image} alt={displayName} />
+                  <AvatarImage src={resolveMediaUrl(user?.profile_image)} alt={displayName} />
                   <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
                 </Avatar>
               </div>
@@ -463,7 +464,7 @@ export default function ProfilePage({
                         <div className="profile-review-header">
                           <div className="profile-reviewer">
                             <Avatar className="profile-review-avatar">
-                              <AvatarImage src={review.reviewer_profile_image} alt={review.reviewer_name || 'Reviewer'} />
+                              <AvatarImage src={resolveMediaUrl(review.reviewer_profile_image)} alt={review.reviewer_name || 'Reviewer'} />
                               <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
                             </Avatar>
                             <div>

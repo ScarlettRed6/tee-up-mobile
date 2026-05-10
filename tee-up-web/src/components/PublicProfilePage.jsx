@@ -6,8 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Alert } from './ui/alert';
 import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { getListings } from '../api/userListingsApi';
+import { useLoginPrompt } from '../context/LoginPromptContext';
 import { getFollowStatus } from '../api/followerApi';
 import ListingSearchFilters from './ListingSearchFilters';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import { cn } from '@/lib/utils';
 import './ProfilePage.css';
@@ -39,6 +41,7 @@ function formatMemberSince(createdAt) {
 export default function PublicProfilePage({
   profileUserId,
   currentUser,
+  userHeaderExtras = {},
   onBack,
   onSearch,
   onSell,
@@ -66,6 +69,7 @@ export default function PublicProfilePage({
   const [listingsSearch, setListingsSearch] = useState('');
   const [listingsCategory, setListingsCategory] = useState('');
   const [listingsSort, setListingsSort] = useState('newest');
+  const { openLogin } = useLoginPrompt();
 
   useEffect(() => {
     if (!profileUserId) {
@@ -120,6 +124,10 @@ export default function PublicProfilePage({
   }, [profileUserId, currentUser?.id]);
 
   const handleFollow = async () => {
+    if (!currentUser?.id) {
+      openLogin({ fromBrowse: true });
+      return;
+    }
     if (followLoading) return;
     setActionError(null);
     const nextFollowing = !following;
@@ -142,15 +150,9 @@ export default function PublicProfilePage({
         <UserHeader
           user={currentUser}
           onSearch={onSearch}
-          onSell={onSell}
-          onMessages={onMessages}
-          onMyListings={onMyListings}
-          onNotifications={onNotifications}
-          onViewAllNotifications={onViewAllNotifications}
           onNotificationClick={onNotificationClick}
-          onOpenProfile={onOpenProfile}
-          onLogout={onLogout}
           onGoHome={onGoHome}
+          {...userHeaderExtras}
         />
         <main className="profile-page-main">
           <div className="profile-page-container">
@@ -178,15 +180,9 @@ export default function PublicProfilePage({
       <UserHeader
         user={currentUser}
         onSearch={onSearch}
-        onSell={onSell}
-        onMessages={onMessages}
-        onMyListings={onMyListings}
-        onNotifications={onNotifications}
-        onViewAllNotifications={onViewAllNotifications}
         onNotificationClick={onNotificationClick}
-        onOpenProfile={onOpenProfile}
-        onLogout={onLogout}
         onGoHome={onGoHome}
+        {...userHeaderExtras}
       />
 
       <main className="profile-page-main">
@@ -201,7 +197,7 @@ export default function PublicProfilePage({
             <div className="profile-hero-inner">
               <div className="profile-avatar-wrap">
                 <Avatar className="profile-avatar">
-                  <AvatarImage src={profile?.profile_image} alt={displayName} />
+                  <AvatarImage src={resolveMediaUrl(profile?.profile_image)} alt={displayName} />
                   <AvatarFallback><User className="h-12 w-12" /></AvatarFallback>
                 </Avatar>
               </div>
@@ -327,7 +323,7 @@ export default function PublicProfilePage({
                         <div className="profile-review-header">
                           <div className="profile-reviewer">
                             <Avatar className="profile-review-avatar">
-                              <AvatarImage src={review.reviewer_profile_image} alt={review.reviewer_name || 'Reviewer'} />
+                              <AvatarImage src={resolveMediaUrl(review.reviewer_profile_image)} alt={review.reviewer_name || 'Reviewer'} />
                               <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
                             </Avatar>
                             <div>

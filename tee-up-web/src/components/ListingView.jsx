@@ -9,6 +9,7 @@ import { Skeleton } from './ui/skeleton';
 import { getListingById } from '../api/userListingsApi';
 import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import { buildOfferMessage } from '../utils/chatOffers';
 import './ListingView.css';
@@ -27,7 +28,19 @@ function normalizeListing(row) {
   };
 }
 
-export default function ListingView({ listingId, onBack, user, onSearch, onSell, onMessages, onMyListings, onNotifications, onViewAllNotifications, onNotificationClick, onOpenProfile, onLogout, onViewSellerProfile, onGoHome, onToggleFavorite, isFavorite }) {
+export default function ListingView({
+  listingId,
+  onBack,
+  user,
+  userHeaderExtras = {},
+  onSearch,
+  onNotificationClick,
+  onMessages,
+  onViewSellerProfile,
+  onGoHome,
+  onToggleFavorite,
+  isFavorite,
+}) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,15 +120,9 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
         <UserHeader
           user={user}
           onSearch={onSearch}
-          onSell={onSell}
-          onMessages={onMessages}
-          onMyListings={onMyListings}
-          onNotifications={onNotifications}
-          onViewAllNotifications={onViewAllNotifications}
           onNotificationClick={onNotificationClick}
-          onOpenProfile={onOpenProfile}
-          onLogout={onLogout}
           onGoHome={onGoHome}
+          {...userHeaderExtras}
         />
         <div className="listing-view-container">
           <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
@@ -141,15 +148,9 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
         <UserHeader
           user={user}
           onSearch={onSearch}
-          onSell={onSell}
-          onMessages={onMessages}
-          onMyListings={onMyListings}
-          onNotifications={onNotifications}
-          onViewAllNotifications={onViewAllNotifications}
           onNotificationClick={onNotificationClick}
-          onOpenProfile={onOpenProfile}
-          onLogout={onLogout}
           onGoHome={onGoHome}
+          {...userHeaderExtras}
         />
         <div className="listing-view-container">
           <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
@@ -181,16 +182,10 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
       <UserHeader
         user={user}
         onSearch={onSearch}
-        onSell={onSell}
-        onMessages={onMessages}
-        onMyListings={onMyListings}
-        onNotifications={onNotifications}
-        onViewAllNotifications={onViewAllNotifications}
         onNotificationClick={onNotificationClick}
-          onOpenProfile={onOpenProfile}
-          onLogout={onLogout}
-          onGoHome={onGoHome}
-        />
+        onGoHome={onGoHome}
+        {...userHeaderExtras}
+      />
 
       <div className="listing-view-container">
         <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
@@ -314,7 +309,7 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
             <Card className="listing-view-seller-card">
               <CardContent className="listing-view-seller-content">
                 <Avatar className="listing-view-seller-avatar">
-                  <AvatarImage src={listing.seller_profile_image} alt={sellerName} />
+                  <AvatarImage src={resolveMediaUrl(listing.seller_profile_image)} alt={sellerName} />
                   <AvatarFallback><User className="h-6 w-6" /></AvatarFallback>
                 </Avatar>
                 <div className="listing-view-seller-text">
@@ -335,54 +330,58 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
               </CardContent>
             </Card>
 
-            <Button
-              className="listing-view-make-offer"
-              size="lg"
-              onClick={() => {
-                onMessages?.({
-                  sellerId: listing.user_id,
-                  listingId: listing.listing_id ?? listing.id,
-                  listingTitle: listing.title,
-                });
-              }}
-            >
-              Chat with Seller
-            </Button>
-            <div className="listing-view-offer-box">
-              <div className="listing-view-offer-row">
-                <input
-                  type="number"
-                  min="1"
-                  className="listing-view-offer-input"
-                  placeholder="Enter your offer amount"
-                  value={offerAmount}
-                  onChange={(e) => setOfferAmount(e.target.value)}
-                />
+            {!isOwnListing ? (
+              <>
                 <Button
-                  size="lg"
                   className="listing-view-make-offer"
+                  size="lg"
                   onClick={() => {
-                    setOfferError('');
-                    const payload = buildOfferMessage(offerAmount);
-                    if (!payload) {
-                      setOfferError('Please enter a valid offer amount.');
-                      return;
-                    }
                     onMessages?.({
                       sellerId: listing.user_id,
                       listingId: listing.listing_id ?? listing.id,
                       listingTitle: listing.title,
-                      intent: 'offer',
-                      offerRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                      initialMessage: payload,
                     });
                   }}
                 >
-                  Make Offer
+                  Chat with Seller
                 </Button>
-              </div>
-              {offerError ? <p className="listing-view-offer-error">{offerError}</p> : null}
-            </div>
+                <div className="listing-view-offer-box">
+                  <div className="listing-view-offer-row">
+                    <input
+                      type="number"
+                      min="1"
+                      className="listing-view-offer-input"
+                      placeholder="Enter your offer amount"
+                      value={offerAmount}
+                      onChange={(e) => setOfferAmount(e.target.value)}
+                    />
+                    <Button
+                      size="lg"
+                      className="listing-view-make-offer"
+                      onClick={() => {
+                        setOfferError('');
+                        const payload = buildOfferMessage(offerAmount);
+                        if (!payload) {
+                          setOfferError('Please enter a valid offer amount.');
+                          return;
+                        }
+                        onMessages?.({
+                          sellerId: listing.user_id,
+                          listingId: listing.listing_id ?? listing.id,
+                          listingTitle: listing.title,
+                          intent: 'offer',
+                          offerRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                          initialMessage: payload,
+                        });
+                      }}
+                    >
+                      Make Offer
+                    </Button>
+                  </div>
+                  {offerError ? <p className="listing-view-offer-error">{offerError}</p> : null}
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -403,7 +402,7 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
                     </p>
                     <div className="listing-view-reviewer">
                       <Avatar className="listing-view-reviewer-avatar">
-                        <AvatarImage src={review.reviewer_profile_image} alt={review.reviewer_name || 'Reviewer'} />
+                        <AvatarImage src={resolveMediaUrl(review.reviewer_profile_image)} alt={review.reviewer_name || 'Reviewer'} />
                         <AvatarFallback><User className="h-3 w-3" /></AvatarFallback>
                       </Avatar>
                       <span className="listing-view-reviewer-name">{review.reviewer_name || `Buyer ${idx + 1}`}</span>

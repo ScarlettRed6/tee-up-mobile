@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginPromptProvider } from './context/LoginPromptContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -19,9 +20,29 @@ import './App.css';
 function AppContent() {
   const { isAuthenticated, loading, logout, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [authView, setAuthView] = useState('home'); // 'home' | 'login'
+  /** Guest path: landing vs auth form vs browsing marketplace without an account */
+  const [authView, setAuthView] = useState('home'); // 'home' | 'login' | 'browse'
+  const [loginBackDestination, setLoginBackDestination] = useState('home'); // 'home' | 'browse'
   const [loginInitialView, setLoginInitialView] = useState('login'); // 'login' | 'signup'
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+
+  const goLogin = useCallback((fromBrowse, tab) => {
+    if (loading || isAuthenticated) return;
+    setLoginBackDestination(fromBrowse ? 'browse' : 'home');
+    setLoginInitialView(tab === 'signup' ? 'signup' : 'login');
+    setAuthView('login');
+  }, [loading, isAuthenticated]);
+
+  const loginPromptApi = useMemo(
+    () => ({
+      openLogin: (opts = {}) => goLogin(Boolean(opts.fromBrowse), opts.tab === 'signup' ? 'signup' : 'login'),
+    }),
+    [goLogin]
+  );
+
+  const handleLoginScreenBack = useCallback(() => {
+    setAuthView(loginBackDestination === 'browse' ? 'browse' : 'home');
+  }, [loginBackDestination]);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
@@ -86,44 +107,74 @@ function AppContent() {
   if (!isAuthenticated) {
     if (authView === 'login') {
       return (
-        <>
-          <Login
-            initialView={loginInitialView}
-            onBackToHome={() => setAuthView('home')}
-          />
-          <ThemeToggle />
-        </>
+        <LoginPromptProvider value={loginPromptApi}>
+          <>
+            <Login initialView={loginInitialView} onBackToHome={handleLoginScreenBack} />
+            <ThemeToggle />
+          </>
+        </LoginPromptProvider>
+      );
+    }
+    if (authView === 'browse') {
+      return (
+        <LoginPromptProvider value={loginPromptApi}>
+          <NotificationsProvider>
+            <>
+              <UserHome guest />
+              <ThemeToggle />
+            </>
+          </NotificationsProvider>
+        </LoginPromptProvider>
       );
     }
     return (
-      <>
-        <HomePage
-          onOpenLogin={() => {
-            setLoginInitialView('login');
-            setAuthView('login');
-          }}
-          onOpenSignUp={() => {
-            setLoginInitialView('signup');
-            setAuthView('login');
-          }}
-        />
-        <ThemeToggle />
-      </>
+      <LoginPromptProvider value={loginPromptApi}>
+        <>
+          <HomePage
+            onBrowseMarketplace={() => setAuthView('browse')}
+            onBrowseListing={(listingId) => {
+              if (listingId == null) return;
+              try {
+                sessionStorage.setItem('teeup_guest_open_listing', String(listingId));
+              } catch {
+                /* ignore */
+              }
+              setAuthView('browse');
+            }}
+            onBrowseSearch={(query) => {
+              const q = (query || '').trim();
+              if (!q) return;
+              try {
+                sessionStorage.setItem('teeup_guest_search_query', q);
+              } catch {
+                /* ignore */
+              }
+              setAuthView('browse');
+            }}
+            onOpenLogin={() => goLogin(false, 'login')}
+            onOpenSignUp={() => goLogin(false, 'signup')}
+          />
+          <ThemeToggle />
+        </>
+      </LoginPromptProvider>
     );
   }
 
   if (!isAdmin) {
     return (
-      <NotificationsProvider>
-        <>
-          <UserHome />
-          <ThemeToggle />
-        </>
-      </NotificationsProvider>
+      <LoginPromptProvider value={loginPromptApi}>
+        <NotificationsProvider>
+          <>
+            <UserHome />
+            <ThemeToggle />
+          </>
+        </NotificationsProvider>
+      </LoginPromptProvider>
     );
   }
 
   return (
+    <LoginPromptProvider value={loginPromptApi}>
     <div className="app">
       <Header user={user} />
       <Sidebar
@@ -140,6 +191,7 @@ function AppContent() {
         onConfirm={confirmLogout}
       />
     </div>
+    </LoginPromptProvider>
   );
 }
 

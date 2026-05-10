@@ -2,10 +2,12 @@ import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { PHILIPPINE_CITIES_BY_REGION } from '../constants/philippineLocations';
 import './SearchResultsPage.css';
 
 function SearchResultsPage({
   user,
+  userHeaderExtras = {},
   query,
   results,
   loading,
@@ -14,14 +16,7 @@ function SearchResultsPage({
   onFiltersChange,
   onBack,
   onSearch,
-  onSell,
-  onMessages,
-  onMyListings,
-  onNotifications,
-  onViewAllNotifications,
   onNotificationClick,
-  onOpenProfile,
-  onLogout,
   onGoHome,
   onViewListing,
   favoritePropsForListing,
@@ -57,7 +52,7 @@ function SearchResultsPage({
     if (!onFiltersChange) return;
     onFiltersChange((prev) => ({
       ...prev,
-      location: value,
+      location: value || '',
     }));
   };
 
@@ -66,15 +61,9 @@ function SearchResultsPage({
       <UserHeader
         user={user}
         onSearch={onSearch}
-        onSell={onSell}
-        onMessages={onMessages}
-        onMyListings={onMyListings}
-        onNotifications={onNotifications}
-        onViewAllNotifications={onViewAllNotifications}
         onNotificationClick={onNotificationClick}
-        onOpenProfile={onOpenProfile}
-        onLogout={onLogout}
         onGoHome={onGoHome}
+        {...userHeaderExtras}
       />
 
       <main className="search-page-main">
@@ -183,13 +172,26 @@ function SearchResultsPage({
 
               <section className="search-page-filter-section">
                 <h3 className="search-page-filter-title">Location</h3>
-                <Input
-                  type="text"
-                  className="search-page-location-input"
-                  placeholder="Quezon City, NCR"
+                <select
+                  className="search-page-location-select"
+                  aria-label="Filter by location"
                   value={filters?.location ?? ''}
                   onChange={(e) => handleLocationChange(e.target.value)}
-                />
+                >
+                  <option value="">All locations</option>
+                  {Object.entries(PHILIPPINE_CITIES_BY_REGION).map(([region, cities]) => (
+                    <optgroup key={region} label={region}>
+                      {cities.map((city) => {
+                        const value = `${region}, ${city}`;
+                        return (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  ))}
+                </select>
               </section>
             </aside>
 

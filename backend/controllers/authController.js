@@ -134,6 +134,10 @@ export async function login(req, res){
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                profile_image: user.profile_image ?? null,
+                bio: user.bio ?? null,
+                provider: user.provider ?? 'local',
+                created_at: user.created_at ?? null,
             }
         });
     }catch(err){

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import Logo from './Logo';
+import UserHeader from './UserHeader';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ChevronRight } from 'lucide-react';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import { getListings } from '../api/userListingsApi';
 import PriceDisplay from './PriceDisplay';
 import './HomePage.css';
@@ -39,12 +40,30 @@ function normalizeListing(item) {
   };
 }
 
-function HomePage({ onOpenLogin, onOpenSignUp }) {
+function HomePage({
+  onOpenLogin,
+  onOpenSignUp,
+  onBrowseMarketplace,
+  onBrowseListing,
+  onBrowseSearch,
+}) {
   const [heroIndex, setHeroIndex] = useState(0);
   const [trendingItems, setTrendingItems] = useState([]);
   const [trendingLoading, setTrendingLoading] = useState(true);
   const handleOpenLogin = () => (onOpenLogin ? onOpenLogin() : null);
   const handleOpenSignUp = () => (onOpenSignUp ? onOpenSignUp() : onOpenLogin?.());
+
+  const handleGuestSearch = (q) => {
+    const raw = String(q ?? '').trim();
+    if (!raw) return;
+    onBrowseSearch?.(raw);
+  };
+
+  const handleGuestGoHome = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openMarketplace = () => onBrowseMarketplace?.();
 
   // Preload slideshow images for smoother transitions
   useEffect(() => {
@@ -86,37 +105,14 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
 
   return (
     <div className="home-page">
-      {/* Header */}
-      <header className="home-header">
-        <div className="home-header-inner">
-          <Logo className="home-logo" size={36} />
-          <div className="home-search-wrap">
-            <Input
-              type="search"
-              placeholder="Search clubs, balls, rangefinders..."
-              className="home-search-input"
-              aria-label="Search marketplace"
-            />
-          </div>
-          <div className="home-header-actions">
-            <button
-              type="button"
-              onClick={handleOpenLogin}
-              className="home-link-login"
-            >
-              Log In
-            </button>
-            <Button
-              type="button"
-              onClick={handleOpenSignUp}
-              className="home-btn-join"
-              size="lg"
-            >
-              Join the Club
-            </Button>
-          </div>
-        </div>
-      </header>
+      <UserHeader
+        guest
+        user={null}
+        onGuestLogin={handleOpenLogin}
+        onGuestSignUp={handleOpenSignUp}
+        onSearch={handleGuestSearch}
+        onGoHome={handleGuestGoHome}
+      />
 
       {/* Hero – auto slideshow of golf scenery (no user controls) */}
       <section className="home-hero" aria-label="Golf scenery">
@@ -139,7 +135,7 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
           </p>
           <Button
             type="button"
-            onClick={handleOpenSignUp}
+            onClick={openMarketplace}
             className="home-hero-cta"
             size="lg"
           >
@@ -194,10 +190,21 @@ function HomePage({ onOpenLogin, onOpenSignUp }) {
                         originalClassName="home-product-price-original"
                       />
                       <p className="home-product-merchant">
-                        <span className="home-product-merchant-dot" />
-                        {item.seller_name || 'Marketplace seller'}
+                        <Avatar className="home-product-merchant-avatar">
+                          <AvatarImage src={resolveMediaUrl(item.seller_profile_image)} alt="" />
+                          <AvatarFallback className="home-product-merchant-fallback">
+                            {(item.seller_name || 'S').trim().charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="home-product-merchant-name">
+                          {item.seller_name || 'Marketplace seller'}
+                        </span>
                       </p>
-                      <button type="button" className="home-product-view-hint-btn" onClick={handleOpenLogin}>
+                      <button
+                        type="button"
+                        className="home-product-view-hint-btn"
+                        onClick={() => onBrowseListing?.(item.listing_id ?? item.id)}
+                      >
                         <span className="home-product-view-hint">
                           View details <ChevronRight className="home-product-view-icon" />
                         </span>

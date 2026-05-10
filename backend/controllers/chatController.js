@@ -1,5 +1,6 @@
 import { 
     storeMessage, 
+    getMessageByIdWithSender,
     findOrCreateConversation,
     findConversation,
     getConversationsForUser, 
@@ -10,8 +11,9 @@ import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export async function saveSentMessage(conversation_id, senderId, message, image_url){
     try{
-        const result = await storeMessage(conversation_id, senderId, message, image_url);
-        return result;
+        const row = await storeMessage(conversation_id, senderId, message, image_url);
+        const withSender = await getMessageByIdWithSender(row.id);
+        return withSender || row;
     }catch(err){
         console.log('CHATCONTROLLER, ERROR: ', err.message);
         throw new Error("Error saving message");

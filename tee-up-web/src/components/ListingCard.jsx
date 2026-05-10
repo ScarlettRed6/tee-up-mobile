@@ -2,8 +2,10 @@ import * as React from 'react';
 import { Card, CardHeader, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Heart, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import './ListingCard.css';
 
@@ -11,6 +13,8 @@ function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, varian
   const photos = Array.isArray(listing.photos) ? listing.photos : (listing.photos ? JSON.parse(listing.photos || '[]') : []);
   const imageUrl = photos[0] || null;
   const subtitle = listing.seller_name || tagline || listing.brand || '';
+  const sellerPic = resolveMediaUrl(listing.seller_profile_image);
+  const sellerInitial = (subtitle || '?').trim().charAt(0).toUpperCase() || '?';
 
   const handleClick = () => {
     onClick?.(listing.listing_id ?? listing.id);
@@ -65,8 +69,11 @@ function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, varian
         />
         {subtitle && (
           <p className="listing-card-subtitle">
-            <span className="listing-card-dot" aria-hidden="true" />
-            {subtitle}
+            <Avatar className="listing-card-seller-avatar">
+              <AvatarImage src={sellerPic} alt="" />
+              <AvatarFallback className="listing-card-seller-fallback">{sellerInitial}</AvatarFallback>
+            </Avatar>
+            <span className="listing-card-subtitle-name">{subtitle}</span>
           </p>
         )}
         {variant === 'grid' && (

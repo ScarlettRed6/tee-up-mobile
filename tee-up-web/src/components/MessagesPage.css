@@ -295,6 +295,8 @@
 
 .messages-bubble-row {
   display: flex;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .messages-bubble-row-me {
@@ -303,6 +305,34 @@
 
 .messages-bubble-row-other {
   justify-content: flex-start;
+}
+
+.messages-bubble-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-light-gray);
+}
+
+.messages-bubble-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.messages-bubble-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
 }
 
 .messages-bubble {

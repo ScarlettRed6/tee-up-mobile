@@ -1,117 +1,9 @@
-/* HomePage - Landing (aligned with logged-in browse design) */
+/* HomePage - Landing */
 
 .home-page {
   min-height: 100vh;
   font-family: var(--font-family);
   background-color: var(--color-background);
-}
-
-/* Header – same feel as UserHeader */
-.home-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background-color: var(--color-white);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-header);
-}
-
-.home-header-inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: var(--spacing-md) var(--spacing-2xl);
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xl);
-}
-
-.home-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-h3);
-  flex-shrink: 0;
-}
-
-.home-search-wrap {
-  flex: 1;
-  max-width: 420px;
-  margin: 0 auto;
-}
-
-.home-search-input {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: var(--input-min-height);
-  padding: var(--input-padding);
-  font-size: var(--font-size-body-small);
-  color: var(--color-text-primary);
-  background-color: var(--color-light-gray) !important;
-  border: 1px solid var(--color-border) !important;
-  border-radius: var(--radius-pill);
-}
-
-.home-search-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-.home-search-input:hover {
-  border-color: var(--color-primary);
-}
-
-.home-search-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(66, 122, 67, 0.15);
-  outline: none;
-}
-
-.home-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  flex-shrink: 0;
-}
-
-.home-link-login {
-  background: none;
-  border: none;
-  font-family: var(--font-family);
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  cursor: pointer;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-small);
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.home-link-login:hover {
-  color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: white;
-}
-
-.home-btn-join {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background-color: var(--color-primary) !important;
-  color: var(--color-white) !important;
-  border-radius: var(--radius-button);
-  font-weight: var(--font-weight-semibold);
-  padding: 13px 24px 11px !important;
-  box-shadow: var(--shadow-button);
-  line-height: 1;
-  min-height: 44px;
-  box-sizing: border-box;
-}
-
-.home-btn-join:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
 }
 
 /* Hero – slideshow (kept), design tweaks to match browse */
@@ -325,21 +217,33 @@
 }
 
 .home-product-merchant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   font-size: var(--font-size-small);
   color: var(--color-text-muted);
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
-.home-product-merchant-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-primary);
+.home-product-merchant-avatar {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
-  opacity: 0.6;
+  border: 1px solid var(--color-border);
+}
+
+.home-product-merchant-fallback {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.home-product-merchant-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .home-product-view-hint {
@@ -411,15 +315,6 @@
 }
 
 @media (max-width: 768px) {
-  .home-header-inner {
-    padding: var(--spacing-md) var(--spacing-lg);
-    gap: var(--spacing-md);
-  }
-
-  .home-search-wrap {
-    max-width: 200px;
-  }
-
   .home-hero {
     min-height: 420px;
     padding: var(--spacing-2xl) var(--spacing-lg);

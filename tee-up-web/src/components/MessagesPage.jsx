@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { getConversations, getMessages, findOrCreateConversation } from '../api/chatApi';
 import { getSocket } from '../utils/socketClient';
 import { formatChatSnippet } from '../utils/chatOffers';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import './MessagesPage.css';
 
 /** Match login/signup text field padding */
@@ -53,7 +54,10 @@ function normalizeMessage(row, currentUserId) {
     sender: isMe ? 'me' : 'other',
     timestamp: row.created_at,
     senderName: row.sender_name,
-    senderAvatar: row.sender_profile_image || null,
+    senderAvatar:
+      row.sender_profile_image ||
+      row.senderProfileImage ||
+      null,
   };
 }
 
@@ -118,10 +122,7 @@ export default function MessagesPage({
       socket.on('new_message', (payload) => {
         const convId = payload?.conversation_id;
         if (!convId) return;
-        setConversations((prev) => {
-          // ensure newest message surfaces for list; rely on backend sorting on reload for now
-          return prev;
-        });
+        loadConversations();
         if (String(convId) !== String(selectedConversationId)) return;
         const normalizedIncoming = normalizeMessage(payload, currentUserId);
         setMessages((prev) => {
@@ -139,7 +140,7 @@ export default function MessagesPage({
         socketRef.current.off('new_message');
       }
     };
-  }, [currentUserId, selectedConversationId]);
+  }, [currentUserId, selectedConversationId, loadConversations]);
 
   useEffect(() => {
     if (!selectedConversationId || !socketRef.current) return;
@@ -290,7 +291,7 @@ export default function MessagesPage({
                     >
                       <div className="messages-list-avatar">
                         {conv.image ? (
-                          <img src={conv.image} alt={conv.productName} />
+                          <img src={resolveMediaUrl(conv.image)} alt="" />
                         ) : (
                           <div className="messages-list-avatar-fallback" />
                         )}
@@ -332,7 +333,7 @@ export default function MessagesPage({
                   <div className="messages-thread-heading">
                     <div className="messages-thread-avatar">
                       {activeConversation.image ? (
-                        <img src={activeConversation.image} alt={activeConversation.productName} />
+                        <img src={resolveMediaUrl(activeConversation.image)} alt="" />
                       ) : (
                         <div className="messages-thread-avatar-fallback" />
                       )}
@@ -370,7 +371,7 @@ export default function MessagesPage({
                   <div className="messages-thread-listing-summary">
                     <div className="messages-thread-listing-thumb">
                       {activeConversation.image ? (
-                        <img src={activeConversation.image} alt={activeConversation.productName} />
+                        <img src={resolveMediaUrl(activeConversation.image)} alt={activeConversation.productName} />
                       ) : (
                         <div className="messages-thread-listing-thumb-fallback" />
                       )}
@@ -398,22 +399,50 @@ export default function MessagesPage({
                     </div>
                   ) : (
                     <div className="messages-thread-scroll">
-                      {messages.map((m) => (
-                        <div
-                          key={m.id}
-                          className={`messages-bubble-row ${
-                            m.sender === 'me' ? 'messages-bubble-row-me' : 'messages-bubble-row-other'
-                          }`}
-                        >
+                      {messages.map((m) => {
+                        const otherPic = resolveMediaUrl(
+                          m.senderAvatar || activeConversation?.otherUserProfileImage
+                        );
+                        const mePic = resolveMediaUrl(user?.profile_image);
+                        return (
                           <div
-                            className={`messages-bubble ${
-                              m.sender === 'me' ? 'messages-bubble-me' : 'messages-bubble-other'
+                            key={m.id}
+                            className={`messages-bubble-row ${
+                              m.sender === 'me' ? 'messages-bubble-row-me' : 'messages-bubble-row-other'
                             }`}
                           >
-                            {formatChatSnippet(m.text)}
+                            {m.sender !== 'me' ? (
+                              <div className="messages-bubble-avatar" aria-hidden>
+                                {otherPic ? (
+                                  <img src={otherPic} alt="" />
+                                ) : (
+                                  <div className="messages-bubble-avatar-fallback">
+                                    {(activeConversation?.username || '?').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+                            <div
+                              className={`messages-bubble ${
+                                m.sender === 'me' ? 'messages-bubble-me' : 'messages-bubble-other'
+                              }`}
+                            >
+                              {formatChatSnippet(m.text)}
+                            </div>
+                            {m.sender === 'me' ? (
+                              <div className="messages-bubble-avatar" aria-hidden>
+                                {mePic ? (
+                                  <img src={mePic} alt="" />
+                                ) : (
+                                  <div className="messages-bubble-avatar-fallback">
+                                    {(user?.name || '?').trim().charAt(0).toUpperCase() || '?'}
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

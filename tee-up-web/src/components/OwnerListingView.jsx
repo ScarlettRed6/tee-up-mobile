@@ -9,6 +9,7 @@ import { Skeleton } from './ui/skeleton';
 import { getListingById, updateListingStatus, deleteListing } from '../api/userListingsApi';
 import { getConversations, getMessages } from '../api/chatApi';
 import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import { parseOfferMessage } from '../utils/chatOffers';
 import './OwnerListingView.css';
@@ -399,7 +400,7 @@ export default function OwnerListingView({
                     <Card key={offer.id} className="owner-listing-offer-card">
                       <CardContent className="owner-listing-offer-content">
                         <Avatar className="owner-listing-offer-avatar">
-                          <AvatarImage src={offer.buyerImage} alt={offer.buyerName} />
+                          <AvatarImage src={resolveMediaUrl(offer.buyerImage)} alt={offer.buyerName} />
                           <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
                         </Avatar>
                         <div className="owner-listing-offer-info">
