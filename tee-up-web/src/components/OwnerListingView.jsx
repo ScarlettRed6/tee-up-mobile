@@ -37,7 +37,6 @@ export default function OwnerListingView({
   onNotifications,
   onViewAllNotifications,
   onNotificationClick,
-  onProfile,
   onEditListing,
   onReviewOffer,
   onOpenProfile,
@@ -301,7 +300,9 @@ export default function OwnerListingView({
         onNotifications={onNotifications}
         onViewAllNotifications={onViewAllNotifications}
         onNotificationClick={onNotificationClick}
-        onProfile={onProfile}
+        onOpenProfile={onOpenProfile}
+        onLogout={onLogout}
+        onGoHome={onGoHome}
       />
 
       <div className="owner-listing-container">

@@ -13,6 +13,7 @@ import {
 } from './ui/dropdown-menu';
 import { Bell, User, LogOut, MessageCircle, Star, Tag, Heart, Megaphone, UserPlus } from 'lucide-react';
 import { useNotifications } from '../context/NotificationsContext';
+import { formatChatSnippet } from '../utils/chatOffers';
 import { cn } from '@/lib/utils';
 import './UserHeader.css';
 
@@ -105,18 +106,14 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
     <header className="user-header">
       <div className="user-header-inner">
         <div className="user-header-left">
-          {onGoHome ? (
-            <button
-              type="button"
-              className="user-header-logo-btn"
-              onClick={onGoHome}
-              aria-label="Go to home"
-            >
-              <Logo className="user-header-logo" size={32} showText={true} />
-            </button>
-          ) : (
+          <button
+            type="button"
+            className="user-header-logo-btn"
+            onClick={() => onGoHome?.()}
+            aria-label="Go to home"
+          >
             <Logo className="user-header-logo" size={32} showText={true} />
-          )}
+          </button>
         </div>
 
         <form className="user-header-search-wrap" onSubmit={handleSearchSubmit}>
@@ -200,7 +197,7 @@ function UserHeader({ user, onSearch, onSell, onMessages, onMyListings, onNotifi
                             </span>
                             <span className="user-header-notif-item-content">
                               <span className="user-header-notif-item-message">
-                                {n.message}
+                                {formatChatSnippet(n.message)}
                               </span>
                               <span className="user-header-notif-item-time">
                                 {formatRelativeTime(n.created_at)}

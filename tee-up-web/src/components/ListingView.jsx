@@ -96,6 +96,11 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
 
   if (!listingId) return null;
 
+  const isOwnListing =
+    user?.id != null &&
+    listing?.user_id != null &&
+    Number(user.id) === Number(listing.user_id);
+
   if (loading) {
     return (
       <div className="listing-view" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -269,7 +274,7 @@ export default function ListingView({ listingId, onBack, user, onSearch, onSell,
           <div className="listing-view-info">
             <div className="listing-view-title-row">
               <h1 className="listing-view-title">{listing.title || 'Untitled'}</h1>
-              {onToggleFavorite ? (
+              {onToggleFavorite && !isOwnListing ? (
                 <Button
                   type="button"
                   variant="outline"

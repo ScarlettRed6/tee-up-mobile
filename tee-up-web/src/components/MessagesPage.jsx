@@ -2,10 +2,16 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { cn } from '@/lib/utils';
 import { getConversations, getMessages, findOrCreateConversation } from '../api/chatApi';
 import { getSocket } from '../utils/socketClient';
-import { parseOfferMessage, formatOfferMessage } from '../utils/chatOffers';
+import { formatChatSnippet } from '../utils/chatOffers';
 import './MessagesPage.css';
+
+/** Match login/signup text field padding */
+const alignedAuthInputPad = { paddingInline: '1rem', paddingBlock: '0.875rem' };
+const alignedInputClassName =
+  'min-h-[52px] text-[17px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50';
 
 function normalizeConversation(conv) {
   let listingPhotos = [];
@@ -254,10 +260,15 @@ export default function MessagesPage({
             </div>
             <div className="messages-search">
               <Input
-                type="search"
+                type="text"
+                role="searchbox"
+                enterKeyHint="search"
                 placeholder="Search by user or listing…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className={cn(alignedInputClassName, 'messages-sidebar-search-field')}
+                style={alignedAuthInputPad}
+                aria-label="Search conversations by user or listing"
               />
             </div>
             <div className="messages-list">
@@ -293,7 +304,9 @@ export default function MessagesPage({
                         </div>
                         {conv.lastMessage && (
                           <div className="messages-list-row">
-                            <span className="messages-list-last">{conv.lastMessage}</span>
+                            <span className="messages-list-last">
+                              {formatChatSnippet(conv.lastMessage)}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -397,9 +410,7 @@ export default function MessagesPage({
                               m.sender === 'me' ? 'messages-bubble-me' : 'messages-bubble-other'
                             }`}
                           >
-                            {parseOfferMessage(m.text) != null
-                              ? formatOfferMessage(parseOfferMessage(m.text))
-                              : m.text}
+                            {formatChatSnippet(m.text)}
                           </div>
                         </div>
                       ))}
@@ -422,7 +433,8 @@ export default function MessagesPage({
                       handleSend();
                     }
                   }}
-                  className="messages-thread-input-field"
+                  className={cn(alignedInputClassName, 'messages-thread-input-field')}
+                  style={alignedAuthInputPad}
                 />
                 <Button
                   size="sm"

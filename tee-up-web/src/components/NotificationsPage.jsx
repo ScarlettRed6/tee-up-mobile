@@ -6,6 +6,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { ChevronLeft, Bell, MessageCircle, Star, Tag, Heart, Megaphone, UserPlus, CheckCheck } from 'lucide-react';
 import { useNotifications } from '../context/NotificationsContext';
+import { formatChatSnippet } from '../utils/chatOffers';
 import { cn } from '@/lib/utils';
 import './NotificationsPage.css';
 
@@ -182,7 +183,7 @@ export default function NotificationsPage({
                           </span>
                           <span className="notifications-page-item-content">
                             <span className="notifications-page-item-message">
-                              {n.message}
+                              {formatChatSnippet(n.message)}
                             </span>
                             <span className="notifications-page-item-time">
                               {formatRelativeTime(n.created_at)}

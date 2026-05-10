@@ -40,6 +40,12 @@
   opacity: 0.85;
 }
 
+.user-header-logo-btn:focus-visible {
+  outline: none;
+  border-radius: var(--radius-medium);
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+}
+
 .user-header-logo {
   display: inline-flex;
   align-items: center;

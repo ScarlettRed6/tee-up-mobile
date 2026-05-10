@@ -11,6 +11,7 @@ import { authContext } from '../context/authContext';
 import { fetchListingById } from '../api/listingsApi';
 import { getConversations } from '../api/chatApi';
 import { getUserProfile } from '../api/userApi';
+import { formatChatSnippet } from '../utils/chatOffers';
 
 const ICON_MAP = {
   new_message: { icon: 'chatbubble-ellipses-outline', color: '#3B82F6' },
@@ -206,7 +207,9 @@ export default function NotificationsScreen({ navigation }) {
         </View>
 
         <View style={styles.notificationContent}>
-          <Text style={[styles.notificationMessage, dynamicStyles.notificationMessage]}>{notification.message}</Text>
+          <Text style={[styles.notificationMessage, dynamicStyles.notificationMessage]}>
+            {formatChatSnippet(notification.message)}
+          </Text>
           {timestamp ? <Text style={[styles.timestamp, dynamicStyles.timestamp]}>{timestamp}</Text> : null}
         </View>
       </TouchableOpacity>

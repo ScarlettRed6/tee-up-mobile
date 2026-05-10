@@ -4,12 +4,55 @@ import {
     markAllNotificationsRead,
 } from "../models/notificationsModel.js";
 
+function parseNotificationDataRaw(data) {
+    if (typeof data === "string") {
+        try {
+            return JSON.parse(data);
+        } catch {
+            return {};
+        }
+    }
+    if (!data || typeof data !== "object") return {};
+    return data;
+}
+
+/** Drop rows where the recipient is effectively the actor (e.g. legacy self-favorites). */
+function isSelfDirectedNotification(notification, recipientUserId) {
+    const rid = Number(recipientUserId);
+    const data = parseNotificationDataRaw(notification.data);
+
+    if (notification.type === "listing_favorited") {
+        const actorId = data.favorited_user_id ?? data.favorited_by;
+        if (actorId != null && Number(actorId) === rid) return true;
+    }
+
+    if (notification.type === "favorite_status_changed") {
+        const sellerId = data.seller_id;
+        if (sellerId != null && Number(sellerId) === rid) return true;
+    }
+
+    if (notification.type === "followed_new_listing") {
+        const sellerId = data.seller_id;
+        if (sellerId != null && Number(sellerId) === rid) return true;
+    }
+
+    if (notification.type === "new_follower") {
+        const followerId = data.follower_id;
+        if (followerId != null && Number(followerId) === rid) return true;
+    }
+
+    return false;
+}
+
 export async function listNotifications(req, res) {
     try {
         const user_id = req.user.id;
         const notifications = await getUserNotifications(user_id);
+        const filtered = notifications.filter(
+            (n) => !isSelfDirectedNotification(n, user_id)
+        );
 
-        const transformed = notifications.map((notification) => {
+        const transformed = filtered.map((notification) => {
             let parsedData = notification.data;
             if (typeof parsedData === "string") {
                 try {

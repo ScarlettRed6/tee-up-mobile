@@ -439,22 +439,24 @@ export default function ProductDetailScreen({ navigation, route }) {
             <Text style={[styles.productTitle, dynamicStyles.productTitle]} numberOfLines={2}>
               {product.title}
             </Text>
-            <TouchableOpacity 
-              style={styles.favoriteButton}
-              onPress={handleFavoritePress}
-              activeOpacity={0.7}
-              disabled={favoritePending}
-            >
-              {favoritePending ? (
-                <ActivityIndicator size="small" color={theme.primary} />
-              ) : (
-                <Ionicons 
-                  name={listingFavorited ? "heart" : "heart-outline"} 
-                  size={24} 
-                  color={listingFavorited ? theme.primary : theme.textMuted} 
-                />
-              )}
-            </TouchableOpacity>
+            {!isOwnListing ? (
+              <TouchableOpacity 
+                style={styles.favoriteButton}
+                onPress={handleFavoritePress}
+                activeOpacity={0.7}
+                disabled={favoritePending}
+              >
+                {favoritePending ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : (
+                  <Ionicons 
+                    name={listingFavorited ? "heart" : "heart-outline"} 
+                    size={24} 
+                    color={listingFavorited ? theme.primary : theme.textMuted} 
+                  />
+                )}
+              </TouchableOpacity>
+            ) : null}
           </View>
           
           <Text style={[styles.productPrice, dynamicStyles.productPrice]}>

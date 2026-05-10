@@ -11,6 +11,7 @@ import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
 import { rateUser } from '../api/ratingApi';
 import * as ImagePicker from 'expo-image-picker';
+import { formatChatSnippet } from '../utils/chatOffers';
 
 const MIN_MESSAGES_FOR_RATING = 6;
 
@@ -995,7 +996,9 @@ export default function ChatDetailScreen({ navigation, route }) {
                       />
                     )}
                     {hasText && (
-                      <Text style={[styles.messageText, dynamicStyles.messageText]}>{msg.text}</Text>
+                      <Text style={[styles.messageText, dynamicStyles.messageText]}>
+                        {formatChatSnippet(msg.text)}
+                      </Text>
                     )}
                   </BubbleComponent>
                 </View>

@@ -54,7 +54,19 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       return { success: true };
     } catch (error) {
+      const status = error.response?.status;
       const message = error.response?.data?.message || 'Login failed';
+      if (status === 403) {
+        const lower = message.toLowerCase();
+        if (lower.includes('not verified') || lower.includes('verify your email')) {
+          return {
+            success: false,
+            error: message,
+            needsEmailVerification: true,
+            email: typeof email === 'string' ? email.trim() : email,
+          };
+        }
+      }
       return { success: false, error: message };
     }
   };
@@ -70,7 +82,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password, confirmPassword) => {
     try {
       await authRegister(name, email, password, confirmPassword);
-      return { success: true };
+      return { success: true, email: typeof email === 'string' ? email.trim() : email };
     } catch (error) {
       const message = error.response?.data?.message || error.response?.data?.error || 'Sign up failed';
       return { success: false, error: message };

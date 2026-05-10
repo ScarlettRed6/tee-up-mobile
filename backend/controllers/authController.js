@@ -338,8 +338,10 @@ export async function verifyEmailOtp(req, res){
             return res.status(400).json({ message: "Email already verified" });
         }
 
-        //Check if otp matches in the db
-        if(user.email_verification_otp !== otp){
+        //Check if otp matches in the db (normalize types — DB/driver may return number)
+        const storedOtp = user.email_verification_otp != null ? String(user.email_verification_otp).trim() : "";
+        const bodyOtp = otp != null ? String(otp).trim() : "";
+        if(storedOtp !== bodyOtp){
             return res.status(400).json({ message: "Invalid OTP" });
         }
 

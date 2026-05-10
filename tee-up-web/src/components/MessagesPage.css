@@ -46,6 +46,11 @@
   margin-bottom: 12px;
 }
 
+/* Same padding/visual system as footer composer; avoids WebKit(type=search) inner padding quirks */
+.messages-sidebar-search-field {
+  width: 100%;
+}
+
 .messages-list {
   flex: 1;
   overflow-y: auto;
@@ -332,7 +337,6 @@
 .messages-thread-input-field {
   flex: 1;
   border-radius: var(--radius-pill);
-  min-height: var(--input-min-height);
 }
 
 @media (max-width: 960px) {

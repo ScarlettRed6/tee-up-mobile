@@ -23,10 +23,11 @@ function SellListingPage({
   onMessages,
   onMyListings,
   onNotifications,
+  onViewAllNotifications,
+  onNotificationClick,
   onOpenProfile,
   onLogout,
   onGoHome,
-  onViewAllNotifications,
   onListingCreated,
   mode = 'create',
   initialListing = null,
@@ -162,10 +163,11 @@ function SellListingPage({
         onMessages={onMessages}
         onMyListings={onMyListings}
         onNotifications={onNotifications}
+        onViewAllNotifications={onViewAllNotifications}
+        onNotificationClick={onNotificationClick}
         onOpenProfile={onOpenProfile}
         onLogout={onLogout}
         onGoHome={onGoHome}
-        onViewAllNotifications={onViewAllNotifications}
       />
 
       <main className="sell-page-main">

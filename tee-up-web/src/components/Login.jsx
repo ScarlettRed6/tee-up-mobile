@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { sendEmailVerification, verifyEmailOtp } from '../api/authApi';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert } from './ui/alert';
-import { Sun, Moon, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const authInputPad = { paddingInline: '1rem', paddingBlock: '0.875rem' };
@@ -25,6 +26,7 @@ function AuthTextField({ className, style, ...props }) {
 function Login({ initialView = 'login', onBackToHome }) {
   const { login, register } = useAuth();
   const [view, setView] = useState(initialView);
+  const pendingPasswordRef = useRef(null);
 
   useEffect(() => {
     setView(initialView);
@@ -33,9 +35,13 @@ function Login({ initialView = 'login', onBackToHome }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [verifyNotice, setVerifyNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const resetForm = () => {
     setError('');
@@ -44,6 +50,10 @@ function Login({ initialView = 'login', onBackToHome }) {
     setPassword('');
     setName('');
     setConfirmPassword('');
+    setOtp('');
+    setVerifyEmail('');
+    setVerifyNotice('');
+    pendingPasswordRef.current = null;
   };
 
   const switchToSignUp = () => {
@@ -56,14 +66,101 @@ function Login({ initialView = 'login', onBackToHome }) {
     setView('login');
   };
 
+  const goBackToLoginFromVerify = () => {
+    pendingPasswordRef.current = null;
+    const keep = verifyEmail.trim();
+    setVerifyEmail('');
+    setOtp('');
+    setError('');
+    setSuccess('');
+    setVerifyNotice('');
+    if (keep) setEmail(keep);
+    setView('login');
+  };
+
+  const handleBackToHomeClick = () => {
+    pendingPasswordRef.current = null;
+    resetForm();
+    onBackToHome?.();
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setLoading(true);
     const result = await login(email, password);
-    if (!result.success) setError(result.error || 'Login failed. Please try again.');
+    if (!result.success) {
+      if (result.needsEmailVerification && result.email) {
+        setVerifyEmail(result.email);
+        setOtp('');
+        pendingPasswordRef.current = null;
+        setSuccess('');
+        setVerifyNotice(
+          'This email is not verified yet. Enter the code from your inbox, or resend a new code.'
+        );
+        setView('verify');
+      } else {
+        setError(result.error || 'Login failed. Please try again.');
+      }
+    }
     setLoading(false);
+  };
+
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    const code = otp.replace(/\s/g, '').trim();
+    if (!/^\d{6}$/.test(code)) {
+      setError('Enter the 6-digit code from your email.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await verifyEmailOtp(verifyEmail.trim(), code);
+      setVerifyNotice('');
+      const pwd = pendingPasswordRef.current;
+      pendingPasswordRef.current = null;
+      setOtp('');
+      if (pwd) {
+        const loginResult = await login(verifyEmail.trim(), pwd);
+        if (loginResult.success) return;
+        setError(loginResult.error || 'Could not sign you in. Try signing in manually.');
+        setEmail(verifyEmail.trim());
+        setVerifyEmail('');
+        setView('login');
+        return;
+      }
+      setSuccess('Email verified. Sign in to continue.');
+      setEmail(verifyEmail.trim());
+      setVerifyEmail('');
+      setView('login');
+    } catch (err) {
+      setError(
+        err.response?.data?.message || err.response?.data?.error || 'Verification failed'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    const target = verifyEmail.trim();
+    if (!target) return;
+    setError('');
+    setResendLoading(true);
+    try {
+      await sendEmailVerification(target);
+      setSuccess('New verification code sent. Check your inbox.');
+    } catch (err) {
+      setSuccess('');
+      setError(
+        err.response?.data?.message || err.response?.data?.error || 'Could not resend code'
+      );
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   const handleSignUpSubmit = async (e) => {
@@ -75,11 +172,22 @@ function Login({ initialView = 'login', onBackToHome }) {
       return;
     }
     setLoading(true);
-    const result = await register(name, email, password, confirmPassword);
+    const signupEmail = email.trim();
+    const result = await register(name, signupEmail, password, confirmPassword);
     if (result.success) {
-      setSuccess('Account created! Check your email to verify, then sign in.');
-      setView('login');
-      resetForm();
+      pendingPasswordRef.current = password;
+      setVerifyEmail(result.email || signupEmail);
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setOtp('');
+      setError('');
+      setVerifyNotice('');
+      setSuccess(
+        'We sent a 6-digit code to your email. Enter it below to verify your account.'
+      );
+      setView('verify');
     } else {
       setError(result.error || 'Sign up failed. Please try again.');
     }
@@ -117,10 +225,15 @@ function Login({ initialView = 'login', onBackToHome }) {
               <p className="text-2xl md:text-3xl font-semibold opacity-95">Welcome Back</p>
               <p className="text-white/90 mt-2 text-xl">Enter the clubhouse.</p>
             </>
-          ) : (
+          ) : view === 'signup' ? (
             <>
               <p className="text-2xl md:text-3xl font-semibold opacity-95">Hello! Welcome!</p>
               <p className="text-white/90 mt-2 text-xl">Join the club.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl md:text-3xl font-semibold opacity-95">Verify your email</p>
+              <p className="text-white/90 mt-2 text-xl">Almost there — enter your code.</p>
             </>
           )}
         </div>
@@ -137,7 +250,7 @@ function Login({ initialView = 'login', onBackToHome }) {
       >
         {onBackToHome ? (
           <div className="absolute top-6 right-6 flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={onBackToHome}>
+            <Button type="button" variant="outline" size="sm" onClick={handleBackToHomeClick}>
               <ArrowLeft className="h-4 w-4 mr-1.5" />
               Back to home
             </Button>
@@ -152,13 +265,59 @@ function Login({ initialView = 'login', onBackToHome }) {
               {success}
             </Alert>
           )}
+          {view === 'verify' && verifyNotice && (
+            <Alert className="mb-8">{verifyNotice}</Alert>
+          )}
           {error && (
             <Alert variant="destructive" className="mb-8">
               {error}
             </Alert>
           )}
 
-          {view === 'login' ? (
+          {view === 'verify' ? (
+            <form key="verify" onSubmit={handleVerifySubmit} className="flex flex-col gap-8 login-form-stagger">
+              <p className="text-[var(--color-text-secondary)] text-base">
+                Code sent to <span className="font-semibold text-[var(--color-text-primary)]">{verifyEmail}</span>
+              </p>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="otp" className="text-base">Verification code</Label>
+                <AuthTextField
+                  id="otp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  pattern="[0-9]*"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="h-[52px] w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
+                size="lg"
+                disabled={loading}
+              >
+                {loading ? 'Verifying…' : 'Verify email'}
+              </Button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={loading || resendLoading}
+                  onClick={handleResendCode}
+                >
+                  {resendLoading ? 'Sending…' : 'Resend code'}
+                </Button>
+                <Button type="button" variant="link" className="w-full sm:w-auto p-0 h-auto font-semibold" onClick={goBackToLoginFromVerify}>
+                  Back to sign in
+                </Button>
+              </div>
+            </form>
+          ) : view === 'login' ? (
             <form key="login" onSubmit={handleLoginSubmit} className="flex flex-col gap-8 login-form-stagger">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="email" className="text-base">Email</Label>
@@ -254,23 +413,25 @@ function Login({ initialView = 'login', onBackToHome }) {
             </form>
           )}
 
-          <p className="text-center text-[var(--color-text-muted)] mt-10 text-base">
-            {view === 'login' ? (
-              <>
-                New here?{' '}
-                <Button type="button" variant="link" className="p-0 h-auto font-semibold" onClick={switchToSignUp}>
-                  Create an account
-                </Button>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <Button type="button" variant="link" className="p-0 h-auto font-semibold" onClick={switchToLogin}>
-                  Log in
-                </Button>
-              </>
-            )}
-          </p>
+          {view !== 'verify' ? (
+            <p className="text-center text-[var(--color-text-muted)] mt-10 text-base">
+              {view === 'login' ? (
+                <>
+                  New here?{' '}
+                  <Button type="button" variant="link" className="p-0 h-auto font-semibold" onClick={switchToSignUp}>
+                    Create an account
+                  </Button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <Button type="button" variant="link" className="p-0 h-auto font-semibold" onClick={switchToLogin}>
+                    Log in
+                  </Button>
+                </>
+              )}
+            </p>
+          ) : null}
         </div>
       </main>
     </div>

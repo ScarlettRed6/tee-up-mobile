@@ -78,3 +78,26 @@ export const register = async (name, email, password, confirmPassword) => {
   });
   return response.data;
 };
+
+/**
+ * Resend email verification OTP (unauthenticated).
+ * Backend: POST /auth/send-email-verification
+ */
+export const sendEmailVerification = async (email) => {
+  const response = await axiosInstance.post('/auth/send-email-verification', {
+    email,
+  });
+  return response.data;
+};
+
+/**
+ * Verify email with OTP (unauthenticated).
+ * Backend: POST /auth/verify-email-otp
+ */
+export const verifyEmailOtp = async (email, otp) => {
+  const response = await axiosInstance.post('/auth/verify-email-otp', {
+    email,
+    otp: String(otp).trim(),
+  });
+  return response.data;
+};

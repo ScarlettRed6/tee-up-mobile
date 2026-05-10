@@ -288,6 +288,7 @@ export async function changeListingStatus(req, res) {
                 const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
 
                 for(const u of users){
+                    if (Number(u.user_id) === Number(user_id)) continue;
                     const notif = await createNotification(
                         u.user_id,
                         "favorite_status_changed",
@@ -296,6 +297,7 @@ export async function changeListingStatus(req, res) {
                             listing_id,
                             listing_title: listingTitle,
                             seller_name: sellerName,
+                            seller_id: user_id,
                             status: statusLabel
                         }
                     );

@@ -24,6 +24,7 @@ function SearchResultsPage({
   onLogout,
   onGoHome,
   onViewListing,
+  favoritePropsForListing,
 }) {
   const hasResults = Array.isArray(results) && results.length > 0;
 
@@ -224,6 +225,7 @@ function SearchResultsPage({
                       listing={listing}
                       tagline={listing.seller_name}
                       variant="grid"
+                      {...(favoritePropsForListing?.(listing) || {})}
                       onClick={() => onViewListing?.(listing.listing_id ?? listing.id)}
                     />
                   ))}

@@ -281,6 +281,17 @@ function UserHome() {
     }
   };
 
+  const listingCardFavoriteProps = (listing) => {
+    const id = listing.listing_id ?? listing.id;
+    const isOwn =
+      user?.id != null && listing?.user_id != null && Number(listing.user_id) === Number(user.id);
+    const saved = savedIds.has(String(id));
+    return {
+      onFavorite: !isOwn || saved ? handleFavorite : undefined,
+      isFavorite: saved,
+    };
+  };
+
   const handleSearch = (q) => {
     const trimmed = (q || '').trim();
     if (!trimmed) return;
@@ -558,6 +569,28 @@ function UserHome() {
             setView('editListing');
           }}
         />
+      ) : selectedListingId != null ? (
+        <ListingView
+          listingId={selectedListingId}
+          onBack={() => setSelectedListingId(null)}
+          user={user}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onViewSellerProfile={(userId) => {
+            setSelectedProfileUserId(String(userId));
+            setView('publicProfile');
+          }}
+          onToggleFavorite={() => handleFavorite(selectedListingId)}
+          isFavorite={savedIds.has(String(selectedListingId))}
+          onGoHome={handleGoHome}
+        />
       ) : view === 'search' && searchQuery ? (
         <SearchResultsPage
           user={user}
@@ -579,6 +612,7 @@ function UserHome() {
           onLogout={handleLogout}
           onGoHome={handleGoHome}
           onViewListing={openListingById}
+          favoritePropsForListing={listingCardFavoriteProps}
         />
       ) : view === 'notifications' ? (
         <NotificationsPage
@@ -643,6 +677,8 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
@@ -661,6 +697,8 @@ function UserHome() {
           onMessages={handleMessages}
           onMyListings={handleMyListings}
           onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
@@ -707,8 +745,7 @@ function UserHome() {
                         key={listing.listing_id ?? listing.id}
                         listing={listing}
                         tagline={listing.seller_name}
-                        onFavorite={handleFavorite}
-                        isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                        {...listingCardFavoriteProps(listing)}
                         onClick={() => handleListingClick(listing)}
                         variant="grid"
                       />
@@ -753,8 +790,7 @@ function UserHome() {
                         key={listing.listing_id ?? listing.id}
                         listing={listing}
                         tagline={listing.seller_name}
-                        onFavorite={handleFavorite}
-                        isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                        {...listingCardFavoriteProps(listing)}
                         onClick={() => handleListingClick(listing)}
                         variant="grid"
                       />
@@ -765,28 +801,6 @@ function UserHome() {
             </div>
           </main>
         </>
-      ) : selectedListingId != null ? (
-        <ListingView
-          listingId={selectedListingId}
-          onBack={() => setSelectedListingId(null)}
-          user={user}
-          onSearch={handleSearch}
-          onSell={handleSell}
-          onMessages={handleMessages}
-          onMyListings={handleMyListings}
-          onNotifications={() => {}}
-          onViewAllNotifications={handleViewAllNotifications}
-          onNotificationClick={handleNotificationClick}
-          onOpenProfile={handleOpenProfile}
-          onLogout={handleLogout}
-          onViewSellerProfile={(userId) => {
-            setSelectedProfileUserId(String(userId));
-            setView('publicProfile');
-          }}
-          onToggleFavorite={() => handleFavorite(selectedListingId)}
-          isFavorite={savedIds.has(String(selectedListingId))}
-          onGoHome={handleGoHome}
-        />
       ) : (
         <>
       <UserHeader
@@ -888,8 +902,7 @@ function UserHome() {
                           key={listing.listing_id ?? listing.id}
                           listing={listing}
                           tagline={listing.seller_name}
-                          onFavorite={handleFavorite}
-                          isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                          {...listingCardFavoriteProps(listing)}
                           onClick={() => handleListingClick(listing)}
                         />
                       ))}
@@ -924,8 +937,7 @@ function UserHome() {
                           key={listing.listing_id ?? listing.id}
                           listing={listing}
                           tagline={listing.seller_name}
-                          onFavorite={handleFavorite}
-                          isFavorite={savedIds.has(String(listing.listing_id ?? listing.id))}
+                          {...listingCardFavoriteProps(listing)}
                           onClick={() => handleListingClick(listing)}
                         />
                       ))}
@@ -959,8 +971,7 @@ function UserHome() {
                         key={listing.listing_id ?? listing.id}
                         listing={listing}
                         tagline={listing.seller_name}
-                        onFavorite={handleFavorite}
-                        isFavorite
+                        {...listingCardFavoriteProps(listing)}
                         onClick={() => handleListingClick(listing)}
                       />
                     ))

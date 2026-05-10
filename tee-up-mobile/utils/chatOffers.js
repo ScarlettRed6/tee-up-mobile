@@ -18,14 +18,13 @@ export function parseOfferMessage(message) {
 export function formatOfferMessage(amount) {
   const numeric = Number(amount);
   if (!Number.isFinite(numeric) || numeric <= 0) return '';
-  return `Offered ${new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP',
-    minimumFractionDigits: 0,
-  }).format(numeric)}`;
+  try {
+    return `Offered ₱${numeric.toLocaleString('en-PH', { maximumFractionDigits: 0 })}`;
+  } catch {
+    return `Offered ₱${numeric}`;
+  }
 }
 
-/** Use in thread bubbles, inbox rows, notification text — hides `__OFFER__::` payloads. */
 export function formatChatSnippet(message) {
   if (typeof message !== 'string') return '';
   const trimmed = message.trim();
