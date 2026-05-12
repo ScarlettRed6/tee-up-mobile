@@ -1,6 +1,10 @@
 import { io } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
+import Constants from 'expo-constants';
+
+const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+const localHost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
 
 let socketInstance = null;
 let lastToken = null; // Store last token to detect changes
@@ -29,13 +33,13 @@ export const getSocket = async () => {
     lastToken = token;
 
     // Extract base URL (remove /api if present)
-    let socketUrl = API_BASE_URL.replace('/api', '');
+    let socketUrl = `http://${localHost}:5000`;
     
     // Ensure URL doesn't end with slash
     socketUrl = socketUrl.replace(/\/$/, '');
     
     console.log('=== Socket.IO Connection Debug ===');
-    console.log('API_BASE_URL:', API_BASE_URL);
+    console.log('API_BASE_URL:', `http://${localHost}:5000/api`);
     console.log('Socket URL:', socketUrl);
     console.log('Token present:', !!token);
     console.log('Token length:', token ? token.length : 0);
