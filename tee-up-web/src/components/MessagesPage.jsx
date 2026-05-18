@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -237,6 +238,8 @@ export default function MessagesPage({
     }
   };
 
+  const showThreadPanel = Boolean(selectedConversationId || listingContext?.listingId);
+
   return (
     <div className="messages-page" style={{ backgroundColor: 'var(--color-background)' }}>
       <UserHeader
@@ -254,7 +257,12 @@ export default function MessagesPage({
       />
 
       <main className="messages-main">
-        <div className="messages-shell">
+        <div
+          className={cn(
+            'messages-shell',
+            showThreadPanel && 'messages-shell--thread-open'
+          )}
+        >
           <aside className="messages-sidebar" aria-label="Conversations list">
             <div className="messages-sidebar-header">
               <h1 className="messages-title">Messages</h1>
@@ -331,6 +339,15 @@ export default function MessagesPage({
             ) : (
               <>
                 <header className="messages-thread-header">
+                  <button
+                    type="button"
+                    className="messages-thread-back"
+                    onClick={() => setSelectedConversationId(null)}
+                    aria-label="Back to conversations"
+                  >
+                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                    Back
+                  </button>
                   <div className="messages-thread-heading">
                     <div className="messages-thread-avatar">
                       {activeConversation.image ? (

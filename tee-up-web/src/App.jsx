@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPromptProvider } from './context/LoginPromptContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -15,6 +15,7 @@ import { NotificationsProvider } from './context/NotificationsContext';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
 import { AuthCheckLoadingSkeleton } from './components/admin/AdminSkeletons';
 import './App.css';
+import './components/admin/AdminResponsive.css';
 
 function AppContent() {
   const { isAuthenticated, loading, logout, user } = useAuth();
@@ -23,6 +24,24 @@ function AppContent() {
   const [authView, setAuthView] = useState('browse'); // 'login' | 'browse'
   const [loginInitialView, setLoginInitialView] = useState('login'); // 'login' | 'signup'
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [sidebarOpen]);
 
   const goLogin = useCallback((_fromBrowse, tab) => {
     if (loading || isAuthenticated) return;
@@ -111,9 +130,23 @@ function AppContent() {
 
   return (
     <LoginPromptProvider value={loginPromptApi}>
-    <div className="app">
-      <Header user={user} />
+    <div className={`app app--admin${sidebarOpen ? ' app--sidebar-open' : ''}`}>
+      <Header
+        user={user}
+        menuOpen={sidebarOpen}
+        onMenuToggle={() => setSidebarOpen((open) => !open)}
+      />
+      {sidebarOpen ? (
+        <button
+          type="button"
+          className="admin-sidebar-backdrop"
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
       <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         onNavigate={setCurrentPage}
         currentPage={currentPage}
         onLogout={() => setLogoutModalOpen(true)}

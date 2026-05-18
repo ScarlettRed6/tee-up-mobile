@@ -4,6 +4,8 @@ import { useLoginPrompt } from '../context/LoginPromptContext';
 import { getListings, getRecommendations, getFavorites, addFavorite, removeFavorite, getListingById } from '../api/userListingsApi';
 import { followUser, unfollowUser } from '../api/followerApi';
 import { findOrCreateConversation } from '../api/chatApi';
+import { getExistingUserOfferForListing } from '../utils/listingOffer';
+import { parseOfferMessage } from '../utils/chatOffers';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import ListingView from './ListingView';
@@ -22,6 +24,7 @@ import NotificationsPage from './NotificationsPage';
 import LogoutConfirmModal from './LogoutConfirmModal';
 import { getSocket } from '../utils/socketClient';
 import './UserHome.css';
+import './marketplace/MarketplaceResponsive.css';
 
 // Golf slideshow for feed hero
 const HERO_SLIDES = [
@@ -353,18 +356,30 @@ function UserHome({ guest = false }) {
     if (hasOfferIntent && !sendingOfferRef.current) {
       sendingOfferRef.current = true;
       try {
+        const existingOffer = user?.id
+          ? await getExistingUserOfferForListing(
+              user.id,
+              listingContext.sellerId,
+              listingContext.listingId
+            )
+          : null;
+
         const conversation = await findOrCreateConversation(
           listingContext.sellerId,
           listingContext.listingId
         );
         const conversationId = conversation?.conversation_id ?? null;
         if (conversationId) {
-          const socket = getSocket();
-          socket.emit('send_message', {
-            conversationId,
-            message: listingContext.initialMessage,
-            image_url: null,
-          });
+          const shouldSendOffer =
+            existingOffer == null && parseOfferMessage(listingContext.initialMessage) != null;
+          if (shouldSendOffer) {
+            const socket = getSocket();
+            socket.emit('send_message', {
+              conversationId,
+              message: listingContext.initialMessage,
+              image_url: null,
+            });
+          }
           setInitialMessagesConversationId(conversationId);
         } else {
           setInitialMessagesConversationId(null);
@@ -394,7 +409,7 @@ function UserHome({ guest = false }) {
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
     setSelectedProfileUserId(null);
-  }, [guest, openLogin]);
+  }, [guest, openLogin, user?.id]);
 
   const handleMyListings = () => {
     if (guest) {

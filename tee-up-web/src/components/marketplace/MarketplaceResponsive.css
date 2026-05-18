@@ -1,0 +1,384 @@
+/**
+ * Marketplace / user-facing responsive layout (≤1023px mobile, ≤640px small phone).
+ */
+
+.user-header-menu-btn {
+  display: none;
+}
+
+.user-header-drawer-backdrop {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .user-header-inner {
+    flex-wrap: wrap;
+    padding: var(--spacing-sm) var(--spacing-md);
+    gap: var(--spacing-sm);
+    min-height: 52px;
+  }
+
+  .user-header-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-light-gray);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .user-header-menu-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-background-alt);
+  }
+
+  .user-header-menu-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .user-header-left {
+    gap: var(--spacing-xs);
+  }
+
+  .user-header-search-wrap {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .user-header-right {
+    gap: var(--spacing-xs);
+    margin-left: auto;
+  }
+
+  .user-header-nav-desktop {
+    display: none !important;
+  }
+
+  .user-header-btn-sell.user-header-btn-join {
+    display: none;
+  }
+
+  .user-header-guest-link {
+    display: none;
+  }
+
+  .user-header-notif-dropdown {
+    position: fixed;
+    top: auto;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-height: min(60vh, 420px);
+    border-radius: var(--radius-large);
+  }
+
+  .user-header-account-panel {
+    position: fixed;
+    top: auto;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+    width: auto;
+  }
+
+  .user-header-drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    top: 0;
+    z-index: 150;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+    animation: marketplace-fade-in 0.2s ease;
+  }
+
+  .user-header-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 160;
+    width: min(300px, 88vw);
+    padding: var(--spacing-xl) var(--spacing-lg);
+    padding-top: calc(var(--spacing-xl) + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0px));
+    background: var(--color-white);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    animation: marketplace-drawer-in 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .user-header-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .user-header-drawer-title {
+    margin: 0;
+    font-size: var(--font-size-h4);
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .user-header-drawer-close {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: var(--color-light-gray);
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+
+  .user-header-drawer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .user-header-drawer-link {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-medium);
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .user-header-drawer-link:hover {
+    background: var(--color-background-alt);
+    color: var(--color-primary);
+  }
+
+  .user-header-drawer-link--primary {
+    background: var(--color-dark-gray);
+    color: var(--color-white);
+    font-weight: 600;
+    justify-content: center;
+  }
+
+  .user-header-drawer-link--primary:hover {
+    background: var(--color-text-primary);
+    color: var(--color-white);
+  }
+
+  [data-theme='dark'] .user-header-drawer {
+    background: #262626;
+    box-shadow: 4px 0 28px rgba(0, 0, 0, 0.45);
+  }
+
+  /* —— Messages master/detail —— */
+  .messages-main {
+    padding: 0;
+    height: calc(100dvh - 56px);
+    min-height: 0;
+  }
+
+  .messages-shell {
+    padding: 0;
+    gap: 0;
+    height: 100%;
+    max-width: none;
+  }
+
+  .messages-sidebar,
+  .messages-thread {
+    border-radius: 0;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .messages-sidebar {
+    order: 1;
+    border: none;
+    box-shadow: none;
+  }
+
+  .messages-thread {
+    order: 1;
+  }
+
+  .messages-shell--thread-open .messages-sidebar {
+    display: none;
+  }
+
+  .messages-shell:not(.messages-shell--thread-open) .messages-thread {
+    display: none;
+  }
+
+  .messages-thread-header {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  .messages-thread-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    min-height: 40px;
+    padding: 0 var(--spacing-sm);
+    margin-right: var(--spacing-xs);
+    border: none;
+    border-radius: var(--radius-medium);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: var(--font-size-body-small);
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .messages-thread-back:hover {
+    background: var(--color-background-alt);
+    color: var(--color-primary);
+  }
+
+  .messages-thread-listing-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .messages-thread-input {
+    padding: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* —— Pages —— */
+  .listing-view-container,
+  .notifications-page-main,
+  .sell-page-main,
+  .search-page-container,
+  .profile-page-container,
+  .my-listings-container,
+  .owner-listing-container {
+    padding-left: var(--spacing-lg) !important;
+    padding-right: var(--spacing-lg) !important;
+  }
+
+  .listing-view-offer-row {
+    flex-direction: column;
+  }
+
+  .listing-view-make-offer {
+    width: 100%;
+  }
+
+  .notifications-page-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-page-layout {
+    gap: var(--spacing-lg);
+  }
+
+  .search-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .sell-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .sell-section {
+    position: static;
+  }
+
+  .sell-card-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .sell-card-footer button,
+  .sell-btn-primary {
+    width: 100%;
+    min-height: 44px;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .messages-thread-back {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .user-home-container {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+
+  .user-home-hero-wrap,
+  .user-home-hero-content {
+    min-height: 280px;
+  }
+
+  .search-page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-view-gallery-arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .theme-toggle-floating {
+    bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@keyframes marketplace-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes marketplace-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

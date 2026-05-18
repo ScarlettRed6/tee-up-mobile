@@ -1,11 +1,13 @@
+import { cn } from '@/lib/utils';
 import './Sidebar.css';
 
-function Sidebar({ onNavigate, currentPage, onLogout, user }) {
+function Sidebar({ open = false, onClose, onNavigate, currentPage, onLogout, user }) {
   const handleNavClick = (e, page) => {
     e.preventDefault();
     if (onNavigate) {
       onNavigate(page);
     }
+    onClose?.();
   };
 
   const handleLogout = (e) => {
@@ -13,6 +15,7 @@ function Sidebar({ onNavigate, currentPage, onLogout, user }) {
     if (onLogout) {
       onLogout();
     }
+    onClose?.();
   };
 
   const getRoleDisplay = (role) => {
@@ -22,48 +25,44 @@ function Sidebar({ onNavigate, currentPage, onLogout, user }) {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={cn('sidebar', open && 'sidebar--open')}>
       <div className="user-profile">
-        <div className="avatar"></div>
+        <div className="avatar" />
         <div className="user-info">
           <div className="user-name">{user?.name || 'Admin User'}</div>
           <div className="user-role">{getRoleDisplay(user?.role)}</div>
         </div>
       </div>
-      <nav className="sidebar-nav">
-        <a 
-          href="#" 
+      <nav className="sidebar-nav" aria-label="Admin navigation">
+        <a
+          href="#"
           className={`nav-item ${currentPage === 'dashboard' ? 'active' : ''}`}
           onClick={(e) => handleNavClick(e, 'dashboard')}
         >
           Dashboard
         </a>
-        <a 
-          href="#" 
+        <a
+          href="#"
           className={`nav-item ${currentPage === 'listings' ? 'active' : ''}`}
           onClick={(e) => handleNavClick(e, 'listings')}
         >
           Listings Management
         </a>
-        <a 
-          href="#" 
+        <a
+          href="#"
           className={`nav-item ${currentPage === 'reports' ? 'active' : ''}`}
           onClick={(e) => handleNavClick(e, 'reports')}
         >
           Reports
         </a>
-        <a 
-          href="#" 
+        <a
+          href="#"
           className={`nav-item ${currentPage === 'users' ? 'active' : ''}`}
           onClick={(e) => handleNavClick(e, 'users')}
         >
           Users
         </a>
-        <a 
-          href="#" 
-          className="nav-item nav-item-logout"
-          onClick={handleLogout}
-        >
+        <a href="#" className="nav-item nav-item-logout" onClick={handleLogout}>
           Log Out
         </a>
       </nav>
@@ -72,4 +71,3 @@ function Sidebar({ onNavigate, currentPage, onLogout, user }) {
 }
 
 export default Sidebar;
-

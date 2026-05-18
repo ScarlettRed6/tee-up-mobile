@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { saveSentMessage } from "../controllers/chatController.js";
+import { saveSentMessage, OFFER_ALREADY_SUBMITTED } from "../controllers/chatController.js";
 import { getOtherParticipant } from "../models/chatModel.js";
 import { createNotification } from "./notifications.js";
 
@@ -69,6 +69,13 @@ export function initSocketHandlers(io){
 
             } catch (err) {
                 console.error("Error sending message:", err.message);
+                if (err.code === OFFER_ALREADY_SUBMITTED || err.message === OFFER_ALREADY_SUBMITTED) {
+                    socket.emit("error_message", {
+                        message: "You have already submitted an offer for this listing.",
+                        code: OFFER_ALREADY_SUBMITTED,
+                    });
+                    return;
+                }
                 socket.emit("error_message", { message: "Message not sent" });
             }
         });

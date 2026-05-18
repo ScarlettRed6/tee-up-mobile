@@ -319,12 +319,66 @@
   font-size: var(--font-size-body);
   font-family: var(--font-family);
   line-height: var(--line-height-body);
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.listing-view-offer-input::-webkit-outer-spin-button,
+.listing-view-offer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .listing-view-offer-error {
   margin: 0;
   color: var(--color-error);
   font-size: var(--font-size-small);
+}
+
+.listing-view-offer-status {
+  margin: 0;
+  padding: var(--spacing-md);
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.listing-view-offer-locked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-medium);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+}
+
+.listing-view-offer-locked-title {
+  margin: 0;
+  font-size: var(--font-size-body-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.listing-view-offer-locked-amount {
+  margin: 0;
+  font-size: var(--font-size-h4);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.listing-view-offer-locked-hint {
+  margin: 0;
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.listing-view-offer-locked-btn {
+  margin-top: var(--spacing-xs);
+  width: 100%;
 }
 
 /* Product Reviews */

@@ -11,6 +11,13 @@
   flex-direction: column;
   gap: var(--spacing-2xl);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1023px) {
+  .sidebar {
+    padding-top: var(--spacing-xl);
+  }
 }
 
 .user-profile {

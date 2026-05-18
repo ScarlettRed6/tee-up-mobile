@@ -1,6 +1,6 @@
 .users-page {
   padding: var(--spacing-2xl);
-  margin-left: var(--sidebar-width);
+  margin-left: var(--admin-content-offset);
   margin-top: var(--header-height);
   min-height: calc(100vh - var(--header-height));
   background-color: var(--color-background);

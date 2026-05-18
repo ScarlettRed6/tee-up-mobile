@@ -99,6 +99,8 @@
   /* Layout */
   --sidebar-width: 260px;
   --header-height: 64px;
+  --admin-content-offset: var(--sidebar-width);
+  --admin-mobile-max: 1023px;
 
   /* Browse / feed – clearer hero and card hover */
   --browse-hero-gradient: linear-gradient(135deg, rgba(45, 92, 46, 0.08) 0%, rgba(45, 92, 46, 0.03) 100%);

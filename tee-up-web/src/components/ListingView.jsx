@@ -11,7 +11,9 @@ import { getPublicUserProfile, getUserRatings } from '../api/usersApi';
 import { cn } from '@/lib/utils';
 import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
-import { buildOfferMessage } from '../utils/chatOffers';
+import { buildOfferMessage, formatOfferMessage, parseOfferMessage } from '../utils/chatOffers';
+import { getExistingUserOfferForListing } from '../utils/listingOffer';
+import OfferConfirmModal from './OfferConfirmModal';
 import './ListingView.css';
 
 function normalizeListing(row) {
@@ -50,6 +52,10 @@ export default function ListingView({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [offerAmount, setOfferAmount] = useState('');
   const [offerError, setOfferError] = useState('');
+  const [existingOffer, setExistingOffer] = useState(null);
+  const [offerCheckLoading, setOfferCheckLoading] = useState(false);
+  const [offerConfirmOpen, setOfferConfirmOpen] = useState(false);
+  const [pendingOfferAmount, setPendingOfferAmount] = useState(null);
 
   useEffect(() => {
     if (!listingId) return;
@@ -106,6 +112,36 @@ export default function ListingView({
       cancelled = true;
     };
   }, [listing?.user_id]);
+
+  useEffect(() => {
+    const sellerId = listing?.user_id;
+    const id = listing?.listing_id ?? listing?.id;
+    const viewerOwnsListing =
+      user?.id != null && sellerId != null && Number(user.id) === Number(sellerId);
+
+    if (!user?.id || !sellerId || !id || viewerOwnsListing) {
+      setExistingOffer(null);
+      setOfferCheckLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setOfferCheckLoading(true);
+    getExistingUserOfferForListing(user.id, sellerId, id)
+      .then((amount) => {
+        if (!cancelled) setExistingOffer(amount);
+      })
+      .catch(() => {
+        if (!cancelled) setExistingOffer(null);
+      })
+      .finally(() => {
+        if (!cancelled) setOfferCheckLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [listing?.user_id, listing?.listing_id, listing?.id, user?.id]);
 
   if (!listingId) return null;
 
@@ -176,6 +212,44 @@ export default function ListingView({
   const sellerRatingText = sellerStats.rating == null ? 'New' : sellerStats.rating.toFixed(1);
   const sellerReviewCount = sellerStats.totalRatings;
   const reviews = sellerReviews.slice(0, 6);
+
+  const handleOfferRequest = () => {
+    setOfferError('');
+    const payload = buildOfferMessage(offerAmount);
+    if (!payload) {
+      setOfferError('Please enter a valid offer amount.');
+      return;
+    }
+    setPendingOfferAmount(parseOfferMessage(payload));
+    setOfferConfirmOpen(true);
+  };
+
+  const handleOfferCancel = () => {
+    setOfferConfirmOpen(false);
+    setPendingOfferAmount(null);
+  };
+
+  const handleOfferConfirm = () => {
+    if (pendingOfferAmount == null) return;
+    const payload = buildOfferMessage(pendingOfferAmount);
+    if (!payload) {
+      setOfferError('Please enter a valid offer amount.');
+      handleOfferCancel();
+      return;
+    }
+    setExistingOffer(pendingOfferAmount);
+    setOfferAmount('');
+    setOfferConfirmOpen(false);
+    setPendingOfferAmount(null);
+    onMessages?.({
+      sellerId: listing.user_id,
+      listingId: listing.listing_id ?? listing.id,
+      listingTitle: listing.title,
+      intent: 'offer',
+      offerRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      initialMessage: payload,
+    });
+  };
 
   return (
     <div className="listing-view" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -346,6 +420,34 @@ export default function ListingView({
                   Chat with Seller
                 </Button>
                 <div className="listing-view-offer-box">
+                  {offerCheckLoading ? (
+                    <p className="listing-view-offer-status">Checking your offer…</p>
+                  ) : existingOffer != null ? (
+                    <div className="listing-view-offer-locked">
+                      <p className="listing-view-offer-locked-title">Offer submitted</p>
+                      <p className="listing-view-offer-locked-amount">
+                        {formatOfferMessage(existingOffer)}
+                      </p>
+                      <p className="listing-view-offer-locked-hint">
+                        Your offer is locked for this listing. Chat with the seller to discuss.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="listing-view-offer-locked-btn"
+                        onClick={() => {
+                          onMessages?.({
+                            sellerId: listing.user_id,
+                            listingId: listing.listing_id ?? listing.id,
+                            listingTitle: listing.title,
+                          });
+                        }}
+                      >
+                        View conversation
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
                   <div className="listing-view-offer-row">
                     <input
                       type="number"
@@ -358,27 +460,14 @@ export default function ListingView({
                     <Button
                       size="lg"
                       className="listing-view-make-offer"
-                      onClick={() => {
-                        setOfferError('');
-                        const payload = buildOfferMessage(offerAmount);
-                        if (!payload) {
-                          setOfferError('Please enter a valid offer amount.');
-                          return;
-                        }
-                        onMessages?.({
-                          sellerId: listing.user_id,
-                          listingId: listing.listing_id ?? listing.id,
-                          listingTitle: listing.title,
-                          intent: 'offer',
-                          offerRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                          initialMessage: payload,
-                        });
-                      }}
+                      onClick={handleOfferRequest}
                     >
                       Make Offer
                     </Button>
                   </div>
                   {offerError ? <p className="listing-view-offer-error">{offerError}</p> : null}
+                    </>
+                  )}
                 </div>
               </>
             ) : null}
@@ -414,6 +503,14 @@ export default function ListingView({
           </div>
         </section>
       </div>
+
+      <OfferConfirmModal
+        open={offerConfirmOpen}
+        offerAmount={pendingOfferAmount}
+        listingTitle={listing.title}
+        onCancel={handleOfferCancel}
+        onConfirm={handleOfferConfirm}
+      />
     </div>
   );
 }

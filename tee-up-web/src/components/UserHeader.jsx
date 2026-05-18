@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Menu, X } from 'lucide-react';
 import Logo from './Logo';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -55,6 +56,7 @@ function UserHeader({
 }) {
   const [searchValue, setSearchValue] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { notifications, unreadCount, refreshNotifications, markNotificationAsRead } = useNotifications();
   const notifDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
@@ -78,24 +80,38 @@ function UserHeader({
       if (e.key === 'Escape') {
         setNotifDropdownOpen(false);
         setDropdownOpen(false);
+        setMobileMenuOpen(false);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     onSearch?.(searchValue.trim());
+    closeMobileMenu();
   };
 
   const handleOpenProfile = () => {
     setDropdownOpen(false);
+    closeMobileMenu();
     onOpenProfile?.();
   };
 
   const handleLogout = () => {
     setDropdownOpen(false);
+    closeMobileMenu();
     onLogout?.();
   };
 
@@ -103,7 +119,6 @@ function UserHeader({
     setDropdownOpen(false);
     setNotifDropdownOpen((prev) => {
       const next = !prev;
-      if (!prev && !next) return next;
       if (!prev && next) {
         refreshNotifications();
       }
@@ -118,6 +133,7 @@ function UserHeader({
 
   const handleNotificationItemClick = (n) => {
     markNotificationAsRead(n.id);
+    setNotifDropdownOpen(false);
     if (onNotificationClick) {
       onNotificationClick(n);
     } else {
@@ -125,13 +141,27 @@ function UserHeader({
     }
   };
 
+  const runNav = (fn) => {
+    closeMobileMenu();
+    fn?.();
+  };
+
   const recentNotifications = notifications.slice(0, 5);
   const hasNotifications = recentNotifications.length > 0;
 
   return (
-    <header className="user-header">
+    <header className={cn('user-header', mobileMenuOpen && 'user-header--menu-open')}>
       <div className="user-header-inner">
         <div className="user-header-left">
+          <button
+            type="button"
+            className="user-header-menu-btn"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
           <button
             type="button"
             className="user-header-logo-btn"
@@ -154,31 +184,46 @@ function UserHeader({
         </form>
 
         <nav className="user-header-right">
-          {guest ? (
-            <>
-              <Button variant="ghost" size="sm" className="user-header-link user-header-guest-link" type="button" onClick={() => onGuestLogin?.()}>
-                Log in
+          <div className="user-header-nav-desktop">
+            {guest ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="user-header-link user-header-guest-link"
+                  type="button"
+                  onClick={() => onGuestLogin?.()}
+                >
+                  Log in
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="user-header-btn-sell user-header-btn-join"
+                  type="button"
+                  onClick={() => onGuestSignUp?.()}
+                >
+                  Join free
+                </Button>
+              </>
+            ) : null}
+            {!guest && onMessages ? (
+              <Button variant="ghost" size="sm" className="user-header-link" onClick={onMessages}>
+                Messages
               </Button>
-              <Button variant="secondary" size="sm" className="user-header-btn-sell user-header-btn-join" type="button" onClick={() => onGuestSignUp?.()}>
-                Join free
+            ) : null}
+            {!guest && onMyListings ? (
+              <Button variant="ghost" size="sm" className="user-header-link" onClick={onMyListings}>
+                My Listings
               </Button>
-            </>
-          ) : null}
-          {!guest && onMessages ? (
-            <Button variant="ghost" size="sm" className="user-header-link" onClick={onMessages}>
-              Messages
-            </Button>
-          ) : null}
-          {!guest && onMyListings ? (
-            <Button variant="ghost" size="sm" className="user-header-link" onClick={onMyListings}>
-              My Listings
-            </Button>
-          ) : null}
-          {!guest && onSell ? (
-            <Button variant="secondary" size="sm" className="user-header-btn-sell" onClick={onSell}>
-              + Sell
-            </Button>
-          ) : null}
+            ) : null}
+            {!guest && onSell ? (
+              <Button variant="secondary" size="sm" className="user-header-btn-sell" onClick={onSell}>
+                + Sell
+              </Button>
+            ) : null}
+          </div>
+
           {!guest && onNotifications != null ? (
             <div className="user-header-notif-wrap" ref={notifDropdownRef}>
               <Button
@@ -200,19 +245,16 @@ function UserHeader({
                   <div className="user-header-notif-dropdown-head">
                     <span className="user-header-notif-dropdown-title">Notifications</span>
                     {unreadCount > 0 && (
-                      <span className="user-header-notif-dropdown-count">
-                        {unreadCount} unread
-                      </span>
+                      <span className="user-header-notif-dropdown-count">{unreadCount} unread</span>
                     )}
                   </div>
                   <div className="user-header-notif-dropdown-list">
                     {hasNotifications ? (
                       recentNotifications.map((n) => {
-                        const meta =
-                          NOTIFICATION_ICON_MAP[n.type] || {
-                            Icon: Bell,
-                            color: 'var(--color-text-muted)',
-                          };
+                        const meta = NOTIFICATION_ICON_MAP[n.type] || {
+                          Icon: Bell,
+                          color: 'var(--color-text-muted)',
+                        };
                         const isUnread = !n.read_at;
                         const IconComponent = meta.Icon;
                         return (
@@ -250,7 +292,10 @@ function UserHeader({
                   <button
                     type="button"
                     className="user-header-notif-view-all"
-                    onClick={() => onViewAllNotifications?.()}
+                    onClick={() => {
+                      setNotifDropdownOpen(false);
+                      onViewAllNotifications?.();
+                    }}
                   >
                     View all notifications
                   </button>
@@ -319,6 +364,108 @@ function UserHeader({
           ) : null}
         </nav>
       </div>
+
+      {mobileMenuOpen ? (
+        <>
+          <button
+            type="button"
+            className="user-header-drawer-backdrop"
+            aria-label="Close menu"
+            onClick={closeMobileMenu}
+          />
+          <aside className="user-header-drawer" aria-label="Main menu">
+            <div className="user-header-drawer-head">
+              <h2 className="user-header-drawer-title">Menu</h2>
+              <button
+                type="button"
+                className="user-header-drawer-close"
+                onClick={closeMobileMenu}
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="user-header-drawer-nav">
+              {guest ? (
+                <>
+                  <button
+                    type="button"
+                    className="user-header-drawer-link"
+                    onClick={() => runNav(onGuestLogin)}
+                  >
+                    Log in
+                  </button>
+                  <button
+                    type="button"
+                    className="user-header-drawer-link user-header-drawer-link--primary"
+                    onClick={() => runNav(onGuestSignUp)}
+                  >
+                    Join free
+                  </button>
+                </>
+              ) : (
+                <>
+                  {onMessages ? (
+                    <button
+                      type="button"
+                      className="user-header-drawer-link"
+                      onClick={() => runNav(onMessages)}
+                    >
+                      Messages
+                    </button>
+                  ) : null}
+                  {onMyListings ? (
+                    <button
+                      type="button"
+                      className="user-header-drawer-link"
+                      onClick={() => runNav(onMyListings)}
+                    >
+                      My Listings
+                    </button>
+                  ) : null}
+                  {onSell ? (
+                    <button
+                      type="button"
+                      className="user-header-drawer-link user-header-drawer-link--primary"
+                      onClick={() => runNav(onSell)}
+                    >
+                      + Sell an item
+                    </button>
+                  ) : null}
+                  {onOpenProfile ? (
+                    <button
+                      type="button"
+                      className="user-header-drawer-link"
+                      onClick={handleOpenProfile}
+                    >
+                      Profile
+                    </button>
+                  ) : null}
+                  {onViewAllNotifications ? (
+                    <button
+                      type="button"
+                      className="user-header-drawer-link"
+                      onClick={() => runNav(onViewAllNotifications)}
+                    >
+                      Notifications
+                    </button>
+                  ) : null}
+                  {onLogout ? (
+                    <button
+                      type="button"
+                      className="user-header-drawer-link"
+                      onClick={handleLogout}
+                      style={{ color: 'var(--color-error)' }}
+                    >
+                      Log out
+                    </button>
+                  ) : null}
+                </>
+              )}
+            </nav>
+          </aside>
+        </>
+      ) : null}
     </header>
   );
 }

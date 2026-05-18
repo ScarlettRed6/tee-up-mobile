@@ -1,8 +1,9 @@
+import { Menu, X } from 'lucide-react';
 import './Header.css';
 import Logo from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 
-function Header() {
+function Header({ menuOpen = false, onMenuToggle }) {
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -12,6 +13,15 @@ function Header() {
   return (
     <header className="header">
       <div className="header-left">
+        <button
+          type="button"
+          className="header-menu-btn"
+          onClick={onMenuToggle}
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
         <div className="logo-container">
           <Logo size={36} />
         </div>

@@ -158,6 +158,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .messages-thread-heading {
@@ -369,13 +371,9 @@
   border-radius: var(--radius-pill);
 }
 
-@media (max-width: 960px) {
-  .messages-shell {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* Mobile master/detail: see marketplace/MarketplaceResponsive.css */
 
-  .messages-sidebar {
-    order: 2;
-  }
+.messages-thread-back {
+  display: none;
 }
 

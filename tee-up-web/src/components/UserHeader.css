@@ -444,18 +444,4 @@
   color: var(--color-primary);
 }
 
-@media (max-width: 768px) {
-  .user-header-inner {
-    padding: var(--spacing-md) var(--spacing-lg);
-    gap: var(--spacing-md);
-  }
-
-  .user-header-search-wrap {
-    max-width: 200px;
-  }
-
-  /* Keep guest Log in visible; hide Messages / My Listings on small screens */
-  .user-header-link:not(.user-header-guest-link) {
-    display: none;
-  }
-}
+/* Mobile layout: see marketplace/MarketplaceResponsive.css */
