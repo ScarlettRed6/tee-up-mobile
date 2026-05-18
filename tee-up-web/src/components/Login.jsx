@@ -5,8 +5,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert } from './ui/alert';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import './Login.css';
 
 const authInputPad = { paddingInline: '1rem', paddingBlock: '0.875rem' };
 
@@ -20,6 +21,38 @@ function AuthTextField({ className, style, ...props }) {
       style={{ ...authInputPad, ...style }}
       {...props}
     />
+  );
+}
+
+function AuthPasswordField({ className, style, id, disabled, ...props }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="auth-password-wrap">
+      <Input
+        id={id}
+        type={visible ? 'text' : 'password'}
+        disabled={disabled}
+        className={cn(
+          'auth-password-input min-h-[52px] text-[17px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50',
+          className
+        )}
+        style={{ ...authInputPad, ...style }}
+        {...props}
+      />
+      <button
+        type="button"
+        className="auth-password-toggle"
+        onClick={() => setVisible((v) => !v)}
+        disabled={disabled}
+        aria-label={visible ? 'Hide password' : 'Show password'}
+        aria-pressed={visible}
+        aria-controls={id}
+        tabIndex={0}
+      >
+        {visible ? <EyeOff className="h-5 w-5" aria-hidden /> : <Eye className="h-5 w-5" aria-hidden />}
+      </button>
+    </div>
   );
 }
 
@@ -333,9 +366,8 @@ function Login({ initialView = 'login', onBackToHome }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="password" className="text-base">Password</Label>
-                <AuthTextField
+                <AuthPasswordField
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -380,9 +412,8 @@ function Login({ initialView = 'login', onBackToHome }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="signup-password" className="text-base">Password</Label>
-                <AuthTextField
+                <AuthPasswordField
                   id="signup-password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -392,9 +423,8 @@ function Login({ initialView = 'login', onBackToHome }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
-                <AuthTextField
+                <AuthPasswordField
                   id="confirmPassword"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required

@@ -224,6 +224,7 @@ function UserHeader({
             ) : null}
           </div>
 
+          <div className="user-header-actions">
           {!guest && onNotifications != null ? (
             <div className="user-header-notif-wrap" ref={notifDropdownRef}>
               <Button
@@ -362,6 +363,7 @@ function UserHeader({
               ) : null}
             </div>
           ) : null}
+          </div>
         </nav>
       </div>
 

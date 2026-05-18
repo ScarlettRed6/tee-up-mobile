@@ -97,6 +97,62 @@
   margin: 0;
 }
 
+.auth-password-wrap {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.auth-password-wrap .auth-password-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 2.75rem !important;
+}
+
+/* Hide browser default password reveal (causes empty gap on the right) */
+.auth-password-wrap .auth-password-input::-ms-reveal,
+.auth-password-wrap .auth-password-input::-ms-clear {
+  display: none;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  left: auto;
+  z-index: 2;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-medium);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.auth-password-toggle:hover:not(:disabled) {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.auth-password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
