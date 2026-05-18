@@ -1,9 +1,6 @@
 import { useCallback } from 'react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { ScrollArea } from './ui/scroll-area';
-import { Badge } from './ui/badge';
 import { ChevronLeft, Bell, MessageCircle, Star, Tag, Heart, Megaphone, UserPlus, CheckCheck } from 'lucide-react';
 import { useNotifications } from '../context/NotificationsContext';
 import { formatChatSnippet } from '../utils/chatOffers';
@@ -11,13 +8,13 @@ import { cn } from '@/lib/utils';
 import './NotificationsPage.css';
 
 const NOTIFICATION_ICON_MAP = {
-  new_message: { Icon: MessageCircle, color: 'var(--color-info, #3B82F6)' },
-  rating_received: { Icon: Star, color: 'var(--color-warning, #F59E0B)' },
-  favorite_sold: { Icon: Tag, color: 'var(--color-success, #10B981)' },
-  favorite_status_changed: { Icon: Tag, color: 'var(--color-orange, #F97316)' },
-  listing_favorited: { Icon: Heart, color: '#EC4899' },
-  followed_new_listing: { Icon: Megaphone, color: '#6366F1' },
-  new_follower: { Icon: UserPlus, color: '#F472B6' },
+  new_message: { Icon: MessageCircle, color: 'var(--color-info, #3B82F6)', label: 'Message' },
+  rating_received: { Icon: Star, color: 'var(--color-warning, #F59E0B)', label: 'Rating' },
+  favorite_sold: { Icon: Tag, color: 'var(--color-success, #10B981)', label: 'Listing' },
+  favorite_status_changed: { Icon: Tag, color: '#F97316', label: 'Listing update' },
+  listing_favorited: { Icon: Heart, color: '#EC4899', label: 'Favorite' },
+  followed_new_listing: { Icon: Megaphone, color: '#6366F1', label: 'New listing' },
+  new_follower: { Icon: UserPlus, color: '#F472B6', label: 'Follower' },
 };
 
 function formatRelativeTime(timestamp) {
@@ -33,7 +30,11 @@ function formatRelativeTime(timestamp) {
   if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-  return parsed.toLocaleDateString();
+  return parsed.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export default function NotificationsPage({
@@ -57,7 +58,6 @@ export default function NotificationsPage({
     notifications,
     notificationsLoading,
     unreadCount,
-    refreshNotifications,
     markNotificationAsRead,
     markAllNotificationsAsRead,
   } = useNotifications();
@@ -89,7 +89,6 @@ export default function NotificationsPage({
       }
       if (type === 'rating_received') {
         onOpenProfile?.();
-        return;
       }
     },
     [
@@ -100,6 +99,14 @@ export default function NotificationsPage({
       onOpenProfile,
     ]
   );
+
+  const totalCount = notifications.length;
+  const subtitle =
+    totalCount === 0
+      ? 'You’re all caught up'
+      : unreadCount > 0
+        ? `${unreadCount} unread · ${totalCount} total`
+        : `${totalCount} notification${totalCount === 1 ? '' : 's'}`;
 
   return (
     <div className="notifications-page">
@@ -118,18 +125,23 @@ export default function NotificationsPage({
       />
 
       <main className="notifications-page-main">
-        <div className="notifications-page-header">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="notifications-page-back"
-            onClick={onBack}
-          >
-            <ChevronLeft className="h-5 w-5" />
-            Back
-          </Button>
-          <h1 className="notifications-page-title">Notifications</h1>
-          <div className="notifications-page-actions">
+        <header className="notifications-page-toolbar">
+          <div className="notifications-page-toolbar-start">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="notifications-page-back"
+              onClick={onBack}
+            >
+              <ChevronLeft className="h-5 w-5" />
+              Back
+            </Button>
+            <div className="notifications-page-heading">
+              <h1 className="notifications-page-title">Notifications</h1>
+              <p className="notifications-page-subtitle">{subtitle}</p>
+            </div>
+          </div>
+          <div className="notifications-page-toolbar-actions">
             <Button
               variant="outline"
               size="sm"
@@ -141,71 +153,82 @@ export default function NotificationsPage({
               Mark all read
             </Button>
             {unreadCount > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <span className="notifications-page-unread-badge" aria-live="polite">
                 {unreadCount} unread
-              </Badge>
+              </span>
             )}
           </div>
-        </div>
+        </header>
 
-        <Card className="notifications-page-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-lg">All notifications</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {notificationsLoading && notifications.length === 0 ? (
-              <p className="notifications-page-loading">Loading…</p>
-            ) : notifications.length > 0 ? (
-              <ScrollArea className="h-[60vh] w-full">
-                <ul className="notifications-page-list">
-                  {notifications.map((n) => {
-                    const meta = NOTIFICATION_ICON_MAP[n.type] || {
-                      Icon: Bell,
-                      color: 'var(--color-text-muted)',
-                    };
-                    const IconComponent = meta.Icon;
-                    const isUnread = !n.read_at;
-                    return (
-                      <li key={n.id}>
-                        <button
-                          type="button"
-                          className={cn(
-                            'notifications-page-item',
-                            isUnread && 'notifications-page-item-unread'
-                          )}
-                          onClick={() => handleNotificationPress(n)}
+        <section className="notifications-page-panel" aria-label="Notification list">
+          {notificationsLoading && notifications.length === 0 ? (
+            <p className="notifications-page-loading">Loading notifications…</p>
+          ) : notifications.length > 0 ? (
+            <div className="notifications-page-scroll">
+              <ul className="notifications-page-list">
+                {notifications.map((n) => {
+                  const meta = NOTIFICATION_ICON_MAP[n.type] || {
+                    Icon: Bell,
+                    color: 'var(--color-text-muted)',
+                    label: 'Update',
+                  };
+                  const IconComponent = meta.Icon;
+                  const isUnread = !n.read_at;
+                  return (
+                    <li key={n.id}>
+                      <button
+                        type="button"
+                        className={cn(
+                          'notifications-page-item',
+                          isUnread && 'notifications-page-item-unread'
+                        )}
+                        onClick={() => handleNotificationPress(n)}
+                      >
+                        <span
+                          className="notifications-page-item-icon-wrap"
+                          style={{ color: meta.color }}
+                          aria-hidden
                         >
-                          <span
-                            className="notifications-page-item-icon"
-                            style={{ color: meta.color }}
-                          >
-                            <IconComponent className="h-5 w-5" />
+                          <IconComponent className="h-5 w-5" />
+                        </span>
+                        <span className="notifications-page-item-body">
+                          <span className="notifications-page-item-message">
+                            {formatChatSnippet(n.message)}
                           </span>
-                          <span className="notifications-page-item-content">
-                            <span className="notifications-page-item-message">
-                              {formatChatSnippet(n.message)}
-                            </span>
+                          <span className="notifications-page-item-meta">
                             <span className="notifications-page-item-time">
                               {formatRelativeTime(n.created_at)}
                             </span>
+                            <span className="notifications-page-item-type">{meta.label}</span>
                           </span>
+                        </span>
+                        <span className="notifications-page-item-indicator">
                           {isUnread && (
-                            <span className="notifications-page-item-dot" />
+                            <span
+                              className="notifications-page-item-dot"
+                              aria-label="Unread"
+                            />
                           )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </ScrollArea>
-            ) : (
-              <div className="notifications-page-empty">
-                <Bell className="notifications-page-empty-icon" />
-                <p className="notifications-page-empty-text">No notifications yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : (
+            <div className="notifications-page-empty">
+              <span className="notifications-page-empty-icon-wrap" aria-hidden>
+                <Bell className="h-8 w-8" />
+              </span>
+              <h2 className="notifications-page-empty-title">No notifications yet</h2>
+              <p className="notifications-page-empty-text">
+                When someone messages you, favorites your listing, or follows you, it will show up
+                here.
+              </p>
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
