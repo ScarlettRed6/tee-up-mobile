@@ -8,6 +8,7 @@ import { Alert } from './ui/alert';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
 import BrandPickerModal from './BrandPickerModal';
 import { createListing, updateListing } from '../api/userListingsApi';
+import { ambiguousListingSubmitMessage } from '../utils/listingSubmitRecovery';
 import { PHILIPPINE_CITIES_BY_REGION, PHILIPPINE_LOCATION_OPTIONS } from '../constants/philippineLocations';
 import './SellListingPage.css';
 
@@ -135,20 +136,24 @@ function SellListingPage({
             status: initialListing.status || 'available',
           },
           files,
-          existingPhotos
+          existingPhotos,
+          { userId: user?.id ?? user?.user_id }
         );
         onListingUpdated?.(updated);
       } else {
-        const created = await createListing(listingData, files);
+        const created = await createListing(listingData, files, {
+          userId: user?.id ?? user?.user_id,
+        });
         if (onListingCreated) {
           onListingCreated(created, status);
         }
       }
     } catch (err) {
+      const serverMsg = err.response?.data?.error || err.response?.data?.message;
       setError(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
+        serverMsg ||
           err.message ||
+          ambiguousListingSubmitMessage() ||
           'Failed to save listing.'
       );
     } finally {

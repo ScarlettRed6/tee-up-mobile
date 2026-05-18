@@ -1,4 +1,9 @@
 import axiosInstance from './axiosInstance';
+import {
+  LISTING_UPLOAD_TIMEOUT_MS,
+  findLikelyCreatedListing,
+  isAmbiguousListingSubmitError,
+} from '../utils/listingSubmitRecovery';
 
 /**
  * Public listings (no auth required).
@@ -85,7 +90,7 @@ export const deleteListing = async (listingId) => {
  * Create a new listing (auth required).
  * Backend: POST /listings (multipart/form-data with photos[])
  */
-export const createListing = async (listingData, files = []) => {
+export const createListing = async (listingData, files = [], options = {}) => {
   const formData = new FormData();
 
   formData.append('title', listingData.title);
@@ -114,19 +119,36 @@ export const createListing = async (listingData, files = []) => {
     }
   });
 
-  const response = await axiosInstance.post('/listings', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data?.listing ?? null;
+  try {
+    const response = await axiosInstance.post('/listings', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: LISTING_UPLOAD_TIMEOUT_MS,
+      skipAuthRetry: true,
+    });
+    const listing = response.data?.listing;
+    if (!listing) {
+      throw new Error('Server did not return listing data');
+    }
+    return listing;
+  } catch (err) {
+    const userId = options.userId;
+    if (userId && isAmbiguousListingSubmitError(err)) {
+      const recovered = await findLikelyCreatedListing(userId, listingData);
+      if (recovered) {
+        return recovered;
+      }
+    }
+    throw err;
+  }
 };
 
 /**
  * Update an existing listing (auth required).
  * Backend: PUT /listings/:id (multipart/form-data with photos[] and existingPhotos)
  */
-export const updateListing = async (listingId, listingData, files = [], existingPhotos = []) => {
+export const updateListing = async (listingId, listingData, files = [], existingPhotos = [], options = {}) => {
   const formData = new FormData();
 
   formData.append('title', listingData.title);
@@ -156,10 +178,27 @@ export const updateListing = async (listingId, listingData, files = [], existing
     }
   });
 
-  const response = await axiosInstance.put(`/listings/${listingId}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data?.listing ?? null;
+  try {
+    const response = await axiosInstance.put(`/listings/${listingId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: LISTING_UPLOAD_TIMEOUT_MS,
+      skipAuthRetry: true,
+    });
+    const listing = response.data?.listing;
+    if (!listing) {
+      throw new Error('Server did not return listing data');
+    }
+    return listing;
+  } catch (err) {
+    const userId = options.userId;
+    if (userId && isAmbiguousListingSubmitError(err)) {
+      const recovered = await findLikelyCreatedListing(userId, listingData);
+      if (recovered && String(recovered.listing_id ?? recovered.id) === String(listingId)) {
+        return recovered;
+      }
+    }
+    throw err;
+  }
 };

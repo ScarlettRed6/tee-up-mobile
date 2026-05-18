@@ -16,7 +16,7 @@ from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";
 import { getIO } from "../utils/getIo.js";
-import { getFollowersForUser } from "../models/followerModel.js";
+import { notifyFollowersNewListing } from "../utils/notifyFollowersNewListing.js";
 import { findUserById } from "../models/userModel.js";
 
 
@@ -61,38 +61,16 @@ export async function createListing(req, res) {
         
         console.log("Listing created successfully with ID:", newListing.listing_id, "for user_id:", newListing.user_id);
         console.log("Returned photos:", newListing.photos);
-        
-        try {
-            const followers = await getFollowersForUser(user_id);
-            if (followers.length > 0) {
-                const seller = await findUserById(user_id);
-                const sellerName = seller?.name || 'Someone';
-                const listingTitle = newListing.title || title;
-                const message = listingTitle 
-                    ? `${sellerName} posted a new listing "${listingTitle}"`
-                    : `${sellerName} posted a new listing`;
-                for (const follower of followers) {
-                    const notif = await createNotification(
-                        follower.follower_id,
-                        "followed_new_listing",
-                        message,
-                        {
-                            listing_id: newListing.listing_id,
-                            listing_title: listingTitle,
-                            seller_id: user_id,
-                            seller_name: sellerName,
-                        }
-                    );
-                    if (io) {
-                        sendNotification(io, follower.follower_id, notif);
-                    }
-                }
-            }
-        } catch (notifyError) {
-            console.error("Failed to notify followers about new listing:", notifyError.message);
-        }
 
+        // Respond immediately so the client is not left waiting on follower notifications
+        // (slow connections were timing out after the listing was already saved).
         res.status(201).json({ message: "New listing added successfully!", listing: newListing });
+
+        setImmediate(() => {
+            notifyFollowersNewListing(io, user_id, newListing, title).catch((err) => {
+                console.error("Background follower notification failed:", err.message);
+            });
+        });
     }catch(err){
         console.error("Error creating listing:", err);
         res.status(500).json({ error: err.message });

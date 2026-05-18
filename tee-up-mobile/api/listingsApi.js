@@ -1,6 +1,11 @@
 import api from "./axiosInstance.js"
+import {
+    LISTING_UPLOAD_TIMEOUT_MS,
+    findLikelyCreatedListing,
+    isAmbiguousListingSubmitError,
+} from "../utils/listingSubmitRecovery.js";
 
-export const createListing = async (listingData, photos = []) => {
+export const createListing = async (listingData, photos = [], options = {}) => {
     const formData = new FormData();
     
     // Add all listing fields to FormData
@@ -39,12 +44,29 @@ export const createListing = async (listingData, photos = []) => {
         }
     });
     
-    const res = await api.post("/listings", formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return res.data.listing;
+    try {
+        const res = await api.post("/listings", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            timeout: LISTING_UPLOAD_TIMEOUT_MS,
+            skipAuthRetry: true,
+        });
+        const listing = res.data?.listing;
+        if (!listing) {
+            throw new Error("Server did not return listing data");
+        }
+        return listing;
+    } catch (err) {
+        const userId = options.userId;
+        if (userId && isAmbiguousListingSubmitError(err)) {
+            const recovered = await findLikelyCreatedListing(userId, listingData);
+            if (recovered) {
+                return recovered;
+            }
+        }
+        throw err;
+    }
 };
 
 export async function fetchListings(filters = {}) {
@@ -83,7 +105,7 @@ export async function updateListingStatus(listingId, status){
     return response.data.listing;
 }
 
-export const updateListing = async (listingId, listingData, photos = []) => {
+export const updateListing = async (listingId, listingData, photos = [], options = {}) => {
     const formData = new FormData();
     
     // Add all listing fields to FormData
@@ -136,12 +158,29 @@ export const updateListing = async (listingId, listingData, photos = []) => {
         });
     });
     
-    const res = await api.put(`/listings/${listingId}`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return res.data.listing;
+    try {
+        const res = await api.put(`/listings/${listingId}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            timeout: LISTING_UPLOAD_TIMEOUT_MS,
+            skipAuthRetry: true,
+        });
+        const listing = res.data?.listing;
+        if (!listing) {
+            throw new Error("Server did not return listing data");
+        }
+        return listing;
+    } catch (err) {
+        const userId = options.userId;
+        if (userId && isAmbiguousListingSubmitError(err)) {
+            const recovered = await findLikelyCreatedListing(userId, listingData);
+            if (recovered && String(recovered.listing_id ?? recovered.id) === String(listingId)) {
+                return recovered;
+            }
+        }
+        throw err;
+    }
 };
 
 /**

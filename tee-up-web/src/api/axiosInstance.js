@@ -30,7 +30,7 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // If token expired and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.skipAuthRetry) {
       originalRequest._retry = true;
 
       try {
