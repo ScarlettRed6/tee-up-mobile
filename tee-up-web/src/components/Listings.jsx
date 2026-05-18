@@ -4,7 +4,7 @@ import './Listings.css';
 import ListingDetailModal from './ListingDetailModal';
 import { getAdminListings, getAdminListingById, updateAdminListingStatus, deleteAdminListing } from '../api/listingsApi';
 import { PHILIPPINE_CITIES_BY_REGION } from '../constants/philippineLocations';
-import PageLoadingSkeleton from './PageLoadingSkeleton';
+import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
 
 // Normalize backend listing row to UI shape (id, seller, postedDate, saves, images, etc.)
 function normalizeListing(row) {
@@ -332,7 +332,7 @@ function Listings() {
   if (loading) {
     return (
       <div className="listings-page">
-        <PageLoadingSkeleton titleWidth="w-64" subtitleWidth="w-80" rows={7} />
+        <AdminTablePageSkeleton variant="listings" rows={6} />
       </div>
     );
   }

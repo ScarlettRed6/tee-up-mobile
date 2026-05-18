@@ -13,7 +13,7 @@ import UserHome from './components/UserHome';
 import { ThemeToggle } from './components/ThemeToggle';
 import { NotificationsProvider } from './context/NotificationsContext';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
-import { Skeleton } from './components/ui/skeleton';
+import { AuthCheckLoadingSkeleton } from './components/admin/AdminSkeletons';
 import './App.css';
 
 function AppContent() {
@@ -70,35 +70,7 @@ function AppContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-background)' }}>
-        <div className="mx-auto max-w-[1280px] space-y-6">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-white)] p-4">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-9 w-24" />
-            </div>
-          </div>
-          <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-white)] p-4 space-y-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-white)] p-6 space-y-4">
-              <Skeleton className="h-8 w-56" />
-              <Skeleton className="h-5 w-72" />
-              <div className="grid gap-4 md:grid-cols-3">
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-                <Skeleton className="h-28 w-full" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <AuthCheckLoadingSkeleton />;
   }
 
   if (!isAuthenticated) {

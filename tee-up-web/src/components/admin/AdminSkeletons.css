@@ -1,0 +1,280 @@
+/* Shared admin loading skeletons — matches Header + Sidebar + page chrome */
+
+@keyframes admin-skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.admin-skel {
+  border-radius: var(--radius-small);
+  background: linear-gradient(
+    90deg,
+    var(--color-light-gray) 0%,
+    color-mix(in srgb, var(--color-white) 70%, var(--color-light-gray)) 50%,
+    var(--color-light-gray) 100%
+  );
+  background-size: 200% 100%;
+  animation: admin-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.admin-skel--circle {
+  border-radius: var(--radius-circle);
+  flex-shrink: 0;
+}
+
+.admin-skel--pill {
+  border-radius: 999px;
+}
+
+.admin-skel-block {
+  background-color: var(--color-white);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+}
+
+/* —— App auth check (all roles) —— */
+.auth-check-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-background);
+  padding: var(--spacing-2xl);
+}
+
+.auth-check-loading__inner {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* —— Full-shell auth loading (optional / admin preview) —— */
+.admin-auth-loading {
+  min-height: 100vh;
+  background-color: var(--color-background);
+}
+
+.admin-auth-loading__header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--spacing-2xl);
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-header);
+}
+
+.admin-auth-loading__sidebar {
+  position: fixed;
+  left: 0;
+  top: var(--header-height);
+  bottom: 0;
+  width: var(--sidebar-width);
+  padding: var(--spacing-2xl);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-sidebar);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.admin-auth-loading__main {
+  margin-left: var(--sidebar-width);
+  margin-top: var(--header-height);
+  padding: var(--spacing-2xl);
+  min-height: calc(100vh - var(--header-height));
+}
+
+/* —— Dashboard —— */
+.admin-dashboard-skel__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-2xl);
+  margin-bottom: var(--spacing-4xl);
+}
+
+.admin-dashboard-skel__metric-card {
+  padding: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.admin-dashboard-skel__metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.admin-dashboard-skel__content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-2xl);
+}
+
+.admin-dashboard-skel__info-card {
+  padding: var(--spacing-2xl);
+}
+
+.admin-dashboard-skel__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.admin-dashboard-skel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.admin-dashboard-skel__list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.admin-dashboard-skel__flagged-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-medium);
+  background-color: var(--color-background-alt);
+}
+
+/* —— Table pages (Users / Listings / Reports) —— */
+.admin-table-skel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+  flex-wrap: wrap;
+}
+
+.admin-table-skel__header-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.admin-table-skel__filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.admin-table-skel__filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.admin-table-skel__filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 140px;
+}
+
+.admin-table-skel__table-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.admin-table-skel__table-head {
+  display: grid;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  background-color: var(--color-background-alt);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.admin-table-skel__table-row {
+  display: grid;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
+  align-items: center;
+}
+
+.admin-table-skel__table-row:last-child {
+  border-bottom: none;
+}
+
+.admin-table-skel__pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+  margin-top: 0;
+}
+
+.admin-table-skel__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
+  padding: var(--spacing-xl) var(--spacing-2xl);
+  background-color: var(--color-white);
+  border-radius: var(--radius-large);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.admin-table-skel__summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 100px;
+}
+
+@media (max-width: 1024px) {
+  .admin-dashboard-skel__metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-dashboard-skel__content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-auth-loading__sidebar {
+    display: none;
+  }
+
+  .admin-auth-loading__main {
+    margin-left: 0;
+  }
+
+  .admin-dashboard-skel__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-table-skel__table-head,
+  .admin-table-skel__table-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}

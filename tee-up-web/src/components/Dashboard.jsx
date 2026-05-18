@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getDashboardData } from '../api/dashboardApi';
 import { Alert } from './ui/alert';
 import { Button } from './ui/button';
-import { Skeleton } from './ui/skeleton';
+import { AdminDashboardSkeleton } from './admin/AdminSkeletons';
 import './Dashboard.css';
 
 function Dashboard({ onViewUsers, onViewReports }) {
@@ -51,17 +51,7 @@ function Dashboard({ onViewUsers, onViewReports }) {
       )}
 
       {loading ? (
-        <div className="dashboard-loading">
-          <div className="metrics-grid">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 rounded-2xl" />
-            ))}
-          </div>
-          <div className="content-grid" style={{ marginTop: '2rem' }}>
-            <Skeleton className="h-64 rounded-2xl" />
-            <Skeleton className="h-64 rounded-2xl" />
-          </div>
-        </div>
+        <AdminDashboardSkeleton bodyOnly />
       ) : (
         <>
           <div className="metrics-grid">

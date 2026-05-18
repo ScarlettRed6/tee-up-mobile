@@ -3,7 +3,8 @@ import './Users.css';
 import { getAllUsers, suspendUser, unsuspendUser, deleteUser, getUserById, updateUser, getSuspensionLogs } from '../api/usersApi';
 import { createAdmin } from '../api/adminApi';
 import { useAuth } from '../context/AuthContext';
-import PageLoadingSkeleton from './PageLoadingSkeleton';
+import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
+import SuspensionLogsModal from './SuspensionLogsModal';
 
 function Users() {
   const { user: currentUser } = useAuth();
@@ -614,7 +615,7 @@ function Users() {
   if (loading) {
     return (
       <div className="users-page">
-        <PageLoadingSkeleton titleWidth="w-56" subtitleWidth="w-72" rows={7} />
+        <AdminTablePageSkeleton variant="users" rows={6} />
       </div>
     );
   }
@@ -1517,188 +1518,20 @@ function Users() {
         </div>
       )}
 
-      {/* Suspension Logs Modal */}
-      {showSuspensionLogsModal && (
-        <div className="modal-overlay" onClick={() => {
-          if (!suspensionLogsLoading) {
-            setShowSuspensionLogsModal(false);
-            setSuspensionLogs([]);
-            setSuspensionLogsUserId(null);
-            setSuspensionLogsError('');
-          }
-        }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', maxHeight: '90vh' }}>
-            <div className="modal-header">
-              <h2 className="modal-title">
-                {suspensionLogsUserId ? 'User Suspension Logs' : 'All Suspension Logs'}
-              </h2>
-              <button
-                className="modal-close-button"
-                onClick={() => {
-                  if (!suspensionLogsLoading) {
-                    setShowSuspensionLogsModal(false);
-                    setSuspensionLogs([]);
-                    setSuspensionLogsUserId(null);
-                    setSuspensionLogsError('');
-                  }
-                }}
-                disabled={suspensionLogsLoading}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              {suspensionLogsLoading ? (
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center', 
-                  minHeight: '200px',
-                  flexDirection: 'column',
-                  gap: '16px'
-                }}>
-                  <div className="loading-spinner"></div>
-                  <p style={{ color: 'var(--color-text-muted)' }}>Loading suspension logs...</p>
-                </div>
-              ) : suspensionLogsError ? (
-                <div style={{
-                  backgroundColor: '#FEE2E2',
-                  color: '#DC2626',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
-                  {suspensionLogsError}
-                </div>
-              ) : suspensionLogs.length === 0 ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '40px 20px',
-                  color: 'var(--color-text-muted)'
-                }}>
-                  <p style={{ fontSize: '16px', marginBottom: '8px' }}>No suspension logs found</p>
-                  <p style={{ fontSize: '14px' }}>There are no suspension records to display.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {suspensionLogs.map((log) => (
-                    <div 
-                      key={log.id} 
-                      style={{
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        backgroundColor: 'var(--color-white)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                        <div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>
-                            {log.user_name || 'Unknown User'} 
-                            {log.user_email && <span style={{ color: 'var(--color-text-muted)', fontWeight: '400' }}> ({log.user_email})</span>}
-                          </div>
-                          {!suspensionLogsUserId && (
-                            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                              User ID: {log.user_id}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: 'var(--color-text-muted)',
-                          textAlign: 'right'
-                        }}>
-                          {new Date(log.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-
-                      <div style={{ marginBottom: '12px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--color-text-secondary)' }}>
-                          Reason:
-                        </div>
-                        <div style={{ 
-                          fontSize: '14px', 
-                          color: 'var(--color-text-primary)',
-                          padding: '8px 12px',
-                          backgroundColor: 'var(--color-light-gray)',
-                          borderRadius: '8px',
-                          lineHeight: '1.5'
-                        }}>
-                          {log.reason}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                          <strong>Suspended by:</strong> {log.admin_name || 'Unknown'} 
-                          {log.admin_role && (
-                            <span style={{ 
-                              marginLeft: '6px',
-                              padding: '2px 8px',
-                              backgroundColor: log.admin_role === 'superadmin' ? '#FEE2E2' : '#DBEAFE',
-                              color: log.admin_role === 'superadmin' ? '#DC2626' : '#1E40AF',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              fontWeight: '500'
-                            }}>
-                              {log.admin_role === 'superadmin' ? 'Super Admin' : 'Admin'}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                          {log.suspended_until ? (
-                            <>
-                              <strong>Until:</strong> {new Date(log.suspended_until).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                              {new Date(log.suspended_until) < new Date() && (
-                                <span style={{ 
-                                  marginLeft: '8px',
-                                  padding: '2px 6px',
-                                  backgroundColor: '#FEE2E2',
-                                  color: '#DC2626',
-                                  borderRadius: '4px',
-                                  fontSize: '11px',
-                                  fontWeight: '500'
-                                }}>
-                                  Expired
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <span style={{ 
-                              padding: '2px 8px',
-                              backgroundColor: '#FEE2E2',
-                              color: '#DC2626',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              fontWeight: '500'
-                            }}>
-                              Permanent
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <SuspensionLogsModal
+        open={showSuspensionLogsModal}
+        loading={suspensionLogsLoading}
+        error={suspensionLogsError}
+        logs={suspensionLogs}
+        userId={suspensionLogsUserId}
+        onClose={() => {
+          if (suspensionLogsLoading) return;
+          setShowSuspensionLogsModal(false);
+          setSuspensionLogs([]);
+          setSuspensionLogsUserId(null);
+          setSuspensionLogsError('');
+        }}
+      />
     </div>
   );
 }

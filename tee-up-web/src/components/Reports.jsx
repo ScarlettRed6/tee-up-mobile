@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getAllReports, reviewReport } from '../api/reportsApi';
 import './Reports.css';
-import PageLoadingSkeleton from './PageLoadingSkeleton';
+import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
 
 function Reports() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -275,7 +275,7 @@ function Reports() {
   if (loading) {
     return (
       <div className="reports-page">
-        <PageLoadingSkeleton titleWidth="w-56" subtitleWidth="w-72" rows={6} />
+        <AdminTablePageSkeleton variant="reports" rows={6} />
       </div>
     );
   }

@@ -33,12 +33,6 @@
   font-weight: var(--font-weight-medium);
 }
 
-.dashboard-loading {
-  padding: var(--spacing-2xl);
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-body);
-}
 
 .metrics-grid {
   display: grid;
