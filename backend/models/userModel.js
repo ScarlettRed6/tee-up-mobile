@@ -231,20 +231,16 @@ export async function getTopSellers(limit = 10) {
     return result.rows;
 }//End of getTopSellers query
 
+/** Permanent suspensions use a far-future date on the user row (logs still store null). */
+const PERMANENT_SUSPENSION_UNTIL = new Date('9999-12-31T23:59:59.999Z');
+
 export async function suspendUserQuery(userId, suspendedUntil = null) {
-    if (suspendedUntil) {
-        const result = await pool.query(
-            `UPDATE users SET suspended_until = $2
-            WHERE id = $1 RETURNING *`,
-            [userId, suspendedUntil]
-        );
-    } else {
-        const result = await pool.query(
-            `UPDATE users SET suspended_until = NULL
-            WHERE id = $1 RETURNING *`,
-            [userId]
-        );
-    }//End of if else statement
+    const until = suspendedUntil ?? PERMANENT_SUSPENSION_UNTIL;
+    const result = await pool.query(
+        `UPDATE users SET suspended_until = $2
+        WHERE id = $1 RETURNING *`,
+        [userId, until]
+    );
     return result.rows[0];
 }//End of suspendUserQuery
 

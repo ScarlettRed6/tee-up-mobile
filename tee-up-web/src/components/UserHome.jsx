@@ -508,15 +508,18 @@ function UserHome({ guest = false }) {
     setLogoutModalOpen(true);
   };
   const confirmLogout = () => {
-    setLogoutModalOpen(false);
+    resetToBrowseHome();
     logout();
   };
 
-  const handleGoHome = () => {
+  const resetToBrowseHome = useCallback(() => {
+    setLogoutModalOpen(false);
     setView('feed');
     setSelectedListingId(null);
     setSelectedOwnerListingId(null);
     setSelectedProfileUserId(null);
+    setOwnerListingFromView('feed');
+    setEditingListing(null);
     setSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
@@ -529,6 +532,10 @@ function UserHome({ guest = false }) {
       maxPrice: '',
       location: '',
     });
+  }, []);
+
+  const handleGoHome = () => {
+    resetToBrowseHome();
   };
 
   const handleListingClick = (listing) => {

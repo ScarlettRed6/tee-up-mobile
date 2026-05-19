@@ -1,36 +1,71 @@
 import pool from "../config/db.js";
 
+let schemaReady = null;
+
+/** Ensures table exists and supports suspend / unsuspend action types. */
+export async function ensureSuspensionLogsSchema() {
+    if (!schemaReady) {
+        schemaReady = (async () => {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS suspension_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    admin_id INTEGER NOT NULL REFERENCES users(id),
+                    reason TEXT NOT NULL DEFAULT '',
+                    suspended_until TIMESTAMPTZ,
+                    action VARCHAR(20) NOT NULL DEFAULT 'suspend',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+            await pool.query(`
+                ALTER TABLE suspension_logs
+                ADD COLUMN IF NOT EXISTS action VARCHAR(20) NOT NULL DEFAULT 'suspend'
+            `);
+        })().catch((err) => {
+            schemaReady = null;
+            throw err;
+        });
+    }
+    return schemaReady;
+}
+
 /**
- * Create a suspension log entry
- * @param {number} userId - The ID of the user being suspended
- * @param {number} adminId - The ID of the admin performing the suspension
- * @param {string} reason - The reason for suspension
- * @param {Date} suspendedUntil - The date when suspension ends (null for permanent)
- * @returns {Promise<Object>} The created suspension log
+ * @param {'suspend'|'unsuspend'} action
  */
-export async function createSuspensionLog(userId, adminId, reason, suspendedUntil) {
+export async function createSuspensionLog(
+    userId,
+    adminId,
+    reason,
+    suspendedUntil = null,
+    action = "suspend"
+) {
+    await ensureSuspensionLogsSchema();
+    const normalizedAction = action === "unsuspend" ? "unsuspend" : "suspend";
     const result = await pool.query(
-        `INSERT INTO suspension_logs (user_id, admin_id, reason, suspended_until)
-        VALUES ($1, $2, $3, $4) RETURNING *`,
-        [userId, adminId, reason, suspendedUntil]
+        `INSERT INTO suspension_logs (user_id, admin_id, reason, suspended_until, action)
+        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [userId, adminId, reason, suspendedUntil, normalizedAction]
     );
     return result.rows[0];
 }
 
-/**
- * Get all suspension logs for a user
- * @param {number} userId - The ID of the user
- * @returns {Promise<Array>} Array of suspension logs
- */
+export async function createUnsuspendLog(userId, adminId, reason = "Account access restored by administrator.") {
+    return createSuspensionLog(userId, adminId, reason, null, "unsuspend");
+}
+
 export async function getUserSuspensionLogs(userId) {
+    await ensureSuspensionLogsSchema();
     const result = await pool.query(
         `SELECT 
             sl.*,
-            u.name as admin_name,
-            u.email as admin_email,
-            u.role as admin_role
+            target.name as user_name,
+            target.email as user_email,
+            admin.name as admin_name,
+            admin.email as admin_email,
+            admin.role as admin_role
         FROM suspension_logs sl
-        LEFT JOIN users u ON sl.admin_id = u.id
+        LEFT JOIN users target ON sl.user_id = target.id
+        LEFT JOIN users admin ON sl.admin_id = admin.id
         WHERE sl.user_id = $1
         ORDER BY sl.created_at DESC`,
         [userId]
@@ -38,11 +73,8 @@ export async function getUserSuspensionLogs(userId) {
     return result.rows;
 }
 
-/**
- * Get all suspension logs (admin view)
- * @returns {Promise<Array>} Array of all suspension logs
- */
 export async function getAllSuspensionLogs() {
+    await ensureSuspensionLogsSchema();
     const result = await pool.query(
         `SELECT 
             sl.*,
@@ -58,4 +90,3 @@ export async function getAllSuspensionLogs() {
     );
     return result.rows;
 }
-

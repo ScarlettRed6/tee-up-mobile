@@ -5,6 +5,8 @@ import { createAdmin } from '../api/adminApi';
 import { useAuth } from '../context/AuthContext';
 import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
 import SuspensionLogsModal from './SuspensionLogsModal';
+import SuspendUserModal from './SuspendUserModal';
+import UnsuspendUserModal from './UnsuspendUserModal';
 
 function Users() {
   const { user: currentUser } = useAuth();
@@ -55,6 +57,10 @@ function Users() {
   });
   const [suspendLoading, setSuspendLoading] = useState(false);
   const [suspendError, setSuspendError] = useState('');
+  const [showUnsuspendModal, setShowUnsuspendModal] = useState(false);
+  const [unsuspendTargetUser, setUnsuspendTargetUser] = useState(null);
+  const [unsuspendLoading, setUnsuspendLoading] = useState(false);
+  const [unsuspendError, setUnsuspendError] = useState('');
   const [showSuspensionLogsModal, setShowSuspensionLogsModal] = useState(false);
   const [suspensionLogs, setSuspensionLogs] = useState([]);
   const [suspensionLogsLoading, setSuspensionLogsLoading] = useState(false);
@@ -63,6 +69,15 @@ function Users() {
   const dropdownRefs = useRef({});
   const buttonRefs = useRef({});
 
+  const mapUserWithStatus = (user) => {
+    const until = user.suspended_until ? new Date(user.suspended_until) : null;
+    const isSuspended = Boolean(until && until > new Date());
+    return {
+      ...user,
+      status: isSuspended ? 'suspended' : 'active',
+    };
+  };
+
   // Fetch users from API
   const fetchUsers = async (search = '') => {
     try {
@@ -70,7 +85,8 @@ function Users() {
       setError('');
       const response = await getAllUsers(search);
       // Backend returns the array directly; support both shapes for compatibility
-      const list = Array.isArray(response) ? response : (response?.result ?? []);
+      const raw = Array.isArray(response) ? response : (response?.result ?? []);
+      const list = raw.map(mapUserWithStatus);
       setUsers(list);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -491,32 +507,45 @@ function Users() {
       alert('User suspended successfully!');
     } catch (err) {
       console.error('Error suspending user:', err);
-      setSuspendError(err.response?.data?.message || 'Failed to suspend user');
+      const apiMsg = err.response?.data?.message || err.response?.data?.error;
+      setSuspendError(apiMsg || err.message || 'Failed to suspend user');
     } finally {
       setSuspendLoading(false);
     }
   };
 
-  const handleUnsuspend = async (userId) => {
-    const targetUser = users.find(u => u.id === userId);
-    
-    if (!window.confirm(`Are you sure you want to unsuspend ${targetUser?.name || 'this user'}?`)) {
-      setOpenDropdown(null);
-      return;
-    }
+  const openUnsuspendModal = (userId) => {
+    const targetUser = users.find((u) => u.id === userId);
+    if (!targetUser) return;
+    setUnsuspendTargetUser(targetUser);
+    setUnsuspendError('');
+    setShowUnsuspendModal(true);
+    setOpenDropdown(null);
+  };
+
+  const closeUnsuspendModal = () => {
+    if (unsuspendLoading) return;
+    setShowUnsuspendModal(false);
+    setUnsuspendTargetUser(null);
+    setUnsuspendError('');
+  };
+
+  const handleUnsuspendConfirm = async () => {
+    if (!unsuspendTargetUser) return;
 
     try {
-      setActionLoading(userId);
-      await unsuspendUser(userId);
-      // Refresh users list
+      setUnsuspendLoading(true);
+      setUnsuspendError('');
+      await unsuspendUser(unsuspendTargetUser.id);
       await fetchUsers();
-      setOpenDropdown(null);
-      alert('User unsuspended successfully!');
+      setShowUnsuspendModal(false);
+      setUnsuspendTargetUser(null);
     } catch (err) {
       console.error('Error unsuspending user:', err);
-      alert(err.response?.data?.message || 'Failed to unsuspend user');
+      const apiMsg = err.response?.data?.message || err.response?.data?.error;
+      setUnsuspendError(apiMsg || err.message || 'Failed to unsuspend user');
     } finally {
-      setActionLoading(null);
+      setUnsuspendLoading(false);
     }
   };
 
@@ -532,7 +561,8 @@ function Users() {
       setSuspensionLogs(response.logs || []);
     } catch (err) {
       console.error('Error fetching suspension logs:', err);
-      setSuspensionLogsError(err.response?.data?.error || 'Failed to load suspension logs');
+      const apiMsg = err.response?.data?.message || err.response?.data?.error;
+      setSuspensionLogsError(apiMsg || err.message || 'Failed to load suspension logs');
       setSuspensionLogs([]);
     } finally {
       setSuspensionLogsLoading(false);
@@ -866,7 +896,7 @@ function Users() {
                               {canSuspend && user.status === 'suspended' && (
                                 <button 
                                   className="dropdown-item unsuspend-item"
-                                  onClick={() => handleUnsuspend(user.id)}
+                                  onClick={() => openUnsuspendModal(user.id)}
                                   disabled={actionLoading === user.id}
                                 >
                                   Unsuspend
@@ -1351,172 +1381,31 @@ function Users() {
         </div>
       )}
 
-      {/* Suspend User Modal */}
-      {showSuspendModal && suspendTargetUser && (
-        <div className="modal-overlay" onClick={() => {
-          if (!suspendLoading) {
-            setShowSuspendModal(false);
-            setSuspendFormData({ duration: '', reason: '', isPermanent: false });
-            setSuspendError('');
-          }
-        }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Suspend User</h2>
-              <button
-                className="modal-close-button"
-                onClick={() => {
-                  if (!suspendLoading) {
-                    setShowSuspendModal(false);
-                    setSuspendFormData({ duration: '', reason: '', isPermanent: false });
-                    setSuspendError('');
-                  }
-                }}
-                disabled={suspendLoading}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
+      <SuspendUserModal
+        open={showSuspendModal}
+        user={suspendTargetUser}
+        formData={suspendFormData}
+        onFormChange={setSuspendFormData}
+        error={suspendError}
+        loading={suspendLoading}
+        onClose={() => {
+          if (suspendLoading) return;
+          setShowSuspendModal(false);
+          setSuspendTargetUser(null);
+          setSuspendFormData({ duration: '', reason: '', isPermanent: false });
+          setSuspendError('');
+        }}
+        onSubmit={handleSuspendSubmit}
+      />
 
-            <div className="modal-body">
-              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--color-light-gray)', borderRadius: '8px' }}>
-                <strong>User:</strong> {suspendTargetUser.name} ({suspendTargetUser.email})
-                <br />
-                <strong>Role:</strong> {suspendTargetUser.role === 'superadmin' ? 'Super Admin' : suspendTargetUser.role === 'admin' ? 'Admin' : 'User'}
-              </div>
-
-              {suspendError && (
-                <div style={{
-                  backgroundColor: '#FEE2E2',
-                  color: '#DC2626',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
-                  {suspendError}
-                </div>
-              )}
-
-              <form onSubmit={handleSuspendSubmit}>
-                <div className="form-group">
-                  <label className="form-label">
-                    <input
-                      type="checkbox"
-                      checked={suspendFormData.isPermanent}
-                      onChange={(e) => setSuspendFormData({
-                        ...suspendFormData,
-                        isPermanent: e.target.checked,
-                        duration: e.target.checked ? '' : suspendFormData.duration
-                      })}
-                      disabled={suspendLoading}
-                      style={{ marginRight: '8px' }}
-                    />
-                    Permanent Suspension
-                  </label>
-                  <small style={{ 
-                    display: 'block', 
-                    marginTop: '4px', 
-                    color: 'var(--color-text-muted)',
-                    fontSize: '12px'
-                  }}>
-                    If checked, the user will be suspended indefinitely
-                  </small>
-                </div>
-
-                {!suspendFormData.isPermanent && (
-                  <div className="form-group">
-                    <label htmlFor="suspend-duration" className="form-label">
-                      Suspension Duration (Days) <span style={{ color: '#EF4444' }}>*</span>
-                    </label>
-                    <input
-                      type="number"
-                      id="suspend-duration"
-                      className="form-input"
-                      placeholder="Enter number of days"
-                      min="1"
-                      value={suspendFormData.duration}
-                      onChange={(e) => setSuspendFormData({
-                        ...suspendFormData,
-                        duration: e.target.value
-                      })}
-                      disabled={suspendLoading}
-                      required={!suspendFormData.isPermanent}
-                    />
-                    <small style={{ 
-                      display: 'block', 
-                      marginTop: '4px', 
-                      color: 'var(--color-text-muted)',
-                      fontSize: '12px'
-                    }}>
-                      Enter the number of days the user should be suspended
-                    </small>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label htmlFor="suspend-reason" className="form-label">
-                    Reason for Suspension <span style={{ color: '#EF4444' }}>*</span>
-                  </label>
-                  <textarea
-                    id="suspend-reason"
-                    className="form-input"
-                    placeholder="Enter the reason for suspending this user..."
-                    rows="4"
-                    value={suspendFormData.reason}
-                    onChange={(e) => setSuspendFormData({
-                      ...suspendFormData,
-                      reason: e.target.value
-                    })}
-                    disabled={suspendLoading}
-                    required
-                    style={{ 
-                      resize: 'vertical',
-                      fontFamily: 'var(--font-family)'
-                    }}
-                  />
-                  <small style={{ 
-                    display: 'block', 
-                    marginTop: '4px', 
-                    color: 'var(--color-text-muted)',
-                    fontSize: '12px'
-                  }}>
-                    This reason will be logged and visible in suspension history
-                  </small>
-                </div>
-
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="modal-button-secondary"
-                    onClick={() => {
-                      if (!suspendLoading) {
-                        setShowSuspendModal(false);
-                        setSuspendFormData({ duration: '', reason: '', isPermanent: false });
-                        setSuspendError('');
-                      }
-                    }}
-                    disabled={suspendLoading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="modal-button-primary"
-                    disabled={suspendLoading}
-                    style={{ backgroundColor: '#EF4444' }}
-                  >
-                    {suspendLoading ? 'Suspending...' : 'Suspend User'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <UnsuspendUserModal
+        open={showUnsuspendModal}
+        user={unsuspendTargetUser}
+        loading={unsuspendLoading}
+        error={unsuspendError}
+        onClose={closeUnsuspendModal}
+        onConfirm={handleUnsuspendConfirm}
+      />
 
       <SuspensionLogsModal
         open={showSuspensionLogsModal}

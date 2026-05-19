@@ -14,6 +14,7 @@ import {
     } from "../models/userModel.js";
 import { 
     createSuspensionLog,
+    createUnsuspendLog,
     getUserSuspensionLogs,
     getAllSuspensionLogs
  } from "../models/suspensionLogModel.js";
@@ -249,8 +250,7 @@ export async function suspendUser(req, res) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        //Log the suspension
-        await createSuspensionLog(targetUserId, adminId, reason.trim(), suspendedUntil);
+        await createSuspensionLog(targetUserId, adminId, reason.trim(), suspendedUntil, "suspend");
 
         console.log("[USER CONTROLLER] Successfully suspended the user.");
         res.status(200).json({
@@ -260,8 +260,11 @@ export async function suspendUser(req, res) {
             suspended: suspended
         });
     } catch (error) {
-        console.error("[USER CONTROLLER] Error in suspending a user.");
-        res.status(500).json({ error: error.message});
+        console.error("[USER CONTROLLER] Error in suspending a user:", error.message);
+        res.status(500).json({
+            message: error.message || "Failed to suspend user",
+            error: error.message,
+        });
     }
 }//End of suspendUser function
 
@@ -281,6 +284,8 @@ export async function unsuspendUser(req, res) {
             console.log("[USER CONTROLLER]Target user for suspension removal not found/does not exist(2)");
             return res.status(404).json({ message: "User not found" });
         }
+
+        await createUnsuspendLog(targetUserId, adminId);
 
         console.log("[USER CONTROLLER] User suspension removal Success");
         res.status(200).json({ 
@@ -314,8 +319,11 @@ export async function getSuspensionLogs(req, res) {
             });
         }
     } catch (error) {
-        console.error("[USER CONTROLLER] Error fetching suspension logs");
-        res.status(500).json({ error: error.message});
+        console.error("[USER CONTROLLER] Error fetching suspension logs:", error.message);
+        res.status(500).json({
+            message: error.message || "Failed to fetch suspension logs",
+            error: error.message,
+        });
     }
 }//End of getSuspensionLogs function
 

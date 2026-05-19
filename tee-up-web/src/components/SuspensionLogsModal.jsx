@@ -1,4 +1,4 @@
-import { ClipboardList, ShieldAlert, X } from 'lucide-react';
+import { ClipboardList, ShieldAlert, UserCheck, X } from 'lucide-react';
 import { Button } from './ui/button';
 import './SuspensionLogsModal.css';
 
@@ -22,11 +22,29 @@ function formatDate(value) {
   });
 }
 
+function getLogAction(log) {
+  const action = String(log.action || 'suspend').toLowerCase();
+  return action === 'unsuspend' ? 'unsuspend' : 'suspend';
+}
+
+function getActionBadge(log) {
+  if (getLogAction(log) === 'unsuspend') {
+    return { label: 'Unsuspended', className: 'suspension-logs-modal__badge--unsuspend' };
+  }
+  return { label: 'Suspended', className: 'suspension-logs-modal__badge--suspended' };
+}
+
 function getDurationBadge(log) {
+  if (getLogAction(log) === 'unsuspend') {
+    return null;
+  }
   if (!log.suspended_until) {
     return { label: 'Permanent', className: 'suspension-logs-modal__badge--permanent' };
   }
   const until = new Date(log.suspended_until);
+  if (until.getFullYear() >= 9999) {
+    return { label: 'Permanent', className: 'suspension-logs-modal__badge--permanent' };
+  }
   if (until < new Date()) {
     return { label: 'Expired', className: 'suspension-logs-modal__badge--expired' };
   }
@@ -54,10 +72,12 @@ export default function SuspensionLogsModal({
   if (!open) return null;
 
   const isUserScope = Boolean(userId);
-  const title = isUserScope ? 'User suspension history' : 'Suspension logs';
+  const title = isUserScope ? 'User moderation history' : 'Suspension logs';
   const subtitle = isUserScope
-    ? 'Review every suspension action recorded for this account.'
-    : 'Audit trail of suspensions across all users on the platform.';
+    ? 'Suspends and unsuspends recorded for this account.'
+    : 'Audit trail of suspensions and unsuspends across all users.';
+  const suspendCount = logs.filter((log) => getLogAction(log) === 'suspend').length;
+  const unsuspendCount = logs.filter((log) => getLogAction(log) === 'unsuspend').length;
 
   const handleOverlayClick = () => {
     if (!loading) onClose();
@@ -102,6 +122,16 @@ export default function SuspensionLogsModal({
               <strong>{logs.length}</strong>
               {logs.length === 1 ? ' record' : ' records'}
             </span>
+            {suspendCount > 0 && (
+              <span className="suspension-logs-modal__stat-pill">
+                <strong>{suspendCount}</strong> suspended
+              </span>
+            )}
+            {unsuspendCount > 0 && (
+              <span className="suspension-logs-modal__stat-pill suspension-logs-modal__stat-pill--unsuspend">
+                <strong>{unsuspendCount}</strong> unsuspended
+              </span>
+            )}
             {isUserScope && (
               <span className="suspension-logs-modal__stat-pill">Filtered to one user</span>
             )}
@@ -125,26 +155,41 @@ export default function SuspensionLogsModal({
               <div className="suspension-logs-modal__empty-icon" aria-hidden>
                 <ClipboardList size={28} strokeWidth={1.75} />
               </div>
-              <h3 className="suspension-logs-modal__empty-title">No suspension logs found</h3>
+              <h3 className="suspension-logs-modal__empty-title">No moderation logs found</h3>
               <p className="suspension-logs-modal__empty-text">
                 {isUserScope
-                  ? 'This user has no suspension history on record.'
-                  : 'There are no suspension records to display yet.'}
+                  ? 'This user has no suspend or unsuspend history on record.'
+                  : 'There are no suspend or unsuspend records to display yet.'}
               </p>
             </div>
           ) : (
             <ul className="suspension-logs-modal__list">
               {logs.map((log) => {
+                const isUnsuspend = getLogAction(log) === 'unsuspend';
+                const actionBadge = getActionBadge(log);
                 const durationBadge = getDurationBadge(log);
                 const roleBadge = getAdminRoleBadge(log.admin_role);
 
                 return (
-                  <li key={log.id} className="suspension-logs-modal__card">
+                  <li
+                    key={log.id}
+                    className={`suspension-logs-modal__card${isUnsuspend ? ' suspension-logs-modal__card--unsuspend' : ''}`}
+                  >
                     <div className="suspension-logs-modal__card-top">
                       <div className="suspension-logs-modal__user-block">
-                        <p className="suspension-logs-modal__user-name">
-                          {log.user_name || 'Unknown user'}
-                        </p>
+                        <div className="suspension-logs-modal__user-title-row">
+                          <p className="suspension-logs-modal__user-name">
+                            {log.user_name || 'Unknown user'}
+                          </p>
+                          <span
+                            className={`suspension-logs-modal__badge ${actionBadge.className}`}
+                          >
+                            {isUnsuspend ? (
+                              <UserCheck size={12} strokeWidth={2.5} aria-hidden />
+                            ) : null}
+                            {actionBadge.label}
+                          </span>
+                        </div>
                         {log.user_email && (
                           <p className="suspension-logs-modal__user-email">{log.user_email}</p>
                         )}
@@ -158,9 +203,11 @@ export default function SuspensionLogsModal({
                     </div>
 
                     <div className="suspension-logs-modal__card-body">
-                      <p className="suspension-logs-modal__reason-label">Reason</p>
+                      <p className="suspension-logs-modal__reason-label">
+                        {isUnsuspend ? 'Note' : 'Reason'}
+                      </p>
                       <p className="suspension-logs-modal__reason-text">
-                        {log.reason || 'No reason provided'}
+                        {log.reason || (isUnsuspend ? 'Access restored' : 'No reason provided')}
                       </p>
                     </div>
 
@@ -176,17 +223,27 @@ export default function SuspensionLogsModal({
                         )}
                       </div>
                       <div className="suspension-logs-modal__duration">
-                        <span
-                          className={`suspension-logs-modal__badge ${durationBadge.className}`}
-                        >
-                          {durationBadge.label}
-                        </span>
-                        {log.suspended_until ? (
-                          <span>
-                            Until <strong>{formatDate(log.suspended_until)}</strong>
+                        {isUnsuspend ? (
+                          <span className="suspension-logs-modal__duration-note">
+                            Platform access restored
                           </span>
                         ) : (
-                          <span>No end date</span>
+                          <>
+                            {durationBadge && (
+                              <span
+                                className={`suspension-logs-modal__badge ${durationBadge.className}`}
+                              >
+                                {durationBadge.label}
+                              </span>
+                            )}
+                            {log.suspended_until ? (
+                              <span>
+                                Until <strong>{formatDate(log.suspended_until)}</strong>
+                              </span>
+                            ) : (
+                              <span>No end date</span>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

@@ -58,16 +58,34 @@ export default function OwnerListingView({
 
   useEffect(() => {
     if (!listingId) return;
+    let cancelled = false;
     setLoading(true);
     setError(null);
     getListingById(listingId)
       .then((data) => {
+        if (cancelled) return;
         setListing(data ? normalizeListing(data) : null);
         setCurrentImageIndex(0);
       })
-      .catch((err) => setError(err?.message ?? 'Failed to load listing'))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (!cancelled) setError(err?.message ?? 'Failed to load listing');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [listingId]);
+
+  useEffect(() => {
+    if (user?.id) return;
+    setListing(null);
+    setError(null);
+    setLoading(false);
+    setPendingConfirmAction(null);
+    setCurrentOffers([]);
+  }, [user?.id]);
 
   const handleMarkAsSold = async () => {
     if (!listing?.listing_id) return;
@@ -160,7 +178,7 @@ export default function OwnerListingView({
     loadOffers();
   }, [listing?.listing_id, user?.id]);
 
-  if (!listingId) return null;
+  if (!listingId || !user?.id) return null;
 
   if (loading) {
     return (
@@ -220,7 +238,8 @@ export default function OwnerListingView({
     );
   }
 
-  const isOwner = user?.id != null && Number(listing.user_id) === Number(user.id);
+  const isOwner =
+    listing?.user_id != null && Number(listing.user_id) === Number(user.id);
   if (!isOwner) {
     return (
       <div className="owner-listing-view" style={{ backgroundColor: 'var(--color-background)' }}>
