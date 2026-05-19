@@ -13,7 +13,10 @@ import {
     storeResetPassOtp,
     clearOtpFields, 
     storeEmailVerificationOtp,
-    verifyUserEmail} from "../models/userModel.js";
+    verifyUserEmail,
+    isUserSuspended,
+    getSuspensionMessage,
+} from "../models/userModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
 /* import dotenv from "dotenv";
 
@@ -48,6 +51,10 @@ export async function googleAuth(req, res) {
             }
 
             user = await createGoogleUser(name, email, googleId, picture);
+        }
+
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
         }
 
         const accessToken = jwt.sign({ id: user.id, role: user.role}, process.env.JWT_SECRET, {expiresIn: "1h"});
@@ -111,6 +118,10 @@ export async function login(req, res){
             return res.status(400).json({message: "Invalid password!"});
         }
 
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
+        }
+
         const accessToken = jwt.sign(
             {id: user.id, role: user.role }, 
             process.env.JWT_SECRET, 
@@ -152,6 +163,10 @@ export async function refreshToken(req, res){
     try{
         const user = await getRefreshToken(refreshToken);
         if(!user) return res.status(403).json({ message: "Invalid refresh token!" });
+
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
+        }
 
         jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
             if(err) return res.status(403).json({ message: "Expired or Invalid refresh token!" });

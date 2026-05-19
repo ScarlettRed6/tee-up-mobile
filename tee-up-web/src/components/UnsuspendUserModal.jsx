@@ -50,7 +50,7 @@ export default function UnsuspendUserModal({
         </div>
 
         {error ? (
-          <div className="unsuspend-modal-error" role="alert">
+          <div className="app-form-error unsuspend-modal-error" role="alert">
             {error}
           </div>
         ) : null}

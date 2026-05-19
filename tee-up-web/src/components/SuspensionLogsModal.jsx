@@ -147,9 +147,9 @@ export default function SuspensionLogsModal({
               </p>
             </div>
           ) : error ? (
-            <p className="suspension-logs-modal__error" role="alert">
+            <div className="app-form-error" role="alert">
               {error}
-            </p>
+            </div>
           ) : logs.length === 0 ? (
             <div className="suspension-logs-modal__empty">
               <div className="suspension-logs-modal__empty-icon" aria-hidden>

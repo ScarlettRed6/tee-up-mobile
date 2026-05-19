@@ -153,14 +153,7 @@
 }
 
 .suspend-user-modal__error {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-radius: var(--radius-medium);
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-size: var(--font-size-body-small);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.5;
+  margin-bottom: var(--spacing-md);
 }
 
 .suspend-user-modal__form {

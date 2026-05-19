@@ -156,13 +156,13 @@ export default function PublicProfilePage({
         />
         <main className="profile-page-main">
           <div className="profile-page-container">
-            {actionError ? <Alert variant="destructive">{actionError}</Alert> : null}
+            {actionError ? <Alert variant="destructive" className="app-page-alert">{actionError}</Alert> : null}
             {onBack && (
               <Button variant="ghost" size="sm" className="profile-back-link" onClick={onBack}>
                 <ChevronLeft className="h-4 w-4" /> Back
               </Button>
             )}
-            <Alert variant="destructive">{error}</Alert>
+            <Alert variant="destructive" className="app-page-alert">{error}</Alert>
           </div>
         </main>
       </div>

@@ -299,10 +299,12 @@ function Login({ initialView = 'login', onBackToHome }) {
             </Alert>
           )}
           {view === 'verify' && verifyNotice && (
-            <Alert className="mb-8">{verifyNotice}</Alert>
+            <Alert variant="default" className="app-auth-alert app-form-notice">
+              {verifyNotice}
+            </Alert>
           )}
           {error && (
-            <Alert variant="destructive" className="mb-8">
+            <Alert variant="destructive" className="app-auth-alert">
               {error}
             </Alert>
           )}

@@ -45,7 +45,7 @@ function Dashboard({ onViewUsers, onViewReports }) {
       </div>
 
       {error && (
-        <Alert variant="destructive" className="dashboard-error" role="alert">
+        <Alert variant="destructive" className="app-page-alert dashboard-error" role="alert">
           {error}
         </Alert>
       )}

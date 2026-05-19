@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { getAllReports, reviewReport } from '../api/reportsApi';
 import './Reports.css';
 import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
+import { Alert } from './ui/alert';
+import { useAppDialog } from '../hooks/useAppDialog.jsx';
 
 function Reports() {
+  const { showConfirm, showAlert, AppDialogHost } = useAppDialog();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -120,11 +123,19 @@ function Reports() {
     }
   };
 
-  const handleResolve = async (reportId) => {
-    if (!window.confirm('Are you sure you want to resolve this report?')) {
+  const promptResolveReport = async (reportId, closeDetails = false) => {
+    const confirmed = await showConfirm({
+      variant: 'primary',
+      title: 'Resolve this report?',
+      message: 'Mark this report as resolved. This action will update the report status.',
+      confirmLabel: 'Resolve',
+      cancelLabel: 'Cancel',
+    });
+    if (!confirmed) {
       setOpenDropdown(null);
       return;
     }
+    if (closeDetails) setShowReportDetailsModal(false);
 
     try {
       setActionLoading(reportId);
@@ -133,17 +144,29 @@ function Reports() {
       setOpenDropdown(null);
     } catch (err) {
       console.error('Error resolving report:', err);
-      alert(err.response?.data?.error || 'Failed to resolve report');
+      await showAlert({
+        variant: 'danger',
+        title: 'Could not resolve report',
+        message: err.response?.data?.error || 'Failed to resolve report',
+      });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleDismiss = async (reportId) => {
-    if (!window.confirm('Are you sure you want to dismiss this report?')) {
+  const promptDismissReport = async (reportId, closeDetails = false) => {
+    const confirmed = await showConfirm({
+      variant: 'warning',
+      title: 'Dismiss this report?',
+      message: 'Dismiss this report without further action. You can still review it later in history.',
+      confirmLabel: 'Dismiss',
+      cancelLabel: 'Cancel',
+    });
+    if (!confirmed) {
       setOpenDropdown(null);
       return;
     }
+    if (closeDetails) setShowReportDetailsModal(false);
 
     try {
       setActionLoading(reportId);
@@ -152,7 +175,11 @@ function Reports() {
       setOpenDropdown(null);
     } catch (err) {
       console.error('Error dismissing report:', err);
-      alert(err.response?.data?.error || 'Failed to dismiss report');
+      await showAlert({
+        variant: 'danger',
+        title: 'Could not dismiss report',
+        message: err.response?.data?.error || 'Failed to dismiss report',
+      });
     } finally {
       setActionLoading(null);
     }
@@ -288,17 +315,9 @@ function Reports() {
       </div>
 
       {error && (
-        <div style={{
-          backgroundColor: '#FEE2E2',
-          color: '#DC2626',
-          padding: '12px 16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-          fontSize: '14px',
-          fontWeight: '500'
-        }}>
+        <Alert variant="destructive" className="app-page-alert">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="reports-controls">
@@ -468,7 +487,7 @@ function Reports() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleResolve(report.report_id);
+                                  promptResolveReport(report.report_id);
                                 }}
                                 disabled={actionLoading === report.id}
                               >
@@ -479,7 +498,7 @@ function Reports() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleDismiss(report.report_id);
+                                  promptDismissReport(report.report_id);
                                 }}
                                 disabled={actionLoading === report.id}
                               >
@@ -723,24 +742,14 @@ function Reports() {
                   <div className="report-actions">
                     <button
                       className="modal-button-secondary"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to resolve this report?')) {
-                          handleResolve(selectedReport.report_id);
-                          setShowReportDetailsModal(false);
-                        }
-                      }}
+                      onClick={() => promptResolveReport(selectedReport.report_id, true)}
                       disabled={actionLoading === selectedReport.report_id}
                     >
                       Resolve Report
                     </button>
                     <button
                       className="modal-button-secondary"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to dismiss this report?')) {
-                          handleDismiss(selectedReport.report_id);
-                          setShowReportDetailsModal(false);
-                        }
-                      }}
+                      onClick={() => promptDismissReport(selectedReport.report_id, true)}
                       disabled={actionLoading === selectedReport.report_id}
                     >
                       Dismiss Report
@@ -752,6 +761,8 @@ function Reports() {
           </div>
         </div>
       )}
+
+      <AppDialogHost />
     </div>
   );
 }

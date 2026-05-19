@@ -7,6 +7,7 @@ import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
 import SuspensionLogsModal from './SuspensionLogsModal';
 import SuspendUserModal from './SuspendUserModal';
 import UnsuspendUserModal from './UnsuspendUserModal';
+import { Alert } from './ui/alert';
 
 function Users() {
   const { user: currentUser } = useAuth();
@@ -674,17 +675,9 @@ function Users() {
       </div>
 
       {error && (
-        <div style={{
-          backgroundColor: '#FEE2E2',
-          color: '#DC2626',
-          padding: '12px 16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-          fontSize: '14px',
-          fontWeight: '500'
-        }}>
+        <Alert variant="destructive" className="app-page-alert">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="users-filters">
@@ -989,17 +982,9 @@ function Users() {
                   <p style={{ color: 'var(--color-text-muted)' }}>Loading user profile...</p>
                 </div>
               ) : userProfileError ? (
-                <div style={{
-                  backgroundColor: '#FEE2E2',
-                  color: '#DC2626',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
+                <Alert variant="destructive" className="app-form-error">
                   {userProfileError}
-                </div>
+                </Alert>
               ) : selectedUser ? (
                 <>
                   <h2 className="modal-title">User Profile</h2>
@@ -1109,17 +1094,9 @@ function Users() {
               <h2 className="modal-title">Create New Admin</h2>
               
               {createAdminError && (
-                <div style={{
-                  backgroundColor: '#FEE2E2',
-                  color: '#DC2626',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
+                <Alert variant="destructive" className="app-form-error">
                   {createAdminError}
-                </div>
+                </Alert>
               )}
 
               <form onSubmit={handleCreateAdmin} className="create-admin-form">
@@ -1257,17 +1234,9 @@ function Users() {
               <h2 className="modal-title">Edit User</h2>
               
               {editUserError && (
-                <div style={{
-                  backgroundColor: '#FEE2E2',
-                  color: '#DC2626',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>
+                <Alert variant="destructive" className="app-form-error">
                   {editUserError}
-                </div>
+                </Alert>
               )}
 
               <form onSubmit={handleUpdateUser} className="create-admin-form">

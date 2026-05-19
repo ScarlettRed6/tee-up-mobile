@@ -192,7 +192,7 @@ export default function ListingView({
           <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
             <ChevronLeft className="h-4 w-4" /> Back to listings
           </Button>
-          <Alert variant="destructive">{error || 'Listing not found.'}</Alert>
+          <Alert variant="destructive" className="app-page-alert">{error || 'Listing not found.'}</Alert>
         </div>
       </div>
     );

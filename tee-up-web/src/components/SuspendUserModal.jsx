@@ -92,7 +92,7 @@ export default function SuspendUserModal({
             </div>
 
             {error ? (
-              <div className="suspend-user-modal__error" role="alert">
+              <div className="app-form-error" role="alert">
                 {error}
               </div>
             ) : null}

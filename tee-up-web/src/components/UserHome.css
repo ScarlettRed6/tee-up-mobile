@@ -106,13 +106,7 @@
 
 /* Error */
 .user-home-error {
-  padding: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
-  background: #FEE2E2;
-  color: var(--color-error);
-  border-radius: var(--radius-medium);
-  font-size: var(--font-size-body-small);
-  font-weight: var(--font-weight-medium);
 }
 
 .user-home-loading {

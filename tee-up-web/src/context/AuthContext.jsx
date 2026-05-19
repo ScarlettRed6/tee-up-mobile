@@ -58,6 +58,9 @@ export const AuthProvider = ({ children }) => {
       const message = error.response?.data?.message || 'Login failed';
       if (status === 403) {
         const lower = message.toLowerCase();
+        if (lower.includes('suspended')) {
+          return { success: false, error: message, accountSuspended: true };
+        }
         if (lower.includes('not verified') || lower.includes('verify your email')) {
           return {
             success: false,

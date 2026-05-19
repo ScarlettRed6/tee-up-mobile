@@ -105,7 +105,7 @@ export default function MyListings({
           />
 
           {error && (
-            <Alert variant="destructive" className="my-listings-error">{error}</Alert>
+            <Alert variant="destructive" className="app-page-alert my-listings-error">{error}</Alert>
           )}
 
           {loading ? (

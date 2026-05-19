@@ -5,6 +5,8 @@ import ListingDetailModal from './ListingDetailModal';
 import { getAdminListings, getAdminListingById, updateAdminListingStatus, deleteAdminListing } from '../api/listingsApi';
 import { PHILIPPINE_CITIES_BY_REGION } from '../constants/philippineLocations';
 import { AdminTablePageSkeleton } from './admin/AdminSkeletons';
+import { Alert } from './ui/alert';
+import { useAppDialog } from '../hooks/useAppDialog.jsx';
 
 // Normalize backend listing row to UI shape (id, seller, postedDate, saves, images, etc.)
 function normalizeListing(row) {
@@ -32,6 +34,7 @@ function normalizeListing(row) {
 }
 
 function Listings() {
+  const { showConfirm, showAlert, AppDialogHost } = useAppDialog();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -283,16 +286,26 @@ function Listings() {
 
   const handleDelete = async (listingId) => {
     closeActionsDropdown();
-    if (!window.confirm('Delete this listing? This action cannot be undone.')) {
-      return;
-    }
+    const confirmed = await showConfirm({
+      variant: 'danger',
+      title: 'Delete this listing?',
+      message: 'This action cannot be undone. The listing will be permanently removed.',
+      confirmLabel: 'Delete listing',
+      cancelLabel: 'Keep listing',
+    });
+    if (!confirmed) return;
+
     setActionLoading(listingId);
     try {
       await deleteAdminListing(listingId);
       await fetchListings();
     } catch (err) {
       console.error('Error deleting listing:', err);
-      alert(err.response?.data?.error || err.message || 'Failed to delete listing');
+      await showAlert({
+        variant: 'danger',
+        title: 'Delete failed',
+        message: err.response?.data?.error || err.message || 'Failed to delete listing',
+      });
     } finally {
       setActionLoading(null);
     }
@@ -306,7 +319,11 @@ function Listings() {
       await fetchListings();
     } catch (err) {
       console.error('Error approving listing:', err);
-      alert(err.response?.data?.error || err.message || 'Failed to approve listing');
+      await showAlert({
+        variant: 'danger',
+        title: 'Approve failed',
+        message: err.response?.data?.error || err.message || 'Failed to approve listing',
+      });
     } finally {
       setActionLoading(null);
     }
@@ -320,7 +337,11 @@ function Listings() {
       await fetchListings();
     } catch (err) {
       console.error('Error marking as sold:', err);
-      alert(err.response?.data?.error || err.message || 'Failed to update status');
+      await showAlert({
+        variant: 'danger',
+        title: 'Update failed',
+        message: err.response?.data?.error || err.message || 'Failed to update status',
+      });
     } finally {
       setActionLoading(null);
     }
@@ -345,17 +366,9 @@ function Listings() {
       </div>
 
       {error && (
-        <div style={{
-          backgroundColor: '#FEE2E2',
-          color: '#DC2626',
-          padding: '12px 16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        }}>
+        <Alert variant="destructive" className="app-page-alert">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="listings-controls">
@@ -634,6 +647,8 @@ function Listings() {
           </div>,
           document.body
         )}
+
+      <AppDialogHost />
     </div>
   );
 }

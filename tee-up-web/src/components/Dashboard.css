@@ -25,12 +25,7 @@
 }
 
 .dashboard-error {
-  padding: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
-  background-color: #FEE2E2;
-  color: var(--color-error, #B91C1C);
-  border-radius: var(--radius-medium);
-  font-weight: var(--font-weight-medium);
 }
 
 

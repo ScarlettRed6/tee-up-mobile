@@ -926,7 +926,7 @@ function UserHome({ guest = false }) {
 
         <div className="user-home-container">
           {error && (
-            <Alert variant="destructive" className="user-home-error" role="alert">
+            <Alert variant="destructive" className="app-page-alert user-home-error" role="alert">
               {error}
             </Alert>
           )}

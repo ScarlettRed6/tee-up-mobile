@@ -218,6 +218,10 @@ export async function suspendUser(req, res) {
             return res.status(404).json({ message: "Target user for suspension is not found"});
         }
 
+        if (Number(adminId) === Number(targetUserId)) {
+            return res.status(403).json({ message: "You cannot suspend your own account" });
+        }
+
         // Permission checks:
         // - Admin can only suspend users (not admins or superadmins)
         // - Superadmin can suspend both users and admins (but not superadmins)

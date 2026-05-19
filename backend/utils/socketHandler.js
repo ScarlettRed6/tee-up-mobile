@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { saveSentMessage, OFFER_ALREADY_SUBMITTED } from "../controllers/chatController.js";
 import { getOtherParticipant } from "../models/chatModel.js";
+import { findUserById, isUserSuspended } from "../models/userModel.js";
 import { createNotification } from "./notifications.js";
 
 export function sendNotification(io, userId, notification){
@@ -8,21 +9,29 @@ export function sendNotification(io, userId, notification){
 }
 
 export function initSocketHandlers(io){
-    io.use((socket, next) => {
+    io.use(async (socket, next) => {
         const token = socket.handshake.auth.token;
         console.log("Socket authentication attempt, token present:", !!token);
 
-        try{
+        try {
             if (!token) {
                 console.error("No token provided in socket handshake");
                 return next(new Error("No token provided"));
             }
-            
+
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await findUserById(decoded.id);
+            if (!user) {
+                return next(new Error("User not found"));
+            }
+            if (isUserSuspended(user)) {
+                return next(new Error("Account suspended"));
+            }
+
             socket.userId = decoded.id;
             console.log("Socket authenticated, userId set to:", socket.userId, "type:", typeof socket.userId);
             next();
-        }catch(err){
+        } catch (err) {
             console.log("SOCKETHANDLER, ERROR: ", err);
             next(new Error("Unauthorized access to chats"));
         }

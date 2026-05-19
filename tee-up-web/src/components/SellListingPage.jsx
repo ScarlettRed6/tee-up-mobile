@@ -204,7 +204,7 @@ function SellListingPage({
           </CardHeader>
           <CardContent className="sell-card-content">
             {error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="destructive" className="app-page-alert mb-4">
                 {error}
               </Alert>
             )}

@@ -232,7 +232,7 @@ export default function OwnerListingView({
           <Button variant="ghost" size="sm" className="owner-listing-back" onClick={onBack}>
             <ChevronLeft className="h-4 w-4" /> Back
           </Button>
-          <Alert variant="destructive">{error}</Alert>
+          <Alert variant="destructive" className="app-page-alert">{error}</Alert>
         </div>
       </div>
     );
@@ -260,7 +260,7 @@ export default function OwnerListingView({
           <Button variant="ghost" size="sm" className="owner-listing-back" onClick={onBack}>
             <ChevronLeft className="h-4 w-4" /> Back
           </Button>
-          <Alert variant="destructive">You don&apos;t own this listing.</Alert>
+          <Alert variant="destructive" className="app-page-alert">You don&apos;t own this listing.</Alert>
         </div>
       </div>
     );
@@ -331,7 +331,7 @@ export default function OwnerListingView({
         </Button>
 
         {error && (
-          <Alert variant="destructive" className="owner-listing-error">{error}</Alert>
+          <Alert variant="destructive" className="app-page-alert owner-listing-error">{error}</Alert>
         )}
 
         <div className="owner-listing-layout">
