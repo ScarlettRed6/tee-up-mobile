@@ -107,6 +107,13 @@ export async function login(req, res){
         const user = await findUserByEmail(email);
         if(!user) return res.status(400).json({message: "User not found"});
 
+        //Stop Google OAuth accounts from passing null to bcrypt
+        if (user.provider === "google" || !user.password) {
+            return res.status(400).json({
+                message: "This account is registered via Google. Please log in using the 'Sign in with Google' button." 
+            });
+        }
+
         //Check if user email is verified
         if(!user.is_verified){
             return res.status(403).json({ message: "Email not verified. Please verify your Email" });
