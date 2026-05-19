@@ -10,6 +10,7 @@ import reportsRoutes from "./routes/reportsRoutes.js";
 import followerRoutes from "./routes/followerRoutes.js";
 import notificationsRoutes from "./routes/notificationsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import passport from "./config/passport.js";
 
 const app = express();
 
@@ -34,6 +35,8 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
+
+app.use(passport.initialize());
 
 // Health check route
 app.get("/api/health", (req, res) => {
