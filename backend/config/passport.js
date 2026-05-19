@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { findUserByGoogleId, findUserByEmail, createGoogleUser } from "../models/userModel";
+import { findUserByGoogleId, findUserByEmail, createGoogleUser } from "../models/userModel.js";
 import dotenv from "dotenv";
 
 doteng.config();
