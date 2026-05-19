@@ -22,52 +22,43 @@ import { sendEmail } from "../utils/sendEmail.js";
 
 dotenv.config(); */
 
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-
-const client = new OAuth2Client(googleClientId);
-
-export async function googleAuth(req, res) {
-    try{
-        const { idToken } = req.body;
-
-        const ticket = await client.verifyIdToken({
-            idToken,
-            audience: googleClientId,
-        });
-
-        const payload = ticket.getPayload();
-        const googleId = payload.sub;
-
-        const email = payload.email;
-        const name = payload.name;
-        const picture = payload.picture;
-
-        let user = await findUserByGoogleId(googleId);
-
-        if(!user){
-            const emailUser = await findUserByEmail(email);
-            if(emailUser && emailUser.provider === "local"){
-                return res.status(400).json({ message: "This email is already registered using local login" });
-            }
-
-            user = await createGoogleUser(name, email, googleId, picture);
+export async function googleAuthSuccess(req, res) {
+    try {
+        const user = req.user;
+        
+        if (!user) {
+            return res.redirect("http://localhost:5173/login?error=unauthorized");
         }
 
-        if (isUserSuspended(user)) {
-            return res.status(403).json({ message: getSuspensionMessage(user) });
-        }
-
-        const accessToken = jwt.sign({ id: user.id, role: user.role}, process.env.JWT_SECRET, {expiresIn: "1h"});
-        const refreshToken = jwt.sign({ id: user.id, role: user.role }, process.env.REFRESH_SECRET, {expiresIn: "7d"});
+        const accessToken = jwt.sign(
+            { id: user.id, role: user.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: "1h" }
+        );
+        const refreshToken = jwt.sign(
+            { id: user.id, role: user.role }, 
+            process.env.REFRESH_SECRET, 
+            { expiresIn: "7d" }
+        );
 
         await storeRefreshToken(refreshToken, user.id);
 
-        res.status(200).json({ message: "Google login successful", token: accessToken, refreshToken, user });
-    }catch(err){
-        console.error("Google login error: ", err);
-        res.status(500).json({ message: "Google login failed" });
+        //Package up the basic profile payload for your web frontend
+        const userData = encodeURIComponent(JSON.stringify({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            profile_image: user.profile_image,
+            provider: 'google'
+        }));
+
+        res.redirect(`http://localhost:5173/login-success?token=${accessToken}&refreshToken=${refreshToken}&user=${userData}`);
+    } catch (err) {
+        console.error("Google Authentication Redirection Error: ", err);
+        res.redirect("http://localhost:5173/login?error=server_error");
     }
-}
+}//End of googleAuthSuccess function
 
 export async function register(req, res){
     const { name, email, password, confirmPassword } = req.body;
