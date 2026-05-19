@@ -16,8 +16,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  const persistSession = (token, refreshToken, userData) => {
+    localStorage.setItem('authToken', token);
+    if (refreshToken) {
+      localStorage.setItem('authRefreshToken', refreshToken);
+    }
+    localStorage.setItem('authUser', JSON.stringify(userData));
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
+      const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+      const params = new URLSearchParams(window.location.search);
+
+      if (pathname === '/login-success') {
+        const token = params.get('token');
+        const refreshToken = params.get('refreshToken');
+        const userParam = params.get('user');
+        if (token && userParam) {
+          try {
+            const userData = JSON.parse(decodeURIComponent(userParam));
+            persistSession(token, refreshToken, userData);
+            window.history.replaceState({}, '', '/');
+            setLoading(false);
+            return;
+          } catch {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('authRefreshToken');
+            localStorage.removeItem('authUser');
+          }
+        }
+        window.history.replaceState({}, '', '/?auth=login&error=google_callback_failed');
+      }
+
       const token = localStorage.getItem('authToken');
       const storedUser = localStorage.getItem('authUser');
 
@@ -46,12 +79,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authLogin(email, password);
       const { token, refreshToken, user: userData } = response;
 
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('authRefreshToken', refreshToken);
-      localStorage.setItem('authUser', JSON.stringify(userData));
-
-      setUser(userData);
-      setIsAuthenticated(true);
+      persistSession(token, refreshToken, userData);
       return { success: true };
     } catch (error) {
       const status = error.response?.status;

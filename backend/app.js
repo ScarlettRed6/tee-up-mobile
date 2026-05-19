@@ -17,7 +17,8 @@ const app = express();
 const allowedOrigins = [
     'http://localhost:5000',
     'http://localhost:5173',
-    'https://tee-up.com'
+    'http://127.0.0.1:5173',
+    'https://tee-up.com',
 ];
 
 //Middleware
@@ -45,6 +46,7 @@ app.get("/api/health", (req, res) => {
 
 //Routes
 app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/listings", listingsRoutes);
 app.use("/api/chat", chatRoutes);

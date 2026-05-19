@@ -14,6 +14,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 import { NotificationsProvider } from './context/NotificationsContext';
 import LogoutConfirmModal from './components/LogoutConfirmModal';
 import { AuthCheckLoadingSkeleton } from './components/admin/AdminSkeletons';
+import { stripOAuthQueryParams } from './utils/oauthErrors';
 import './App.css';
 import './components/admin/AdminResponsive.css';
 
@@ -23,8 +24,16 @@ function AppContent() {
   /** Guest: marketplace (browse) or auth form */
   const [authView, setAuthView] = useState('browse'); // 'login' | 'browse'
   const [loginInitialView, setLoginInitialView] = useState('login'); // 'login' | 'signup'
+  const [loginSessionKey, setLoginSessionKey] = useState(0);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth') === 'login' || params.get('error')) {
+      setAuthView('login');
+    }
+  }, []);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -45,7 +54,9 @@ function AppContent() {
 
   const goLogin = useCallback((_fromBrowse, tab) => {
     if (loading || isAuthenticated) return;
+    stripOAuthQueryParams();
     setLoginInitialView(tab === 'signup' ? 'signup' : 'login');
+    setLoginSessionKey((k) => k + 1);
     setAuthView('login');
   }, [loading, isAuthenticated]);
 
@@ -57,8 +68,13 @@ function AppContent() {
   );
 
   const handleLoginScreenBack = useCallback(() => {
+    stripOAuthQueryParams();
     setAuthView('browse');
   }, []);
+
+  useEffect(() => {
+    if (authView === 'browse') stripOAuthQueryParams();
+  }, [authView]);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
 
@@ -97,7 +113,11 @@ function AppContent() {
       return (
         <LoginPromptProvider value={loginPromptApi}>
           <>
-            <Login initialView={loginInitialView} onBackToHome={handleLoginScreenBack} />
+            <Login
+              key={loginSessionKey}
+              initialView={loginInitialView}
+              onBackToHome={handleLoginScreenBack}
+            />
             <ThemeToggle />
           </>
         </LoginPromptProvider>

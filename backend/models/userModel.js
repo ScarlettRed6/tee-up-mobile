@@ -231,20 +231,37 @@ export async function getTopSellers(limit = 10) {
     return result.rows;
 }//End of getTopSellers query
 
+const PERMANENT_SUSPENSION_DATE = new Date("9999-12-31T23:59:59.999Z");
+const PERMANENT_SUSPENSION_THRESHOLD = new Date("9999-01-01T00:00:00.000Z");
+
+/** True when suspended_until is set and still in the future. */
+export function isUserSuspended(user) {
+    if (!user?.suspended_until) return false;
+    return new Date(user.suspended_until) > new Date();
+}
+
+/** Human-readable suspension message for login / API responses. */
+export function getSuspensionMessage(user) {
+    if (!user?.suspended_until) {
+        return "Your account is suspended. Please contact support.";
+    }
+
+    const until = new Date(user.suspended_until);
+    if (until >= PERMANENT_SUSPENSION_THRESHOLD) {
+        return "Your account is permanently suspended. Please contact support.";
+    }
+
+    const endDate = until.toISOString().split("T")[0];
+    return `Your account is suspended until ${endDate}. Please contact support.`;
+}
+
 export async function suspendUserQuery(userId, suspendedUntil = null) {
-    if (suspendedUntil) {
-        const result = await pool.query(
-            `UPDATE users SET suspended_until = $2
-            WHERE id = $1 RETURNING *`,
-            [userId, suspendedUntil]
-        );
-    } else {
-        const result = await pool.query(
-            `UPDATE users SET suspended_until = NULL
-            WHERE id = $1 RETURNING *`,
-            [userId]
-        );
-    }//End of if else statement
+    const effectiveUntil = suspendedUntil ?? PERMANENT_SUSPENSION_DATE;
+    const result = await pool.query(
+        `UPDATE users SET suspended_until = $2
+        WHERE id = $1 RETURNING *`,
+        [userId, effectiveUntil]
+    );
     return result.rows[0];
 }//End of suspendUserQuery
 

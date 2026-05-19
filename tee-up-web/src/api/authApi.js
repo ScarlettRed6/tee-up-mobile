@@ -1,7 +1,5 @@
 import axiosInstance from './axiosInstance';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
 /**
  * Sign in with email and password. Works for all users (regular and admin).
  * Backend: POST /auth/login

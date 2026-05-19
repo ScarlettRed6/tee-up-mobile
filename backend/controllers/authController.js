@@ -18,47 +18,151 @@ import {
     getSuspensionMessage,
 } from "../models/userModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
-/* import dotenv from "dotenv";
 
-dotenv.config(); */
+const googleClient = new OAuth2Client();
+const FRONTEND_URL = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
 
+/** Web OAuth client (Passport + optional ID-token verify). Mobile uses its own .env in tee-up-mobile/. */
+function getGoogleClientIds() {
+    const id = process.env.GOOGLE_CLIENT_ID;
+    return id ? [id] : [];
+}
+
+function formatAuthUser(user) {
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_image: user.profile_image ?? null,
+        bio: user.bio ?? null,
+        provider: user.provider ?? "google",
+        created_at: user.created_at ?? null,
+    };
+}
+
+async function issueAuthTokens(user) {
+    const accessToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+    );
+    const refreshToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.REFRESH_SECRET,
+        { expiresIn: "7d" }
+    );
+    await storeRefreshToken(refreshToken, user.id);
+    return { accessToken, refreshToken };
+}
+
+/** Find or create a user from a verified Google ID token payload (mobile + shared logic). */
+async function resolveGoogleUserFromPayload(payload) {
+    const googleId = payload.sub;
+    const email = payload.email;
+    const name = payload.name || email?.split("@")[0] || "User";
+    const picture = payload.picture;
+
+    if (!googleId || !email) {
+        return { error: { status: 400, message: "Google account email is required" } };
+    }
+
+    let user = await findUserByGoogleId(googleId);
+
+    if (!user) {
+        const emailUser = await findUserByEmail(email);
+        if (emailUser && emailUser.provider === "local") {
+            return {
+                error: {
+                    status: 400,
+                    message:
+                        "This email is already registered using local login. Please sign in with email and password.",
+                },
+            };
+        }
+        if (!emailUser) {
+            user = await createGoogleUser(name, email, googleId, picture);
+        } else {
+            user = emailUser;
+        }
+    }
+
+    return { user };
+}
+
+/**
+ * Mobile / Expo: POST /auth/google with { idToken } from Google Sign-In.
+ */
+export async function googleAuth(req, res) {
+    try {
+        const { idToken } = req.body;
+        if (!idToken) {
+            return res.status(400).json({ message: "Google ID token is required" });
+        }
+
+        const audiences = getGoogleClientIds();
+        if (audiences.length === 0) {
+            return res.status(500).json({ message: "Google OAuth is not configured on the server" });
+        }
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: audiences,
+        });
+        const payload = ticket.getPayload();
+        const result = await resolveGoogleUserFromPayload(payload);
+
+        if (result.error) {
+            return res.status(result.error.status).json({ message: result.error.message });
+        }
+
+        const user = result.user;
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
+        }
+
+        const { accessToken, refreshToken } = await issueAuthTokens(user);
+
+        return res.json({
+            message: "Login successful",
+            token: accessToken,
+            refreshToken,
+            user: formatAuthUser(user),
+        });
+    } catch (err) {
+        console.error("[GOOGLE AUTH] Token verification failed:", err.message);
+        return res.status(401).json({ message: "Invalid Google token. Please try again." });
+    }
+}
+
+/** Web: Passport redirect callback after Google OAuth. */
 export async function googleAuthSuccess(req, res) {
     try {
         const user = req.user;
-        
+
         if (!user) {
-            return res.redirect("http://localhost:5173/login?error=unauthorized");
+            return res.redirect(`${FRONTEND_URL}/?auth=login&error=unauthorized`);
         }
 
-        const accessToken = jwt.sign(
-            { id: user.id, role: user.role }, 
-            process.env.JWT_SECRET, 
-            { expiresIn: "1h" }
+        const freshUser = await findUserById(user.id);
+        if (freshUser && isUserSuspended(freshUser)) {
+            const msg = encodeURIComponent(getSuspensionMessage(freshUser));
+            return res.redirect(`${FRONTEND_URL}/?auth=login&error=${msg}`);
+        }
+
+        const { accessToken, refreshToken } = await issueAuthTokens(freshUser || user);
+        const userData = encodeURIComponent(
+            JSON.stringify(formatAuthUser(freshUser || user))
         );
-        const refreshToken = jwt.sign(
-            { id: user.id, role: user.role }, 
-            process.env.REFRESH_SECRET, 
-            { expiresIn: "7d" }
+
+        res.redirect(
+            `${FRONTEND_URL}/login-success?token=${accessToken}&refreshToken=${refreshToken}&user=${userData}`
         );
-
-        await storeRefreshToken(refreshToken, user.id);
-
-        //Package up the basic profile payload for your web frontend
-        const userData = encodeURIComponent(JSON.stringify({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            profile_image: user.profile_image,
-            provider: 'google'
-        }));
-
-        res.redirect(`http://localhost:5173/login-success?token=${accessToken}&refreshToken=${refreshToken}&user=${userData}`);
     } catch (err) {
         console.error("Google Authentication Redirection Error: ", err);
-        res.redirect("http://localhost:5173/login?error=server_error");
+        res.redirect(`${FRONTEND_URL}/?auth=login&error=server_error`);
     }
-}//End of googleAuthSuccess function
+}
 
 export async function register(req, res){
     const { name, email, password, confirmPassword } = req.body;

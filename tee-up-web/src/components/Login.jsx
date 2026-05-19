@@ -1,23 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sendEmailVerification, verifyEmailOtp } from '../api/authApi';
+import GoogleRedirectSignIn from './GoogleRedirectSignIn';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert } from './ui/alert';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeOAuthErrorParam, stripOAuthQueryParams } from '../utils/oauthErrors';
 import './Login.css';
 
-const authInputPad = { paddingInline: '1rem', paddingBlock: '0.875rem' };
+const authInputPad = { paddingInline: '1rem', paddingBlock: '0.75rem' };
+
+const authInputClass =
+  'min-h-[48px] text-[16px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50';
+
+const authBtnClass =
+  'login-auth-btn h-12 w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md active:translate-y-0 active:scale-100';
 
 function AuthTextField({ className, style, ...props }) {
   return (
     <Input
-      className={cn(
-        'min-h-[52px] text-[17px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50',
-        className
-      )}
+      className={cn(authInputClass, className)}
       style={{ ...authInputPad, ...style }}
       {...props}
     />
@@ -33,10 +38,7 @@ function AuthPasswordField({ className, style, id, disabled, ...props }) {
         id={id}
         type={visible ? 'text' : 'password'}
         disabled={disabled}
-        className={cn(
-          'auth-password-input min-h-[52px] text-[17px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50',
-          className
-        )}
+        className={cn('auth-password-input', authInputClass, className)}
         style={{ ...authInputPad, ...style }}
         {...props}
       />
@@ -64,6 +66,15 @@ function Login({ initialView = 'login', onBackToHome }) {
   useEffect(() => {
     setView(initialView);
   }, [initialView]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get('error');
+    stripOAuthQueryParams();
+    if (!oauthError) return;
+    const message = normalizeOAuthErrorParam(oauthError);
+    if (message) setError(message);
+  }, []);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -114,6 +125,7 @@ function Login({ initialView = 'login', onBackToHome }) {
   const handleBackToHomeClick = () => {
     pendingPasswordRef.current = null;
     resetForm();
+    stripOAuthQueryParams();
     onBackToHome?.();
   };
 
@@ -229,12 +241,12 @@ function Login({ initialView = 'login', onBackToHome }) {
 
   return (
     <div
-      className="min-h-screen flex flex-col md:flex-row"
+      className="login-auth-page min-h-screen flex flex-col md:flex-row md:h-screen md:max-h-screen"
       style={{ backgroundColor: 'var(--color-background)' }}
     >
       {/* Left: branding with golf scenery background */}
       <aside
-        className="w-full md:w-[42%] min-h-[200px] md:min-h-screen flex flex-col justify-center items-center px-10 py-16 md:py-20 relative overflow-hidden bg-cover bg-center"
+        className="login-auth-aside w-full md:w-[42%] min-h-[160px] md:min-h-0 md:h-full flex flex-col justify-center items-center px-8 py-10 md:py-12 relative overflow-hidden bg-cover bg-center"
         style={{
           backgroundColor: 'var(--color-primary)',
           backgroundImage: `linear-gradient(to bottom, rgba(66, 122, 67, 0.88), rgba(66, 122, 67, 0.78)), url('https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=80')`,
@@ -274,7 +286,7 @@ function Login({ initialView = 'login', onBackToHome }) {
 
       {/* Right: form with subtle pattern */}
       <main
-        className="flex-1 flex flex-col items-center justify-center px-6 sm:px-12 py-16 md:py-20 relative"
+        className="login-auth-main flex-1 flex flex-col items-center justify-center px-6 sm:px-10 py-8 md:py-10 relative"
         style={{
           backgroundColor: 'var(--color-background)',
           backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)',
@@ -290,32 +302,32 @@ function Login({ initialView = 'login', onBackToHome }) {
           </div>
         ) : null}
 
-        <div className="w-full max-w-[400px] login-form-enter">
-          {success && (
-            <Alert
-              className="mb-8 border-[var(--color-success)] bg-[var(--color-success)]/10 text-[var(--color-text-primary)]"
-            >
-              {success}
-            </Alert>
-          )}
-          {view === 'verify' && verifyNotice && (
-            <Alert variant="default" className="app-auth-alert app-form-notice">
-              {verifyNotice}
-            </Alert>
-          )}
-          {error && (
-            <Alert variant="destructive" className="app-auth-alert">
-              {error}
-            </Alert>
-          )}
+        <div className="w-full max-w-[400px] login-form-enter login-auth-panel">
+          <div className="login-auth-alerts">
+            {success && (
+              <Alert className="login-auth-alert-compact border-[var(--color-success)] bg-[var(--color-success)]/10 text-[var(--color-text-primary)]">
+                {success}
+              </Alert>
+            )}
+            {view === 'verify' && verifyNotice && (
+              <Alert variant="default" className="login-auth-alert-compact app-form-notice">
+                {verifyNotice}
+              </Alert>
+            )}
+            {error && (
+              <Alert variant="destructive" className="login-auth-alert-compact">
+                {error}
+              </Alert>
+            )}
+          </div>
 
           {view === 'verify' ? (
-            <form key="verify" onSubmit={handleVerifySubmit} className="flex flex-col gap-8 login-form-stagger">
-              <p className="text-[var(--color-text-secondary)] text-base">
+            <form key="verify" onSubmit={handleVerifySubmit} className="login-auth-form login-form-stagger">
+              <p className="login-auth-hint text-[var(--color-text-secondary)]">
                 Code sent to <span className="font-semibold text-[var(--color-text-primary)]">{verifyEmail}</span>
               </p>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="otp" className="text-base">Verification code</Label>
+              <div className="login-auth-field">
+                <Label htmlFor="otp" className="login-auth-label">Verification code</Label>
                 <AuthTextField
                   id="otp"
                   inputMode="numeric"
@@ -329,12 +341,7 @@ function Login({ initialView = 'login', onBackToHome }) {
                   disabled={loading}
                 />
               </div>
-              <Button
-                type="submit"
-                className="h-[52px] w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
-                size="lg"
-                disabled={loading}
-              >
+              <Button type="submit" className={authBtnClass} size="lg" disabled={loading}>
                 {loading ? 'Verifying…' : 'Verify email'}
               </Button>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -353,9 +360,9 @@ function Login({ initialView = 'login', onBackToHome }) {
               </div>
             </form>
           ) : view === 'login' ? (
-            <form key="login" onSubmit={handleLoginSubmit} className="flex flex-col gap-8 login-form-stagger">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="email" className="text-base">Email</Label>
+            <form key="login" onSubmit={handleLoginSubmit} className="login-auth-form login-form-stagger">
+              <div className="login-auth-field">
+                <Label htmlFor="email" className="login-auth-label">Email</Label>
                 <AuthTextField
                   id="email"
                   type="email"
@@ -366,8 +373,8 @@ function Login({ initialView = 'login', onBackToHome }) {
                   autoComplete="email"
                 />
               </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="password" className="text-base">Password</Label>
+              <div className="login-auth-field">
+                <Label htmlFor="password" className="login-auth-label">Password</Label>
                 <AuthPasswordField
                   id="password"
                   value={password}
@@ -377,19 +384,18 @@ function Login({ initialView = 'login', onBackToHome }) {
                   autoComplete="current-password"
                 />
               </div>
-              <Button
-                type="submit"
-                className="h-[52px] w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
-                size="lg"
-                disabled={loading}
-              >
+              <Button type="submit" className={authBtnClass} size="lg" disabled={loading}>
                 {loading ? 'Signing in…' : 'Sign In'}
               </Button>
+              <div className="login-divider" aria-hidden>
+                <span>or</span>
+              </div>
+              <GoogleRedirectSignIn disabled={loading} />
             </form>
           ) : (
-            <form key="signup" onSubmit={handleSignUpSubmit} className="flex flex-col gap-8 login-form-stagger">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="name" className="text-base">Name</Label>
+            <form key="signup" onSubmit={handleSignUpSubmit} className="login-auth-form login-auth-form--signup login-form-stagger">
+              <div className="login-auth-field">
+                <Label htmlFor="name" className="login-auth-label">Name</Label>
                 <AuthTextField
                   id="name"
                   type="text"
@@ -400,8 +406,8 @@ function Login({ initialView = 'login', onBackToHome }) {
                   autoComplete="name"
                 />
               </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="signup-email" className="text-base">Email</Label>
+              <div className="login-auth-field">
+                <Label htmlFor="signup-email" className="login-auth-label">Email</Label>
                 <AuthTextField
                   id="signup-email"
                   type="email"
@@ -412,8 +418,9 @@ function Login({ initialView = 'login', onBackToHome }) {
                   autoComplete="email"
                 />
               </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="signup-password" className="text-base">Password</Label>
+              <div className="login-auth-field-pair">
+              <div className="login-auth-field">
+                <Label htmlFor="signup-password" className="login-auth-label">Password</Label>
                 <AuthPasswordField
                   id="signup-password"
                   value={password}
@@ -423,8 +430,8 @@ function Login({ initialView = 'login', onBackToHome }) {
                   autoComplete="new-password"
                 />
               </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
+              <div className="login-auth-field">
+                <Label htmlFor="confirmPassword" className="login-auth-label">Confirm password</Label>
                 <AuthPasswordField
                   id="confirmPassword"
                   value={confirmPassword}
@@ -434,19 +441,19 @@ function Login({ initialView = 'login', onBackToHome }) {
                   autoComplete="new-password"
                 />
               </div>
-              <Button
-                type="submit"
-                className="h-[52px] w-full text-base transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-lg active:translate-y-0 active:scale-100"
-                size="lg"
-                disabled={loading}
-              >
+              </div>
+              <Button type="submit" className={authBtnClass} size="lg" disabled={loading}>
                 {loading ? 'Signing up…' : 'Sign Up'}
               </Button>
+              <div className="login-divider" aria-hidden>
+                <span>or</span>
+              </div>
+              <GoogleRedirectSignIn disabled={loading} />
             </form>
           )}
 
           {view !== 'verify' ? (
-            <p className="text-center text-[var(--color-text-muted)] mt-10 text-base">
+            <p className="login-auth-footer text-center text-[var(--color-text-muted)]">
               {view === 'login' ? (
                 <>
                   New here?{' '}

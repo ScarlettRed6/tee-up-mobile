@@ -1,3 +1,127 @@
+/* Auth page — balanced spacing (fits viewport without feeling cramped) */
+.login-auth-page {
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .login-auth-page {
+    overflow: hidden;
+  }
+
+  .login-auth-main {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
+.login-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.login-auth-form--signup {
+  gap: 1rem;
+}
+
+.login-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.login-auth-field-pair {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 420px) {
+  .login-auth-form--signup .login-auth-field-pair {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.875rem;
+  }
+}
+
+.login-auth-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.login-auth-hint {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.login-auth-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.login-auth-alerts:empty {
+  display: none;
+  margin-bottom: 0;
+}
+
+.login-auth-alert-compact {
+  padding: 0.75rem 1rem !important;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin-bottom: 0 !important;
+}
+
+.login-auth-footer {
+  margin-top: 1.25rem;
+  font-size: 0.9375rem;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  width: 100%;
+  margin: 0.25rem 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body-small);
+  text-transform: lowercase;
+  text-align: center;
+}
+
+.login-divider span {
+  flex-shrink: 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.login-google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  background: var(--color-white) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.login-google-btn:hover:not(:disabled) {
+  background: var(--color-background-alt) !important;
+}
+
+.login-google-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
 .login-container {
   min-height: 100vh;
   background-color: var(--color-background);

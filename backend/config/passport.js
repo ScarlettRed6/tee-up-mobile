@@ -1,16 +1,31 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { findUserByGoogleId, findUserByEmail, createGoogleUser } from "../models/userModel.js";
+import {
+    findUserByGoogleId,
+    findUserByEmail,
+    createGoogleUser,
+    isUserSuspended,
+    getSuspensionMessage,
+} from "../models/userModel.js";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+const port = process.env.PORT || 5000;
+const googleCallbackURL =
+    process.env.GOOGLE_CALLBACK_URL ||
+    `http://localhost:${port}/api/auth/google/callback`;
+
+console.log(
+    `[Google OAuth] callback URL (add to Google Cloud → Authorized redirect URIs):\n  ${googleCallbackURL}`
+);
 
 passport.use(
     new GoogleStrategy(
         {
             clientID: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: "http://localhost:5000/api/auth/google/callback",
+            callbackURL: googleCallbackURL,
             scope: ["profile", "email"],
         },
         async function (accessToken, refreshToken, profile, done) {
@@ -33,6 +48,10 @@ passport.use(
 
                     //Brand new user: Create them using the Option A model update we just made!
                     user = await createGoogleUser(name, email, googleId, picture);
+                }
+
+                if (isUserSuspended(user)) {
+                    return done(null, false, { message: getSuspensionMessage(user) });
                 }
 
                 return done(null, user);
