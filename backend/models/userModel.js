@@ -63,8 +63,8 @@ export async function findUserByGoogleId(googleId) {
 
 export async function createGoogleUser(name, email, googleId, profileImage){
     const result = await pool.query(
-        `INSERT INTO users (name, email, provider, google_id, profile_image)
-        VALUES ($1, $2, 'google', $3, $4) RETURNING *`,
+        `INSERT INTO users (name, email, provider, google_id, profile_image, password, is_verified)
+        VALUES ($1, $2, 'google', $3, $4, NULL, true) RETURNING *`,
         [name, email, googleId, profileImage]
     );
     return result.rows[0];
@@ -231,41 +231,20 @@ export async function getTopSellers(limit = 10) {
     return result.rows;
 }//End of getTopSellers query
 
-/** Permanent suspensions use a far-future date on the user row (logs still store null). */
-const PERMANENT_SUSPENSION_UNTIL = new Date('9999-12-31T23:59:59.999Z');
-
-/** True when suspended_until is set and still in the future. */
-export function isUserSuspended(user) {
-    if (!user?.suspended_until) return false;
-    const until = new Date(user.suspended_until);
-    if (Number.isNaN(until.getTime())) return false;
-    return until > new Date();
-}
-
-export function getSuspensionMessage(user) {
-    if (!user?.suspended_until) {
-        return "Your account has been suspended. Please contact support.";
-    }
-    const until = new Date(user.suspended_until);
-    if (Number.isNaN(until.getTime())) {
-        return "Your account has been suspended. Please contact support.";
-    }
-    if (until.getFullYear() >= 9999) {
-        return "Your account has been permanently suspended. Please contact support.";
-    }
-    if (until > new Date()) {
-        return `Your account is suspended until ${until.toISOString().split("T")[0]}. Please contact support.`;
-    }
-    return "Your account has been suspended. Please contact support.";
-}
-
 export async function suspendUserQuery(userId, suspendedUntil = null) {
-    const until = suspendedUntil ?? PERMANENT_SUSPENSION_UNTIL;
-    const result = await pool.query(
-        `UPDATE users SET suspended_until = $2
-        WHERE id = $1 RETURNING *`,
-        [userId, until]
-    );
+    if (suspendedUntil) {
+        const result = await pool.query(
+            `UPDATE users SET suspended_until = $2
+            WHERE id = $1 RETURNING *`,
+            [userId, suspendedUntil]
+        );
+    } else {
+        const result = await pool.query(
+            `UPDATE users SET suspended_until = NULL
+            WHERE id = $1 RETURNING *`,
+            [userId]
+        );
+    }//End of if else statement
     return result.rows[0];
 }//End of suspendUserQuery
 
