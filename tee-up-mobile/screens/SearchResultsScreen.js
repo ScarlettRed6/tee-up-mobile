@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useContext } from 'react';
+import React, { useEffect, useMemo, useState, useContext, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,11 +7,21 @@ import styles from './styles/SearchResultsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { fetchListings } from '../api/listingsApi';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
+import { authContext } from '../context/authContext';
+import { getConversations } from '../api/chatApi';
+import { getUserProfile } from '../api/userApi';
 import { extractPhotos, formatPriceLabel } from '../utils/categoryUtils';
+
+const SORT_OPTIONS = ['Newest First', 'Price: Low to High', 'Price: High to Low'];
 
 export default function SearchResultsScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
+  const { accessToken } = useContext(authContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [userProfileImage, setUserProfileImage] = useState(null);
   const filtersFromRoute = route?.params?.filters || {};
   const filtersKey = JSON.stringify(filtersFromRoute || {});
   const appliedFilters = useMemo(() => {
@@ -25,7 +36,12 @@ export default function SearchResultsScreen({ navigation, route }) {
     ? route.params.searchQuery
     : '';
   const trimmedQuery = rawSearchParam.trim();
-  const displayQuery = trimmedQuery.length ? trimmedQuery : 'All listings';
+  
+  // Determine display query - show category if no search query but category is selected
+  const hasCategory = appliedFilters.category && appliedFilters.category !== 'All';
+  const displayQuery = trimmedQuery.length 
+    ? trimmedQuery 
+    : (hasCategory ? `${appliedFilters.category} listings` : 'All listings');
 
   const backendFilters = useMemo(() => {
     let parsedFilters = {};
@@ -35,26 +51,48 @@ export default function SearchResultsScreen({ navigation, route }) {
       parsedFilters = {};
     }
     const payload = {};
+    // Only add search if there's actually a search query
     if (trimmedQuery.length) {
       payload.search = trimmedQuery;
     }
-    if (parsedFilters.category && parsedFilters.category !== 'All') {
-      payload.category = parsedFilters.category;
+    // Category filter - ensure it's not 'All' and is a valid category
+    // This should work even when search query is empty
+    if (parsedFilters.category && parsedFilters.category !== 'All' && parsedFilters.category.trim() !== '') {
+      payload.category = parsedFilters.category.trim();
+      console.log('✅ Category filter applied:', payload.category);
     }
     if (parsedFilters.condition) {
       payload.condition = parsedFilters.condition;
     }
-    if (parsedFilters.status) {
-      payload.status = parsedFilters.status.toString().toLowerCase();
-    } else {
-      payload.status = 'available';
+    if (parsedFilters.flex) {
+      payload.flex = parsedFilters.flex;
     }
+    if (parsedFilters.hand) {
+      payload.hand = parsedFilters.hand;
+    }
+    // Search results ALWAYS show only available items (never sold or pending)
+      payload.status = 'available';
+    // Price filters - convert to numbers and ensure they're valid
     if (parsedFilters.minPrice) {
-      payload.min_price = parsedFilters.minPrice;
+      const minPriceStr = parsedFilters.minPrice.toString().trim();
+      if (minPriceStr !== '') {
+        const minPriceNum = parseFloat(minPriceStr);
+        if (!Number.isNaN(minPriceNum) && minPriceNum >= 0) {
+          payload.min_price = minPriceNum;
+        }
+      }
     }
     if (parsedFilters.maxPrice) {
-      payload.max_price = parsedFilters.maxPrice;
+      const maxPriceStr = parsedFilters.maxPrice.toString().trim();
+      if (maxPriceStr !== '') {
+        const maxPriceNum = parseFloat(maxPriceStr);
+        if (!Number.isNaN(maxPriceNum) && maxPriceNum >= 0) {
+          payload.max_price = maxPriceNum;
     }
+      }
+    }
+    // Log for debugging
+    console.log('Backend filters payload:', payload);
     return payload;
   }, [trimmedQuery, filtersKey]);
 
@@ -62,6 +100,8 @@ export default function SearchResultsScreen({ navigation, route }) {
   const [results, setResults] = useState([]);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [resultsError, setResultsError] = useState(null);
+  const [sortOption, setSortOption] = useState(SORT_OPTIONS[0]);
+  const [isSortMenuVisible, setIsSortMenuVisible] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -91,6 +131,17 @@ export default function SearchResultsScreen({ navigation, route }) {
     };
   }, [serializedBackendFilters]);
 
+  const sortedResults = useMemo(() => {
+    if (!Array.isArray(results)) return [];
+    const list = [...results];
+    if (sortOption === 'Price: Low to High') {
+      list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    } else if (sortOption === 'Price: High to Low') {
+      list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+    }
+    return list;
+  }, [results, sortOption]);
+
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
     const photos = extractPhotos(item.photos);
@@ -98,10 +149,6 @@ export default function SearchResultsScreen({ navigation, route }) {
     const sellerName = item.seller_name || 'Unknown';
     const priceLabel = formatPriceLabel(item.price);
     const cardKey = item.listing_id || item.id || index;
-    const statusLabel = item.status
-      ? item.status.charAt(0).toUpperCase() + item.status.slice(1)
-      : null;
-
     return (
       <TouchableOpacity
         key={cardKey}
@@ -139,11 +186,6 @@ export default function SearchResultsScreen({ navigation, route }) {
           )}
           <Text style={[styles.sellerName, dynamicStyles.sellerName]}>{sellerName}</Text>
         </View>
-        {statusLabel && (
-          <View style={styles.statusChip}>
-            <Text style={styles.statusChipText}>{statusLabel}</Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
@@ -156,12 +198,57 @@ export default function SearchResultsScreen({ navigation, route }) {
     });
   };
 
+  const handleClearAll = () => {
+    navigation.replace('SearchResults', {
+      searchQuery: '',
+      filters: {},
+    });
+  };
+
+  // Fetch user profile image
+  const fetchUserProfile = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const profile = await getUserProfile();
+      setUserProfileImage(profile?.profile_image || null);
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      setUserProfileImage(null);
+    }
+  }, [accessToken]);
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+      loadInboxUnread();
+    }, [fetchUserProfile, loadInboxUnread])
+  );
+
+  const hasAnyFiltersApplied =
+    trimmedQuery.length > 0 || (appliedFilters && Object.keys(appliedFilters).length > 0);
+
+  const locationLabel = appliedFilters.location || null;
+  const resultsMetaText = `${results.length} result${results.length === 1 ? '' : 's'}${
+    locationLabel ? ` found in ${locationLabel}` : ''
+  }`;
+
   const dynamicStyles = {
     container: { backgroundColor: theme.background },
-    headerIcons: { backgroundColor: theme.background },
+    header: { backgroundColor: theme.background },
+    pageTitle: { color: theme.text },
     scrollView: { backgroundColor: theme.background },
-    titleSection: { backgroundColor: theme.background },
-    title: { color: theme.text },
     resultCountText: { color: theme.textMuted },
     activeFilterText: { color: theme.textMuted },
     loadingText: { color: theme.textMuted },
@@ -173,56 +260,19 @@ export default function SearchResultsScreen({ navigation, route }) {
     productPrice: { color: theme.primary },
     sellerName: { color: theme.textMuted },
     bottomNav: { backgroundColor: theme.card },
+    clearAllText: { color: theme.primary },
+    sortButtonText: { color: theme.text },
+    sortMenuItemTextActive: { color: theme.primary },
   };
 
   return (
     <View style={[styles.container, dynamicStyles.container]}>
-      {/* Floating Header Icons */}
-      <View style={[styles.headerIcons, dynamicStyles.headerIcons]}>
-        <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => navigation.navigate('SearchFilter')}
-        >
-          <Ionicons name="search-outline" size={22} color={theme.text} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons name="people-outline" size={22} color={theme.text} />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigation.navigate('SavedListings')}
-        >
-          <Ionicons name="heart-outline" size={22} color={theme.text} />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.iconButton} 
-          onPress={() => navigateToBottomNav(navigation, 'Profile')}
-        >
-          <View style={styles.profileAvatar}>
-            <Ionicons name="person" size={16} color={theme.primary} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView 
-        style={[styles.scrollView, dynamicStyles.scrollView]}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Page Title with Filter Icon */}
-        <View style={[styles.titleSection, dynamicStyles.titleSection]}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, dynamicStyles.title]} numberOfLines={1}>
-              {trimmedQuery.length ? `'${displayQuery}'` : 'All Listings'}
+      {/* Header Section */}
+      <View style={[styles.header, dynamicStyles.header]}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.pageTitle, dynamicStyles.pageTitle]} numberOfLines={1}>
+            {trimmedQuery.length ? `'${displayQuery}'` : displayQuery}
             </Text>
-            <TouchableOpacity 
-              style={styles.filterButton}
-              onPress={handleFilterPress}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="options-outline" size={22} color={theme.text} />
-            </TouchableOpacity>
-          </View>
           <View style={styles.resultMetaRow}>
             <Text style={[styles.resultCountText, dynamicStyles.resultCountText]}>
               {results.length} result{results.length === 1 ? '' : 's'}
@@ -232,6 +282,124 @@ export default function SearchResultsScreen({ navigation, route }) {
             )}
           </View>
         </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.headerIcon}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SearchFilter', { 
+              returnTo: 'SearchResults',
+              filters: {}
+            })}
+          >
+            <Ionicons name="search-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerIcon, { marginLeft: 16 }]}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('SavedListings')}
+          >
+            <Ionicons name="heart-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.headerIcon, { marginLeft: 16 }]}
+            activeOpacity={0.7}
+            onPress={() => navigateToBottomNav(navigation, 'Profile')}
+          >
+            {userProfileImage ? (
+              <Image
+                source={{ uri: userProfileImage }}
+                style={styles.profileAvatar}
+              />
+            ) : (
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={16} color={theme.primary} />
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView 
+        style={[styles.scrollView, dynamicStyles.scrollView]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 140 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
+
+        <View style={styles.resultsHeader}>
+          <View style={styles.resultsHeaderLeft}>
+            <Text
+              style={[styles.resultsTitle, dynamicStyles.pageTitle]}
+              numberOfLines={2}
+            >
+              Showing results for{' '}
+              <Text style={styles.resultsQueryText}>"{displayQuery}"</Text>
+            </Text>
+            <Text
+              style={[styles.resultsSubtitle, dynamicStyles.resultCountText]}
+              numberOfLines={1}
+            >
+              {resultsMetaText}
+            </Text>
+          </View>
+          <View style={styles.resultsHeaderRight}>
+            {hasAnyFiltersApplied && (
+              <TouchableOpacity
+                style={styles.clearAllButton}
+                activeOpacity={0.7}
+                onPress={handleClearAll}
+              >
+                <Text style={[styles.clearAllText, dynamicStyles.clearAllText]}>
+                  Clear All
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.sortButton}
+              activeOpacity={0.8}
+              onPress={() => setIsSortMenuVisible((prev) => !prev)}
+            >
+              <Text
+                style={[styles.sortButtonText, dynamicStyles.sortButtonText]}
+                numberOfLines={1}
+              >
+                Sort by: {sortOption}
+              </Text>
+              <Ionicons
+                name={isSortMenuVisible ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={theme.text}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {isSortMenuVisible && (
+          <View style={styles.sortMenu}>
+            {SORT_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={styles.sortMenuItem}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSortOption(option);
+                  setIsSortMenuVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.sortMenuItemText,
+                    option === sortOption && [
+                      styles.sortMenuItemTextActive,
+                      dynamicStyles.sortMenuItemTextActive,
+                    ],
+                  ]}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {resultsLoading ? (
           <View style={styles.loadingState}>
@@ -273,6 +441,13 @@ export default function SearchResultsScreen({ navigation, route }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -287,6 +462,13 @@ export default function SearchResultsScreen({ navigation, route }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

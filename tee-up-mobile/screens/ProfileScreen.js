@@ -9,9 +9,11 @@ import { isCurrentUser } from '../utils/userConstants';
 import { authContext } from '../context/authContext';
 import { ListingsContext } from '../context/listingsContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
+import { getConversations } from '../api/chatApi';
 import { getUserProfile } from '../api/userApi';
 import { fetchUserRatingSummary } from '../api/ratingApi';
-import { fetchUserListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
+import { fetchListings, updateListingStatus as updateListingStatusApi } from '../api/listingsApi';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -26,9 +28,11 @@ export default function ProfileScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
   const { refreshListings } = useContext(ListingsContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [ratingSummary, setRatingSummary] = useState({
     average_rating: 0,
     total_raters: 0,
@@ -78,16 +82,29 @@ export default function ProfileScreen({ navigation, route }) {
     });
   }, [navigation, fetchProfile]);
 
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
   // Refresh profile when screen comes into focus (e.g., returning from EditProfile)
   useFocusEffect(
     useCallback(() => {
       if (accessToken) {
         fetchProfile();
+        loadInboxUnread();
       }
-    }, [accessToken, fetchProfile])
+    }, [accessToken, fetchProfile, loadInboxUnread])
   );
 
-  // Fetch user's own listings
+  // Fetch user's own listings with filters
   const fetchUserOwnListings = useCallback(async () => {
     if(!accessToken) return;
 
@@ -98,7 +115,47 @@ export default function ProfileScreen({ navigation, route }) {
       const userId = decoded.id;
 
       if (userId) {
-        const userListings = await fetchUserListings(userId);
+        // Build filters object for backend
+        const filters = {
+          user_id: userId,
+        };
+
+        // Add search filter
+        if (searchQuery.trim().length > 0) {
+          filters.search = searchQuery.trim();
+        }
+
+        // Add category filter
+        if (selectedCategory && selectedCategory !== 'All') {
+          filters.category = selectedCategory.trim();
+        }
+
+        // Add condition filter
+        if (selectedCondition) {
+          filters.condition = selectedCondition;
+        }
+
+        // Add flex filter
+        if (selectedFlex) {
+          filters.flex = selectedFlex;
+        }
+
+        // Add hand filter
+        if (selectedHand) {
+          filters.hand = selectedHand;
+        }
+
+        // Add status filter
+        if (selectedStatus && selectedStatus !== 'All') {
+          const statusMap = {
+            'Available': 'available',
+            'Sold': 'sold',
+            'Pending': 'pending',
+          };
+          filters.status = statusMap[selectedStatus] || selectedStatus.toLowerCase();
+        }
+
+        const userListings = await fetchListings(filters);
         
         // Transform backend listing data to match ProfileScreen format
         const transformedListings = userListings.map(listing => {
@@ -127,8 +184,9 @@ export default function ProfileScreen({ navigation, route }) {
     } finally {
       setListingsLoading(false);
     }
-  }, [accessToken, user]);
+  }, [accessToken, user, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus]);
 
+  // Fetch listings when filters change
   useEffect(() => {
     fetchUserOwnListings();
   }, [fetchUserOwnListings]);
@@ -258,43 +316,9 @@ export default function ProfileScreen({ navigation, route }) {
     return 3;
   }, []);
 
+  // Sort products (filtering is now done on backend)
   const filteredAndSortedProducts = React.useMemo(() => {
-    let filtered = [...allProducts];
-
-    // Search filter
-    if (searchQuery.trim().length > 0) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Category filter
-    if (selectedCategory && selectedCategory !== 'All') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    // Condition filter
-    if (selectedCondition) {
-      filtered = filtered.filter(product => product.condition === selectedCondition);
-    }
-
-    // Price filter - removed for Profile page (only used in SearchResults)
-
-    // Flex filter
-    if (selectedFlex) {
-      filtered = filtered.filter(product => product.flex === selectedFlex);
-    }
-
-    // Hand filter
-    if (selectedHand) {
-      filtered = filtered.filter(product => product.hand === selectedHand);
-    }
-
-    // Status filter (Available/Sold) - skip when "All" is selected
-    if (selectedStatus && selectedStatus !== 'All') {
-      const normalizedSelected = normalizeListingStatus(selectedStatus);
-      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
-    }
+    let sorted = [...allProducts];
 
     const compareBySort = (a, b) => {
       if (!selectedStatus || selectedStatus === 'All') {
@@ -318,8 +342,8 @@ export default function ProfileScreen({ navigation, route }) {
       }
     };
 
-    return filtered.sort(compareBySort);
-  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy, allProducts, getStatusPriority]);
+    return sorted.sort(compareBySort);
+  }, [sortBy, allProducts, selectedStatus, getStatusPriority]);
 
   const renderRatingStars = (ratingValue = 0) => {
     const stars = [];
@@ -334,7 +358,7 @@ export default function ProfileScreen({ navigation, route }) {
         <Ionicons
           key={`rating-star-${i}`}
           name={iconName}
-          size={18}
+          size={20}
           color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
           style={{ marginRight: i === 5 ? 0 : 4 }}
         />
@@ -414,13 +438,6 @@ export default function ProfileScreen({ navigation, route }) {
   const cancelMarkAsSold = () => {
     setShowConfirmModal(false);
     setProductToUpdate(null);
-  };
-
-  const handleViewAnalytics = (productId) => {
-    // Navigate to analytics screen or show analytics modal
-    console.log('View Analytics for product:', productId);
-    setOpenDropdownId(null); // Close dropdown
-    // TODO: Navigate to analytics screen when implemented
   };
 
   const handleEditListing = (item) => {
@@ -543,14 +560,6 @@ export default function ProfileScreen({ navigation, route }) {
             >
               <Ionicons name="create-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
               <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>Edit Listing</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.dropdownItem}
-              onPress={() => handleViewAnalytics(item.id)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="analytics-outline" size={18} color={theme.text} style={styles.dropdownIcon} />
-              <Text style={[styles.dropdownText, dynamicStyles.dropdownText]}>View Analytics</Text>
             </TouchableOpacity>
             {item.status === 'Available' && (
               <>
@@ -679,14 +688,20 @@ export default function ProfileScreen({ navigation, route }) {
   const dynamicStyles = {
     container: { backgroundColor: theme.background },
     scrollView: { backgroundColor: theme.background },
-    profileSection: { backgroundColor: 'transparent' },
+    profileHeaderCard: { backgroundColor: theme.card },
     username: { color: theme.text },
-    statText: { color: theme.textSecondary },
-    reputationText: { color: theme.text },
-    reputationSubtext: { color: theme.textMuted },
-    bioSection: { backgroundColor: 'transparent' },
+    statCard: { backgroundColor: theme.backgroundAlt },
+    statValue: { color: theme.text },
+    statLabel: { color: theme.textMuted },
+    reputationTitle: { color: theme.text },
+    ratingValue: { color: theme.text },
+    reviewCount: { color: theme.textMuted },
+    bioCard: { borderTopColor: theme.border },
+    bioTitle: { color: theme.text },
     bioText: { color: theme.text },
     bioPlaceholderText: { color: theme.textMuted },
+    editBioButton: { backgroundColor: theme.backgroundAlt, borderColor: theme.primary },
+    editBioButtonText: { color: theme.primary },
     searchBar: { backgroundColor: theme.card },
     searchInput: { color: theme.text },
     filterButton: { backgroundColor: theme.lightGray },
@@ -744,79 +759,108 @@ export default function ProfileScreen({ navigation, route }) {
           onScrollBeginDrag={() => setOpenDropdownId(null)}
           scrollEventThrottle={16}
         >
-        {/* Profile Summary Card */}
-        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
-          <View style={styles.profilePhotoContainer}>
-            {user.profile_image ? (
-              <Image 
-                source={{ uri: user.profile_image }}
-                style={styles.profilePhoto}
-                resizeMode="cover"
-                onError={(error) => {
-                  console.error('Profile image load error:', error.nativeEvent.error);
-                  console.error('Failed URL:', user.profile_image);
-                }}
-              />
-            ) : (
-              <View style={styles.profilePhoto}>
-                <Ionicons name="person" size={50} color={theme.primary} />
+        {/* Profile Header Card */}
+        <View style={[styles.profileHeaderCard, dynamicStyles.profileHeaderCard]}>
+          {/* Profile Photo and Name */}
+          <View style={styles.profileHeaderTop}>
+            <View style={styles.profilePhotoContainer}>
+              {user.profile_image ? (
+                <Image 
+                  source={{ uri: user.profile_image }}
+                  style={styles.profilePhoto}
+                  resizeMode="cover"
+                  onError={(error) => {
+                    console.error('Profile image load error:', error.nativeEvent.error);
+                    console.error('Failed URL:', user.profile_image);
+                  }}
+                />
+              ) : (
+                <View style={styles.profilePhoto}>
+                  <Ionicons name="person" size={50} color={theme.primary} />
+                </View>
+              )}
+            </View>
+            <Text style={[styles.username, dynamicStyles.username]}>{user.name}</Text>
+          </View>
+
+          {/* Stats Cards Row */}
+          <View style={styles.statsCardsRow}>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="cube-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {allProducts.filter(p => p.status === 'Available').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Active</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="list-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {allProducts.length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Total</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {allProducts.filter(p => p.status === 'Sold').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Sold</Text>
+            </View>
+          </View>
+
+          {/* Reputation Section */}
+          <View style={styles.reputationSection}>
+            <View style={styles.reputationHeader}>
+              <Ionicons name="star" size={20} color="#FFD700" />
+              <Text style={[styles.reputationTitle, dynamicStyles.reputationTitle]}>Reputation</Text>
+            </View>
+            <View style={styles.reputationContent}>
+              <View style={styles.ratingDisplay}>
+                <Text style={[styles.ratingValue, dynamicStyles.ratingValue]}>
+                  {ratingSummary.total_raters > 0
+                    ? Number(ratingSummary.average_rating || 0).toFixed(1)
+                    : '0.0'}
+                </Text>
+                <View style={styles.starsContainer}>
+                  {renderRatingStars(Number(ratingSummary.average_rating || 0))}
+                </View>
               </View>
+              <Text style={[styles.reviewCount, dynamicStyles.reviewCount]}>
+                {ratingSummary.total_raters > 0
+                  ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
+                  : 'No reviews yet'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Bio Section */}
+          <View style={[styles.bioCard, dynamicStyles.bioCard]}>
+            <View style={styles.bioHeader}>
+              <Ionicons name="document-text-outline" size={18} color={theme.textMuted} />
+              <Text style={[styles.bioTitle, dynamicStyles.bioTitle]}>About</Text>
+            </View>
+            <Text
+              style={[
+                styles.bioText,
+                dynamicStyles.bioText,
+                !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
+              ]}
+            >
+              {user.bio && user.bio.trim().length
+                ? user.bio.trim()
+                : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
+            </Text>
+            {!(user.bio && user.bio.trim().length) && (
+              <TouchableOpacity
+                style={[styles.editBioButton, dynamicStyles.editBioButton]}
+                onPress={handleEditProfile}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="create-outline" size={16} color={theme.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.editBioButtonText, dynamicStyles.editBioButtonText]}>Add bio</Text>
+              </TouchableOpacity>
             )}
           </View>
-          
-          <Text style={[styles.username, dynamicStyles.username]}>{user.name}</Text>
-          
-          <View style={styles.statsContainer}>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Active Listings: {allProducts.filter(p => p.status === 'Available').length}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Total Listings: {allProducts.length}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Sold: {allProducts.filter(p => p.status === 'Sold').length}
-            </Text>
-          </View>
-          
-        <View style={styles.reputationContainer}>
-          <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
-            {ratingSummary.total_raters > 0
-              ? `User Reputation: ${Number(ratingSummary.average_rating || 0).toFixed(2)}`
-              : 'No ratings yet'}
-          </Text>
-          <View style={styles.starsContainer}>
-            {renderRatingStars(Number(ratingSummary.average_rating || 0))}
-          </View>
-          <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
-            {ratingSummary.total_raters > 0
-              ? `${ratingSummary.total_raters} ${ratingSummary.total_raters === 1 ? 'review' : 'reviews'}`
-              : 'You have not received any reviews yet.'}
-          </Text>
-        </View>
-        </View>
-
-        {/* Bio Section */}
-        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
-          <Text
-            style={[
-              styles.bioText,
-              dynamicStyles.bioText,
-              !(user.bio && user.bio.trim().length) && [styles.bioPlaceholderText, dynamicStyles.bioPlaceholderText]
-            ]}
-          >
-            {user.bio && user.bio.trim().length
-              ? user.bio.trim()
-              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
-          </Text>
-          {!(user.bio && user.bio.trim().length) && (
-            <TouchableOpacity
-              style={styles.editBioButton}
-              onPress={handleEditProfile}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.editBioButtonText}>Add bio</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Search and Filters */}
@@ -968,6 +1012,13 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -982,6 +1033,13 @@ export default function ProfileScreen({ navigation, route }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

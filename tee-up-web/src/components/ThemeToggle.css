@@ -1,0 +1,30 @@
+.theme-toggle-floating {
+  position: fixed;
+  bottom: var(--spacing-xl);
+  right: var(--spacing-xl);
+  z-index: 50;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-circle);
+  box-shadow: var(--shadow-button);
+  opacity: 0.85;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.theme-toggle-floating:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.theme-toggle-floating:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .theme-toggle-floating {
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    width: 40px;
+    height: 40px;
+  }
+}

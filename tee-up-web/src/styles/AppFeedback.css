@@ -1,0 +1,72 @@
+/**
+ * Shared padding and typography for inline alerts, form errors, and notice banners.
+ */
+
+.app-page-alert,
+.app-auth-alert {
+  padding: 1.125rem 1.375rem !important;
+  line-height: 1.6 !important;
+  font-size: 15px;
+}
+
+.app-page-alert {
+  margin-bottom: var(--spacing-xl);
+}
+
+.app-auth-alert {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.app-form-error {
+  padding: 1.125rem 1.375rem !important;
+  border-radius: var(--radius-medium);
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.app-form-success {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-medium);
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.app-form-notice {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--color-border);
+  background: var(--color-background-alt);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+[data-theme='dark'] .app-form-error {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+}
+
+[data-theme='dark'] .app-form-success {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #86efac;
+}
+
+[data-theme='dark'] .app-form-notice {
+  background: #1f1f1f;
+  border-color: #404040;
+  color: var(--color-text-muted);
+}

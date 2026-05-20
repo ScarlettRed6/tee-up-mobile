@@ -280,6 +280,9 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    minHeight: 44,
+    minWidth: 44,
+    position: 'relative',
   },
   navLabel: {
     fontFamily: 'Exo_400Regular',
@@ -302,6 +305,23 @@ export default StyleSheet.create({
     fontFamily: 'Exo_400Regular',
     fontSize: 14,
     color: '#999',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 2,
+    right: 18,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontFamily: 'Exo_700Bold',
+    fontSize: 10,
   },
 });
 

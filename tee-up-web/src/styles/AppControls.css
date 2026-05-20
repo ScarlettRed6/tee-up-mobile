@@ -1,0 +1,64 @@
+/**
+ * Shared spacing for form fields, action button rows, and nav text buttons.
+ * Fixes cramped shadcn Input/Button pairs in profile modals, headers, etc.
+ */
+
+/* Vertical stacks (password fields, modal forms) */
+.app-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--form-stack-gap);
+}
+
+.app-form-stack > * {
+  margin: 0;
+}
+
+/* Cancel + primary / outline pairs */
+.app-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.app-btn-row > button,
+.profile-edit-actions > button,
+.profile-password-actions > button,
+.owner-listing-confirm-actions > button {
+  min-height: 2.75rem;
+  padding-left: var(--btn-padding-x);
+  padding-right: var(--btn-padding-x);
+}
+
+/* Header nav text buttons (My Listings, Messages, guest login) */
+.user-header-link {
+  min-height: var(--btn-min-height-sm) !important;
+  height: auto !important;
+  padding: 0.5rem var(--btn-padding-x-sm) !important;
+  font-size: var(--font-size-body-small) !important;
+  font-weight: var(--font-weight-medium) !important;
+  border-radius: var(--radius-medium);
+}
+
+.user-header-btn-sell {
+  min-height: var(--btn-min-height-sm) !important;
+  padding-left: var(--spacing-xl) !important;
+  padding-right: var(--spacing-xl) !important;
+}
+
+.user-header-guest-link {
+  white-space: nowrap;
+}
+
+/* Profile hero + edit modal + listing seller actions */
+.profile-hero-actions .profile-hero-btn,
+.listing-view-seller-btn,
+.profile-edit-actions > button,
+.profile-password-actions > button,
+.profile-password-head > button {
+  min-height: var(--btn-min-height) !important;
+  height: auto !important;
+  padding: 0.75rem 1.5rem !important;
+}

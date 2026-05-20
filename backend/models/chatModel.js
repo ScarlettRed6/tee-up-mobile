@@ -18,6 +18,21 @@ export async function storeMessage(conversationId, senderId, message, image_url)
     return result.rows[0];
 }
 
+/** Single message row joined with sender name and profile image (for sockets + APIs). */
+export async function getMessageByIdWithSender(messageId){
+    const result = await pool.query(
+        `SELECT 
+            m.*,
+            u.name as sender_name,
+            u.profile_image as sender_profile_image
+        FROM messages m
+        LEFT JOIN users u ON m.sender_id = u.id
+        WHERE m.id = $1`,
+        [messageId]
+    );
+    return result.rows[0] || null;
+}
+
 // Find existing conversation between buyer and seller for a listing (without creating)
 export async function findConversation(buyerId, sellerId, listingId){
     // Convert all IDs to integers for consistent comparison
@@ -101,6 +116,16 @@ export async function getConversationsForUser(userId){
         [userId]
     );
     return result.rows;
+}
+
+export async function senderHasOfferInConversation(conversationId, senderId) {
+    const result = await pool.query(
+        `SELECT 1 FROM messages
+         WHERE conversation_id = $1 AND sender_id = $2 AND message LIKE '__OFFER__::%'
+         LIMIT 1`,
+        [conversationId, senderId]
+    );
+    return result.rows.length > 0;
 }
 
 // Get all messages for a conversation

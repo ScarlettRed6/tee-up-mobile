@@ -9,6 +9,7 @@ import { getConversations } from '../api/chatApi';
 import { authContext } from '../context/authContext';
 import { NotificationsContext } from '../context/notificationsContext';
 import { ThemeContext } from '../context/themeContext';
+import { formatChatSnippet } from '../utils/chatOffers';
 
 export default function InboxScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -240,7 +241,7 @@ export default function InboxScreen({ navigation, route }) {
                 </Text>
                 {chat.lastMessage && (
                   <Text style={{ fontSize: 12, color: theme.textMuted, marginTop: 4 }} numberOfLines={1}>
-                    {chat.lastMessage}
+                    {formatChatSnippet(chat.lastMessage)}
                   </Text>
                 )}
               </View>

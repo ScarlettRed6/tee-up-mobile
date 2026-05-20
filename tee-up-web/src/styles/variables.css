@@ -1,0 +1,154 @@
+/* Design Tokens - Tee Up */
+
+:root {
+  /* Colors - Light Mode (higher contrast, crisper) */
+  --color-primary: #2d5c2e;
+  --color-primary-hover: #244a25;
+  --color-background: #ebe6df;
+  --color-background-alt: #f5f1eb;
+  --color-white: #ffffff;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #2d2d2d;
+  --color-text-muted: #525252;
+  --color-text-disabled: #737373;
+  --color-border: #d4cfc8;
+  --color-border-strong: #b8b2a8;
+  --color-light-gray: #e8e4de;
+  --color-dark-gray: #525252;
+  
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Spacing (4px base unit) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 28px;
+  --spacing-4xl: 32px;
+  
+  /* Card Padding */
+  --card-padding: 12px 16px;
+  --card-padding-large: 24px;
+  
+  /* Section Margin */
+  --section-margin: 24px 32px;
+  
+  /* Page Padding */
+  --page-padding: 20px 24px;
+  
+  /* Inputs – shared padding / min heights (aligned across admin + marketplace) */
+  --input-padding-y: 12px;
+  --input-padding-x: 16px;
+  --input-padding: var(--input-padding-y) var(--input-padding-x);
+  --input-min-height: 48px;
+  /* Form stacks – vertical gap between fields */
+  --form-field-gap: 14px;
+  --form-stack-gap: 16px;
+  /* Textareas – slightly taller line box, same horizontal rhythm */
+  --textarea-padding-y: 12px;
+  --textarea-padding-x: var(--input-padding-x);
+  --textarea-padding: var(--textarea-padding-y) var(--textarea-padding-x);
+  
+  /* Button Padding */
+  --button-padding: 14px 24px;
+  --button-padding-small: 11px 20px;
+  --btn-min-height: 44px;
+  --btn-min-height-sm: 40px;
+  --btn-padding-x: 1.375rem;
+  --btn-padding-x-sm: 1.125rem;
+  
+  /* Border Radius */
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+  --radius-pill: 20px;
+  --radius-input: 12px;
+  --radius-button: 28px;
+  --radius-circle: 50%;
+  --radius-modal: 20px;
+  
+  /* Shadows - Light Mode (more definition and depth) */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-button: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-nav: 0 -2px 10px rgba(0, 0, 0, 0.06);
+  --shadow-subtle: 0 1px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-header: 0 2px 10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-header-strong: 0 2px 12px rgba(0, 0, 0, 0.1);
+  
+  /* Typography */
+  --font-family: 'Exo', sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Font Sizes */
+  --font-size-h1: 32px;
+  --font-size-h2: 24px;
+  --font-size-h3: 20px;
+  --font-size-h4: 18px;
+  --font-size-body: 16px;
+  --font-size-body-small: 14px;
+  --font-size-small: 13px;
+  --font-size-tiny: 10px;
+  
+  /* Line Heights */
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+  
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  /* Sticky marketplace header stack height (logo row + padding; mobile includes search row) */
+  --user-header-sticky-height: 80px;
+  --admin-content-offset: var(--sidebar-width);
+  --admin-mobile-max: 1023px;
+
+  /* Browse / feed – clearer hero and card hover */
+  --browse-hero-gradient: linear-gradient(135deg, rgba(45, 92, 46, 0.08) 0%, rgba(45, 92, 46, 0.03) 100%);
+  --browse-hero-border: rgba(45, 92, 46, 0.12);
+  --browse-card-hover: 0 12px 32px rgba(45, 92, 46, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  /* Colors - Dark Mode */
+  --color-primary: #427A43;
+  --color-background: #1a1a1a;
+  --color-background-alt: #242424;
+  --color-white: #2a2a2a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e0e0e0;
+  --color-text-muted: #b0b0b0;
+  --color-text-disabled: #808080;
+  --color-border: #404040;
+  --color-light-gray: #333333;
+  --color-dark-gray: #b0b0b0;
+  
+  /* Status Colors - Slightly adjusted for dark mode */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  /* Shadows - Dark Mode (darker, more pronounced) */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-button: 0 4px 8px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 4px 12px rgba(0, 0, 0, 0.7);
+  --shadow-nav: 0 -2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-subtle: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-sidebar: 2px 0 8px rgba(0, 0, 0, 0.5);
+  --shadow-header: 0 2px 8px rgba(0, 0, 0, 0.5);
+
+  --browse-hero-gradient: linear-gradient(135deg, rgba(66, 122, 67, 0.08) 0%, rgba(66, 122, 67, 0.02) 100%);
+  --browse-card-hover: 0 12px 28px rgba(0, 0, 0, 0.4);
+  --browse-hero-border: rgba(66, 122, 67, 0.15);
+}
+

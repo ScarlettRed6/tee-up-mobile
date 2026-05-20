@@ -13,52 +13,154 @@ import {
     storeResetPassOtp,
     clearOtpFields, 
     storeEmailVerificationOtp,
-    verifyUserEmail} from "../models/userModel.js";
+    verifyUserEmail,
+    isUserSuspended,
+    getSuspensionMessage,
+} from "../models/userModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
-/* import dotenv from "dotenv";
 
-dotenv.config(); */
+const googleClient = new OAuth2Client();
+const FRONTEND_URL = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
 
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
+/** Web OAuth client (Passport + optional ID-token verify). Mobile uses its own .env in tee-up-mobile/. */
+function getGoogleClientIds() {
+    const id = process.env.GOOGLE_CLIENT_ID;
+    return id ? [id] : [];
+}
 
-const client = new OAuth2Client(googleClientId);
+function formatAuthUser(user) {
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_image: user.profile_image ?? null,
+        bio: user.bio ?? null,
+        provider: user.provider ?? "google",
+        created_at: user.created_at ?? null,
+    };
+}
 
-export async function googleAuth(req, res) {
-    try{
-        const { idToken } = req.body;
+async function issueAuthTokens(user) {
+    const accessToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+    );
+    const refreshToken = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.REFRESH_SECRET,
+        { expiresIn: "7d" }
+    );
+    await storeRefreshToken(refreshToken, user.id);
+    return { accessToken, refreshToken };
+}
 
-        const ticket = await client.verifyIdToken({
-            idToken,
-            audience: googleClientId,
-        });
+/** Find or create a user from a verified Google ID token payload (mobile + shared logic). */
+async function resolveGoogleUserFromPayload(payload) {
+    const googleId = payload.sub;
+    const email = payload.email;
+    const name = payload.name || email?.split("@")[0] || "User";
+    const picture = payload.picture;
 
-        const payload = ticket.getPayload();
-        const googleId = payload.sub;
+    if (!googleId || !email) {
+        return { error: { status: 400, message: "Google account email is required" } };
+    }
 
-        const email = payload.email;
-        const name = payload.name;
-        const picture = payload.picture;
+    let user = await findUserByGoogleId(googleId);
 
-        let user = await findUserByGoogleId(googleId);
-
-        if(!user){
-            const emailUser = await findUserByEmail(email);
-            if(emailUser && emailUser.provider === "local"){
-                return res.status(400).json({ message: "This email is already registered using local login" });
-            }
-
+    if (!user) {
+        const emailUser = await findUserByEmail(email);
+        if (emailUser && emailUser.provider === "local") {
+            return {
+                error: {
+                    status: 400,
+                    message:
+                        "This email is already registered using local login. Please sign in with email and password.",
+                },
+            };
+        }
+        if (!emailUser) {
             user = await createGoogleUser(name, email, googleId, picture);
+        } else {
+            user = emailUser;
+        }
+    }
+
+    return { user };
+}
+
+/**
+ * Mobile / Expo: POST /auth/google with { idToken } from Google Sign-In.
+ */
+export async function googleAuth(req, res) {
+    try {
+        const { idToken } = req.body;
+        if (!idToken) {
+            return res.status(400).json({ message: "Google ID token is required" });
         }
 
-        const accessToken = jwt.sign({ id: user.id, role: user.role}, process.env.JWT_SECRET, {expiresIn: "1h"});
-        const refreshToken = jwt.sign({ id: user.id, role: user.role }, process.env.REFRESH_SECRET, {expiresIn: "7d"});
+        const audiences = getGoogleClientIds();
+        if (audiences.length === 0) {
+            return res.status(500).json({ message: "Google OAuth is not configured on the server" });
+        }
 
-        await storeRefreshToken(refreshToken, user.id);
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: audiences,
+        });
+        const payload = ticket.getPayload();
+        const result = await resolveGoogleUserFromPayload(payload);
 
-        res.status(200).json({ message: "Google login successful", token: accessToken, refreshToken, user });
-    }catch(err){
-        console.error("Google login error: ", err);
-        res.status(500).json({ message: "Google login failed" });
+        if (result.error) {
+            return res.status(result.error.status).json({ message: result.error.message });
+        }
+
+        const user = result.user;
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
+        }
+
+        const { accessToken, refreshToken } = await issueAuthTokens(user);
+
+        return res.json({
+            message: "Login successful",
+            token: accessToken,
+            refreshToken,
+            user: formatAuthUser(user),
+        });
+    } catch (err) {
+        console.error("[GOOGLE AUTH] Token verification failed:", err.message);
+        return res.status(401).json({ message: "Invalid Google token. Please try again." });
+    }
+}
+
+/** Web: Passport redirect callback after Google OAuth. */
+export async function googleAuthSuccess(req, res) {
+    try {
+        const user = req.user;
+
+        if (!user) {
+            return res.redirect(`${FRONTEND_URL}/?auth=login&error=unauthorized`);
+        }
+
+        const freshUser = await findUserById(user.id);
+        if (freshUser && isUserSuspended(freshUser)) {
+            const msg = encodeURIComponent(getSuspensionMessage(freshUser));
+            return res.redirect(`${FRONTEND_URL}/?auth=login&error=${msg}`);
+        }
+
+        const { accessToken, refreshToken } = await issueAuthTokens(freshUser || user);
+        const userData = encodeURIComponent(
+            JSON.stringify(formatAuthUser(freshUser || user))
+        );
+
+        res.redirect(
+            `${FRONTEND_URL}/login-success?token=${accessToken}&refreshToken=${refreshToken}&user=${userData}`
+        );
+    } catch (err) {
+        console.error("Google Authentication Redirection Error: ", err);
+        res.redirect(`${FRONTEND_URL}/?auth=login&error=server_error`);
     }
 }
 
@@ -100,6 +202,14 @@ export async function login(req, res){
         const user = await findUserByEmail(email);
         if(!user) return res.status(400).json({message: "User not found"});
 
+        //Stop Google OAuth accounts from passing null to bcrypt
+        if (user.provider === "google" || !user.password) {
+            return res.status(400).json({
+                message: "This account is registered via Google. Please log in using the 'Sign in with Google' button." 
+            });
+        }
+
+        //Check if user email is verified
         if(!user.is_verified){
             return res.status(403).json({ message: "Email not verified. Please verify your Email" });
         }
@@ -110,13 +220,39 @@ export async function login(req, res){
             return res.status(400).json({message: "Invalid password!"});
         }
 
-        const accessToken = jwt.sign({id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        const refreshToken = jwt.sign({id: user.id, role: user.role}, process.env.REFRESH_SECRET, { expiresIn: "7d" });
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
+        }
+
+        const accessToken = jwt.sign(
+            {id: user.id, role: user.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: "1h" }
+        );
+        const refreshToken = jwt.sign(
+            {id: user.id, role: user.role}, 
+            process.env.REFRESH_SECRET, 
+            { expiresIn: "7d" }
+        );
 
         await storeRefreshToken(refreshToken, user.id);
 
-        console.log(`Token: ${accessToken}\nRefresh Token: ${refreshToken}`);
-        res.json({message: "Login successful", token: accessToken, refreshToken: refreshToken });
+        console.log(`[LOGIN SUCCESS]: Token: ${accessToken}\nRefresh Token: ${refreshToken}`);
+        res.json({
+            message: "Login successful", 
+            token: accessToken, 
+            refreshToken: refreshToken,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                profile_image: user.profile_image ?? null,
+                bio: user.bio ?? null,
+                provider: user.provider ?? 'local',
+                created_at: user.created_at ?? null,
+            }
+        });
     }catch(err){
         res.status(500).json({ error: err.message });
     }
@@ -129,6 +265,10 @@ export async function refreshToken(req, res){
     try{
         const user = await getRefreshToken(refreshToken);
         if(!user) return res.status(403).json({ message: "Invalid refresh token!" });
+
+        if (isUserSuspended(user)) {
+            return res.status(403).json({ message: getSuspensionMessage(user) });
+        }
 
         jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
             if(err) return res.status(403).json({ message: "Expired or Invalid refresh token!" });
@@ -319,8 +459,10 @@ export async function verifyEmailOtp(req, res){
             return res.status(400).json({ message: "Email already verified" });
         }
 
-        //Check if otp matches in the db
-        if(user.email_verification_otp !== otp){
+        //Check if otp matches in the db (normalize types — DB/driver may return number)
+        const storedOtp = user.email_verification_otp != null ? String(user.email_verification_otp).trim() : "";
+        const bodyOtp = otp != null ? String(otp).trim() : "";
+        if(storedOtp !== bodyOtp){
             return res.status(400).json({ message: "Invalid OTP" });
         }
 

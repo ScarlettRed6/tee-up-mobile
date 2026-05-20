@@ -1,4 +1,5 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,11 +7,35 @@ import styles from './styles/RecentListingsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { ListingsContext } from '../context/listingsContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
+import { authContext } from '../context/authContext';
+import { getConversations } from '../api/chatApi';
 
 export default function RecentListingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { listings, loading } = useContext(ListingsContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
+  const { accessToken } = useContext(authContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInboxUnread();
+    }, [loadInboxUnread])
+  );
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -168,6 +193,13 @@ export default function RecentListingsScreen({ navigation }) {
         >
           <Ionicons name="notifications-outline" size={22} color="#999" />
           <Text style={styles.navLabel}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

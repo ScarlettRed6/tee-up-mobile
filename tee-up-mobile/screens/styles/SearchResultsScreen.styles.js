@@ -11,26 +11,105 @@ export default StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
     paddingHorizontal: 20,
-    paddingTop: 110,
+    paddingTop: 8,
   },
-  headerIcons: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+  // Results Summary Section
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  resultsHeaderLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  resultsHeaderRight: {
+    alignItems: 'flex-end',
+  },
+  resultsTitle: {
+    fontFamily: 'Exo_700Bold',
+    fontSize: 18,
+    color: '#111827',
+  },
+  resultsQueryText: {
+    fontFamily: 'Exo_700Bold',
+  },
+  resultsSubtitle: {
+    marginTop: 4,
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  clearAllButton: {
+    marginBottom: 8,
+  },
+  clearAllText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#2563EB',
+    textDecorationLine: 'underline',
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  sortButtonText: {
+    fontFamily: 'Exo_500Medium',
+    fontSize: 12,
+    color: '#111827',
+    marginRight: 6,
+  },
+  sortMenu: {
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  sortMenuItem: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  sortMenuItemText: {
+    fontFamily: 'Exo_400Regular',
+    fontSize: 12,
+    color: '#374151',
+  },
+  sortMenuItemTextActive: {
+    fontFamily: 'Exo_600SemiBold',
+    color: '#FF6B35',
+  },
+  // Header Section
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 50,
-    paddingBottom: 12,
+    paddingBottom: 16,
     paddingHorizontal: 20,
     backgroundColor: '#F6EDE2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D9CC',
-    zIndex: 10,
   },
-  iconButton: {
-    padding: 4,
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileAvatar: {
     width: 32,
@@ -41,29 +120,17 @@ export default StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
-  titleSection: {
-    marginBottom: 32,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
+  pageTitle: {
     fontFamily: 'Exo_700Bold',
-    fontSize: 28,
+    fontSize: 26,
     color: '#000',
-    marginRight: 12,
-  },
-  filterButton: {
-    padding: 4,
   },
   resultMetaRow: {
-    marginTop: 8,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     flexWrap: 'wrap',
   },
   resultCountText: {
@@ -242,6 +309,9 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    minHeight: 44,
+    minWidth: 44,
+    position: 'relative',
   },
   navLabel: {
     fontFamily: 'Exo_400Regular',
@@ -254,6 +324,23 @@ export default StyleSheet.create({
     fontSize: 10,
     color: '#000',
     marginTop: 4,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 2,
+    right: 18,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFF',
+    fontFamily: 'Exo_700Bold',
+    fontSize: 10,
   },
 });
 

@@ -33,11 +33,12 @@ export async function findUserById(id){
     return user.rows[0];
 }
 
-export async function createUser(name, email, hashedPassword){
+//Create user for registration logic
+export async function createUser(name, email, hashedPassword, role = 'user'){
     const result = await pool.query(
-        `INSERT INTO users (name, email, password)
-        VALUES ($1, $2, $3) RETURNING *`,
-        [name, email, hashedPassword]
+        `INSERT INTO users (name, email, password, role)
+        VALUES ($1, $2, $3, $4) RETURNING *`,
+        [name, email, hashedPassword, role]
     );
     return result.rows[0];
 }
@@ -62,8 +63,8 @@ export async function findUserByGoogleId(googleId) {
 
 export async function createGoogleUser(name, email, googleId, profileImage){
     const result = await pool.query(
-        `INSERT INTO users (name, email, provider, google_id, profile_image)
-        VALUES ($1, $2, 'google', $3, $4) RETURNING *`,
+        `INSERT INTO users (name, email, provider, google_id, profile_image, password, is_verified)
+        VALUES ($1, $2, 'google', $3, $4, NULL, true) RETURNING *`,
         [name, email, googleId, profileImage]
     );
     return result.rows[0];
@@ -110,3 +111,211 @@ export async function verifyUserEmail(id) {
         WHERE id = $1 RETURNING *`, [id]);
     return result.rows[0];
 }
+
+
+//ADMIN SPECIFIC QUERIES
+
+export async function getUserByIdWithStats(id) {
+    const query = `
+        SELECT 
+            u.*,
+            COALESCE(listing_stats.total_listings, 0) as total_listings,
+            COALESCE(listing_stats.sold_listings, 0) as total_sales,
+            COALESCE(rating_stats.average_rating, 0)::numeric(10,2) as rating,
+            COALESCE(rating_stats.total_ratings, 0) as total_ratings
+        FROM users u
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                COUNT(*) as total_listings,
+                COUNT(*) FILTER (WHERE status = 'sold') as sold_listings
+            FROM listings
+            GROUP BY user_id
+        ) listing_stats ON u.id = listing_stats.user_id
+        LEFT JOIN (
+            SELECT 
+                rated_user_id,
+                AVG(rating)::numeric(10,2) as average_rating,
+                COUNT(*) as total_ratings
+            FROM user_ratings
+            GROUP BY rated_user_id
+        ) rating_stats ON u.id = rating_stats.rated_user_id
+        WHERE u.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+}//End of getUserByIdWithStats query
+
+export async function getAllUsers(search = "") {
+    let query = `
+        SELECT 
+            u.*,
+            COALESCE(listing_stats.total_listings, 0) as total_listings,
+            COALESCE(listing_stats.sold_listings, 0) as total_sales,
+            COALESCE(rating_stats.average_rating, 0)::numeric(10,2) as rating,
+            COALESCE(rating_stats.total_ratings, 0) as total_ratings
+        FROM users u
+        LEFT JOIN (
+            SELECT 
+                user_id,
+                COUNT(*) as total_listings,
+                COUNT(*) FILTER (WHERE status = 'sold') as sold_listings
+            FROM listings
+            GROUP BY user_id
+        ) listing_stats ON u.id = listing_stats.user_id
+        LEFT JOIN (
+            SELECT 
+                rated_user_id,
+                AVG(rating)::numeric(10,2) as average_rating,
+                COUNT(*) as total_ratings
+            FROM user_ratings
+            GROUP BY rated_user_id
+        ) rating_stats ON u.id = rating_stats.rated_user_id
+    `;
+    let params = [];
+
+    if (search) {
+        query += ` WHERE (u.name ILIKE $1 OR u.email ILIKE $1)`;
+        params.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY u.id ASC`;
+
+    const result = await pool.query(query, params);
+    return result.rows;
+}//End of getAllUsers query
+
+export async function getUserCount() {
+    const query = `
+    SELECT COUNT(*) FROM users
+    WHERE role = 'user'`;
+    const result = await pool.query(query);
+
+    return result.rows[0].count;
+}//End of getTotalUserCount query
+
+export async function getActiveUsers() {
+    const query = `
+    SELECT COUNT(*) FROM users
+    WHERE (suspended_until IS NULL OR suspended_until <= NOW())
+    AND role = 'user'`;
+    const result = await pool.query(query);
+
+    return result.rows[0].count;
+}//End of getActiveUsers query
+
+export async function getTopSellers(limit = 10) {
+    const query = `
+        SELECT 
+            u.id,
+            u.name,
+            COALESCE(listing_stats.sold_listings, 0)::int as total_sales,
+            COALESCE(rating_stats.average_rating, 0)::numeric(10,2) as rating,
+            COALESCE(rating_stats.total_ratings, 0)::int as total_ratings
+        FROM users u
+        LEFT JOIN (
+            SELECT user_id, COUNT(*) FILTER (WHERE status = 'sold') as sold_listings
+            FROM listings GROUP BY user_id
+        ) listing_stats ON u.id = listing_stats.user_id
+        LEFT JOIN (
+            SELECT 
+                rated_user_id,
+                AVG(rating)::numeric(10,2) as average_rating,
+                COUNT(*) as total_ratings
+            FROM user_ratings GROUP BY rated_user_id
+        ) rating_stats ON u.id = rating_stats.rated_user_id
+        WHERE u.role = 'user'
+        ORDER BY total_ratings DESC NULLS LAST, rating DESC NULLS LAST
+        LIMIT $1`;
+    const result = await pool.query(query, [limit]);
+    return result.rows;
+}//End of getTopSellers query
+
+const PERMANENT_SUSPENSION_DATE = new Date("9999-12-31T23:59:59.999Z");
+const PERMANENT_SUSPENSION_THRESHOLD = new Date("9999-01-01T00:00:00.000Z");
+
+/** True when suspended_until is set and still in the future. */
+export function isUserSuspended(user) {
+    if (!user?.suspended_until) return false;
+    return new Date(user.suspended_until) > new Date();
+}
+
+/** Human-readable suspension message for login / API responses. */
+export function getSuspensionMessage(user) {
+    if (!user?.suspended_until) {
+        return "Your account is suspended. Please contact support.";
+    }
+
+    const until = new Date(user.suspended_until);
+    if (until >= PERMANENT_SUSPENSION_THRESHOLD) {
+        return "Your account is permanently suspended. Please contact support.";
+    }
+
+    const endDate = until.toISOString().split("T")[0];
+    return `Your account is suspended until ${endDate}. Please contact support.`;
+}
+
+export async function suspendUserQuery(userId, suspendedUntil = null) {
+    const effectiveUntil = suspendedUntil ?? PERMANENT_SUSPENSION_DATE;
+    const result = await pool.query(
+        `UPDATE users SET suspended_until = $2
+        WHERE id = $1 RETURNING *`,
+        [userId, effectiveUntil]
+    );
+    return result.rows[0];
+}//End of suspendUserQuery
+
+export async function unsuspendUserQuery(userId) {
+    const result = await pool.query(
+        `UPDATE users SET suspended_until = NULL
+        WHERE id = $1 RETURNING *`,
+        [userId]
+    );
+    return result.rows[0];
+}//End of unsuspendUserQuery
+
+export async function deleteUserQuery(userId){
+    const result = await pool.query(
+        `DELETE FROM users WHERE id = $1 RETURNING *`,
+        [userId]
+    );
+    return result.rows[0];
+}//End of deleteUserQuery
+
+/** Count listings where user_id = userId and status = 'available' */
+export async function getActiveListingsCount(userId) {
+    const result = await pool.query(
+        `SELECT COUNT(*)::int as count FROM listings WHERE user_id = $1 AND status = 'available'`,
+        [userId]
+    );
+    return result.rows[0]?.count ?? 0;
+}
+
+//Similar to createUser but for creating an admin user
+export async function createAdminUser(name, email, hashedPassword, role = 'admin') {
+    const result = await pool.query(
+        `INSERT INTO users (name, email, password, role, is_verified)
+        VALUES ($1, $2, $3, $4, true) RETURNING *`,
+        [name, email, hashedPassword, role]
+    );
+    return result.rows[0];
+}//End of adminCreateUserQuery
+
+export async function getAllAdmins() {
+    const result = await pool.query(
+        `SELECT id, name, email, role, created_at 
+        FROM users 
+        WHERE role IN ('admin', 'superadmin')
+        ORDER BY created_at DESC`
+    );
+    return result.rows;
+}//End of getAllAdmins query
+
+export async function updateUserRole(userId, role) {
+    const result = await pool.query(
+        `UPDATE users SET role = $1 WHERE id = $2 RETURNING *`,
+        [role, userId]
+    );
+    return result.rows[0];
+}//End of updateUserRole
+

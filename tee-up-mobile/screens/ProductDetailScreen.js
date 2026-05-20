@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator, Modal, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,11 +7,14 @@ import styles from './styles/ProductDetailScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { isCurrentUser } from '../utils/userConstants';
 import { fetchListingById } from '../api/listingsApi';
+import { extractPhotos } from '../utils/categoryUtils';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { findConversation } from '../api/chatApi';
 import { authContext } from '../context/authContext';
 import { favoritesContext } from '../context/favoritesContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
+import { getConversations } from '../api/chatApi';
 import jwtDecode from 'jwt-decode';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -19,14 +23,37 @@ export default function ProductDetailScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const routeProduct = route?.params?.product;
+  const routeListingId = route?.params?.listingId || route?.params?.listing_id || route?.params?.id;
   const [sellerRatingSummary, setSellerRatingSummary] = useState({ average_rating: '0.00', total_raters: 0 });
   const [sellerRecentRatings, setSellerRecentRatings] = useState([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const { isFavorite, toggleFavorite, pendingActions } = useContext(favoritesContext);
   
+  const getPhotoUri = (photo) => {
+    if (!photo) return null;
+    if (typeof photo === 'string') return photo;
+    if (typeof photo === 'object') {
+      return photo.uri || photo.url || photo.secure_url || photo.path || null;
+    }
+    return null;
+  };
+
+  const normalizeImages = (photos) => {
+    const extracted = extractPhotos(photos);
+    if (!extracted || extracted.length === 0) {
+      return [{ id: 1, uri: null }];
+    }
+    return extracted.map((photo, index) => ({
+      id: index + 1,
+      uri: getPhotoUri(photo),
+    }));
+  };
+
   // Get current user ID from token
   const getCurrentUserId = () => {
     if (!accessToken) return null;
@@ -72,18 +99,16 @@ export default function ProductDetailScreen({ navigation, route }) {
             reviewCount: Number(routeProduct.seller_review_count || 0),
           },
           seller_name: routeProduct.seller_name,
-          images: routeProduct.photos && Array.isArray(routeProduct.photos) && routeProduct.photos.length > 0
-            ? routeProduct.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
-            : [{ id: 1, uri: null }], // Default placeholder
+          images: normalizeImages(routeProduct.photos),
           reviews: [], // TODO: Fetch reviews from API
         };
         setProduct(transformedProduct);
         fetchSellerRatings(transformedProduct.user_id);
         setLoading(false);
-      } else if (route?.params?.listingId) {
+      } else if (routeListingId) {
         // If only ID is passed, fetch from API
         try {
-          const listingData = await fetchListingById(route.params.listingId);
+          const listingData = await fetchListingById(routeListingId);
           const transformedProduct = {
             id: listingData.listing_id,
             listing_id: listingData.listing_id,
@@ -112,9 +137,7 @@ export default function ProductDetailScreen({ navigation, route }) {
               reviewCount: Number(listingData.seller_review_count || 0),
             },
             seller_name: listingData.seller_name,
-            images: listingData.photos && Array.isArray(listingData.photos) && listingData.photos.length > 0
-              ? listingData.photos.map((photo, index) => ({ id: index + 1, uri: photo }))
-              : [{ id: 1, uri: null }],
+            images: normalizeImages(listingData.photos),
             reviews: [],
           };
           setProduct(transformedProduct);
@@ -151,7 +174,7 @@ export default function ProductDetailScreen({ navigation, route }) {
     };
 
     loadProduct();
-  }, [routeProduct, route?.params?.listingId]);
+  }, [routeProduct, routeListingId]);
 
   const fetchSellerRatings = async (sellerId) => {
     if (!sellerId) return;
@@ -210,6 +233,24 @@ export default function ProductDetailScreen({ navigation, route }) {
     const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
     setFullscreenIndex(index);
   };
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInboxUnread();
+    }, [loadInboxUnread])
+  );
 
   // Effect to scroll to correct position when fullscreen opens
   useEffect(() => {
@@ -398,22 +439,24 @@ export default function ProductDetailScreen({ navigation, route }) {
             <Text style={[styles.productTitle, dynamicStyles.productTitle]} numberOfLines={2}>
               {product.title}
             </Text>
-            <TouchableOpacity 
-              style={styles.favoriteButton}
-              onPress={handleFavoritePress}
-              activeOpacity={0.7}
-              disabled={favoritePending}
-            >
-              {favoritePending ? (
-                <ActivityIndicator size="small" color={theme.primary} />
-              ) : (
-                <Ionicons 
-                  name={listingFavorited ? "heart" : "heart-outline"} 
-                  size={24} 
-                  color={listingFavorited ? theme.primary : theme.textMuted} 
-                />
-              )}
-            </TouchableOpacity>
+            {!isOwnListing ? (
+              <TouchableOpacity 
+                style={styles.favoriteButton}
+                onPress={handleFavoritePress}
+                activeOpacity={0.7}
+                disabled={favoritePending}
+              >
+                {favoritePending ? (
+                  <ActivityIndicator size="small" color={theme.primary} />
+                ) : (
+                  <Ionicons 
+                    name={listingFavorited ? "heart" : "heart-outline"} 
+                    size={24} 
+                    color={listingFavorited ? theme.primary : theme.textMuted} 
+                  />
+                )}
+              </TouchableOpacity>
+            ) : null}
           </View>
           
           <Text style={[styles.productPrice, dynamicStyles.productPrice]}>
@@ -750,6 +793,13 @@ export default function ProductDetailScreen({ navigation, route }) {
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -764,6 +814,13 @@ export default function ProductDetailScreen({ navigation, route }) {
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

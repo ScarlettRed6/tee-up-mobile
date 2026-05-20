@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import  { API_BASE_URL } from '@env';
+import Constants from 'expo-constants';
 
 let refreshTokenMemory = null;
 let isRefreshing = false;
@@ -10,16 +11,19 @@ export const setRefreshToken = (token) => {
     refreshTokenMemory = token;
 };
 
+const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+const localHost = debuggerHost ? debuggerHost.split(':')[0] : 'localhost'; 
+
 export const getRefreshToken = () => refreshTokenMemory;
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: `http://${localHost}:5000/api`,
     headers: { 'Content-Type': 'application/json' },
-    timeout: 10000, // 10 second timeout
+    timeout: 30000, // 30 second timeout (increased for slower connections)
 });
 
 // Log API_BASE_URL for debugging
-console.log('API_BASE_URL:', API_BASE_URL);
+console.log('API_BASE_URL:', `http://${localHost}:5000/api`);
 
 async function getAccessToken(){
     return await AsyncStorage.getItem("accessToken");
@@ -57,18 +61,26 @@ api.interceptors.response.use(
                 baseURL: error.config?.baseURL
             });
         } else if (error.response) {
+            // Skip logging for login endpoint to avoid cluttering console
+            const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+            if (!isLoginEndpoint) {
             console.error('[API Response Error]', {
                 status: error.response.status,
                 statusText: error.response.statusText,
                 url: error.config?.url,
                 data: error.response?.data
             });
+            }
         } else {
+            // Skip logging for login endpoint
+            const isLoginEndpoint = error.config?.url?.includes('/auth/login');
+            if (!isLoginEndpoint) {
             console.error('[API Error]', error.message);
+            }
         }
         const originalRequest = error.config;
 
-        if(error.response?.status === 401 && !originalRequest._retry){
+        if(error.response?.status === 401 && !originalRequest._retry && !originalRequest.skipAuthRetry){
             originalRequest._retry = true;
 
             if(isRefreshing){

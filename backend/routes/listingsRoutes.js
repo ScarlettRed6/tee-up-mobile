@@ -1,19 +1,42 @@
 import express from "express";
 import upload from "../middleware/upload.js";
-import { createListing, getAllListingItems, getListingItemById, updateListingItem, deleteListingItem, changeListingStatus } 
-from "../controllers/listingsController.js";
-import { verifyToken } from "../middleware/authMiddleware.js";
+import { 
+    createListing, 
+    getAllListingItems, 
+    getListingItemById, 
+    getCategories,
+    updateListingItem, 
+    deleteListingItem, 
+    changeListingStatus, 
+    getRecommendations,
+    adminGetAllListings,
+    adminUpdateListingStatus,
+    adminDeleteListing,
+    adminViewListing,
+    adminGetTotalListingCount
+} from "../controllers/listingsController.js";
+import { verifyToken, verifyAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+router.get("/recommendations", verifyToken, getRecommendations);
+router.get("/categories", getCategories);
 router.get("/", getAllListingItems);
 router.get("/:id", getListingItemById);
 
 //VERY IMPORTANT ROUTE MUST PROTEC!
-router.post("/", verifyToken, upload.array("photos", 5), createListing);
-router.put("/:id", verifyToken, upload.array("photos", 5), updateListingItem);
+router.post("/", verifyToken, upload.array("photos", 10), createListing);
+router.put("/:id", verifyToken, upload.array("photos", 10), updateListingItem);
 router.delete("/:id", verifyToken, deleteListingItem);
 router.patch("/:listing_id/status", verifyToken, changeListingStatus);
 
+//Admin routes
+router.get("/admin/all", verifyToken, verifyAdmin, adminGetAllListings);
+router.get("/admin/listing/:id", verifyToken, verifyAdmin, adminViewListing);
+router.get("/admin/count", verifyAdmin, adminGetTotalListingCount);
+
+router.put("/admin/status/:id", verifyToken, verifyAdmin, adminUpdateListingStatus);
+
+router.delete("/admin/delete/:id", verifyToken, verifyAdmin, adminDeleteListing);
 
 export default router;

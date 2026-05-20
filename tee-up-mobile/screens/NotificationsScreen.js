@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -7,8 +7,11 @@ import styles from './styles/NotificationsScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { NotificationsContext } from '../context/notificationsContext';
 import { ThemeContext } from '../context/themeContext';
+import { authContext } from '../context/authContext';
 import { fetchListingById } from '../api/listingsApi';
 import { getConversations } from '../api/chatApi';
+import { getUserProfile } from '../api/userApi';
+import { formatChatSnippet } from '../utils/chatOffers';
 
 const ICON_MAP = {
   new_message: { icon: 'chatbubble-ellipses-outline', color: '#3B82F6' },
@@ -48,9 +51,22 @@ export default function NotificationsScreen({ navigation }) {
     unreadCount,
   } = useContext(NotificationsContext);
   const { theme } = useContext(ThemeContext);
+  const { accessToken } = useContext(authContext);
   const [refreshing, setRefreshing] = useState(false);
   const [opening, setOpening] = useState(false);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [userProfileImage, setUserProfileImage] = useState(null);
+
+  // Fetch current user's profile image
+  const fetchUserProfile = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const userData = await getUserProfile();
+      setUserProfileImage(userData.profile_image || null);
+    } catch (err) {
+      console.log('Error fetching user profile in NotificationsScreen:', err);
+    }
+  }, [accessToken]);
 
   const loadInboxUnread = useCallback(async () => {
     try {
@@ -64,14 +80,15 @@ export default function NotificationsScreen({ navigation }) {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refreshNotifications(), loadInboxUnread()]);
+    await Promise.all([refreshNotifications(), loadInboxUnread(), fetchUserProfile()]);
     setRefreshing(false);
-  }, [refreshNotifications, loadInboxUnread]);
+  }, [refreshNotifications, loadInboxUnread, fetchUserProfile]);
 
   useFocusEffect(
     useCallback(() => {
       loadInboxUnread();
-    }, [loadInboxUnread])
+      fetchUserProfile();
+    }, [loadInboxUnread, fetchUserProfile])
   );
 
   const handleNavigateToListing = useCallback(
@@ -154,7 +171,12 @@ export default function NotificationsScreen({ navigation }) {
     notificationMessage: { color: theme.text },
     timestamp: { color: theme.textMuted },
     emptyStateText: { color: theme.textMuted },
-    markAllText: { color: theme.text },
+    markAllButton: {
+      backgroundColor: theme.card,
+      borderColor: theme.mode === 'dark' ? 'rgba(255, 107, 53, 0.3)' : '#FFE1D4',
+    },
+    markAllText: { color: theme.primary },
+    markAllTextDisabled: { color: theme.textMuted },
     bottomNav: { backgroundColor: theme.card },
   };
 
@@ -185,7 +207,9 @@ export default function NotificationsScreen({ navigation }) {
         </View>
 
         <View style={styles.notificationContent}>
-          <Text style={[styles.notificationMessage, dynamicStyles.notificationMessage]}>{notification.message}</Text>
+          <Text style={[styles.notificationMessage, dynamicStyles.notificationMessage]}>
+            {formatChatSnippet(notification.message)}
+          </Text>
           {timestamp ? <Text style={[styles.timestamp, dynamicStyles.timestamp]}>{timestamp}</Text> : null}
         </View>
       </TouchableOpacity>
@@ -219,15 +243,22 @@ export default function NotificationsScreen({ navigation }) {
               activeOpacity={0.7}
               onPress={() => navigateToBottomNav(navigation, 'Profile')}
             >
+              {userProfileImage ? (
+                <Image 
+                  source={{ uri: userProfileImage }}
+                  style={styles.profileAvatar}
+                />
+              ) : (
               <View style={styles.profileAvatar}>
                 <Ionicons name="person" size={18} color={theme.primary} />
               </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.markAllRow}>
           <TouchableOpacity
-            style={styles.markAllButton}
+            style={[styles.markAllButton, dynamicStyles.markAllButton]}
             activeOpacity={0.7}
             onPress={markAllNotificationsAsRead}
             disabled={!unreadCount}
@@ -241,7 +272,7 @@ export default function NotificationsScreen({ navigation }) {
               style={[
                 styles.markAllText,
                 dynamicStyles.markAllText,
-                !unreadCount && styles.markAllTextDisabled,
+                !unreadCount && [styles.markAllTextDisabled, dynamicStyles.markAllTextDisabled],
               ]}
             >
               Mark all

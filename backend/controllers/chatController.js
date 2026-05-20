@@ -1,17 +1,31 @@
 import { 
     storeMessage, 
+    getMessageByIdWithSender,
     findOrCreateConversation,
     findConversation,
     getConversationsForUser, 
     getMessagesForConversation,
-    getConversationById 
+    getConversationById,
+    senderHasOfferInConversation,
 } from "../models/chatModel.js";
 import { uploadToCloudinary } from "../config/cloudinary.js";
+import { isOfferMessage } from "../utils/chatOffers.js";
+
+export const OFFER_ALREADY_SUBMITTED = 'OFFER_ALREADY_SUBMITTED';
 
 export async function saveSentMessage(conversation_id, senderId, message, image_url){
     try{
-        const result = await storeMessage(conversation_id, senderId, message, image_url);
-        return result;
+        if (isOfferMessage(message)) {
+            const alreadyOffered = await senderHasOfferInConversation(conversation_id, senderId);
+            if (alreadyOffered) {
+                const err = new Error(OFFER_ALREADY_SUBMITTED);
+                err.code = OFFER_ALREADY_SUBMITTED;
+                throw err;
+            }
+        }
+        const row = await storeMessage(conversation_id, senderId, message, image_url);
+        const withSender = await getMessageByIdWithSender(row.id);
+        return withSender || row;
     }catch(err){
         console.log('CHATCONTROLLER, ERROR: ', err.message);
         throw new Error("Error saving message");

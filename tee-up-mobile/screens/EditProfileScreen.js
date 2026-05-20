@@ -94,15 +94,6 @@ export default function EditProfileScreen({ navigation, route }) {
       newErrors.name = 'Name must be at least 2 characters';
     }
 
-    if (!isGoogleAccount) {
-      // Only validate email for local accounts
-      if (!email.trim()) {
-        newErrors.email = 'Email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        newErrors.email = 'Please enter a valid email address';
-      }
-    }
-
     if (bio && bio.trim().length > BIO_MAX_LENGTH) {
       newErrors.bio = `Bio cannot exceed ${BIO_MAX_LENGTH} characters`;
     }
@@ -168,7 +159,6 @@ export default function EditProfileScreen({ navigation, route }) {
     try {
       const profileData = {
         name: name.trim(),
-        email: isGoogleAccount ? undefined : email.trim(), // Don't send email for Google accounts
         bio: bio ? bio.trim() : '',
       };
 
@@ -300,31 +290,18 @@ export default function EditProfileScreen({ navigation, route }) {
 
         {/* Email Field */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>
-            Email {isGoogleAccount && <Text style={styles.labelHint}>(Cannot change for Google accounts)</Text>}
-          </Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) {
-                setErrors(prev => ({ ...prev, email: null }));
-              }
-            }}
-            style={[styles.input, errors.email && styles.inputError, isGoogleAccount && styles.inputDisabled]}
+            style={[styles.input, styles.inputDisabled]}
             placeholder="Enter your email"
             placeholderTextColor="#999"
             keyboardType="email-address"
             autoCapitalize="none"
-            editable={!isGoogleAccount}
+            editable={false}
             returnKeyType="done"
           />
-          {errors.email && (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          )}
-          {isGoogleAccount && (
-            <Text style={styles.hintText}>Email cannot be changed for Google accounts</Text>
-          )}
+          <Text style={styles.hintText}>Email cannot be changed</Text>
         </View>
 
         {/* Bio Field */}
@@ -364,13 +341,18 @@ export default function EditProfileScreen({ navigation, route }) {
         {!isGoogleAccount && (
           <View style={styles.passwordSection}>
             <View style={styles.passwordHeader}>
-              <Text style={styles.passwordTitle}>Password</Text>
+              <View style={styles.passwordTitleContainer}>
+                <Ionicons name="lock-closed-outline" size={18} color="#000" style={styles.passwordTitleIcon} />
+                <Text style={styles.passwordTitle}>Password</Text>
+              </View>
               {!showPasswordSection && (
                 <TouchableOpacity
                   style={styles.changePasswordButton}
                   onPress={() => setShowPasswordSection(true)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.changePasswordButtonText}>Change Password</Text>
+                  <Ionicons name="key-outline" size={16} color="#FF6B35" style={styles.changePasswordIcon} />
+                  <Text style={styles.changePasswordButtonText}>Change</Text>
                 </TouchableOpacity>
               )}
             </View>

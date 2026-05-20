@@ -216,13 +216,13 @@ export default StyleSheet.create({
     fontSize: 10,
   },
   navLabel: {
-    fontFamily: 'Exo_300Light',
+    fontFamily: 'Exo_400Regular',
     fontSize: 10,
     color: '#999',
     marginTop: 4,
   },
   navLabelActive: {
-    fontFamily: 'Exo_300Light',
+    fontFamily: 'Exo_700Bold',
     fontSize: 10,
     color: '#000',
     marginTop: 4,

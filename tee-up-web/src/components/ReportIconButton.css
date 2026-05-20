@@ -1,0 +1,15 @@
+.report-icon-btn {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-medium);
+}
+
+.report-icon-btn:hover:not(:disabled) {
+  color: var(--color-error, #dc2626);
+  background: color-mix(in srgb, var(--color-error, #ef4444) 8%, transparent);
+}
+
+.report-icon-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}

@@ -268,6 +268,13 @@ export default StyleSheet.create({
     fontFamily: 'Exo_600SemiBold',
     fontSize: 14,
   },
+  exchangeHint: {
+    fontSize: 12,
+    lineHeight: 17,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    textAlign: 'center',
+  },
   previewOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.85)',

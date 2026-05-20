@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styles from './styles/UserProfileScreen.styles';
 import { navigateToBottomNav } from '../navigation/navigationHelpers';
 import { getUserById } from '../api/userApi';
-import { fetchUserListings } from '../api/listingsApi';
+import { fetchListings } from '../api/listingsApi';
 import { fetchUserRatingSummary, fetchUserRatings } from '../api/ratingApi';
 import { followUser, unfollowUser, getFollowerCount, getFollowStatus } from '../api/followerApi';
 import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
+import { NotificationsContext } from '../context/notificationsContext';
+import { getConversations } from '../api/chatApi';
 import jwtDecode from 'jwt-decode';
 
 const normalizeListingStatus = (statusValue = 'available') => {
@@ -30,6 +33,8 @@ export default function UserProfileScreen({ navigation, route }) {
   
   const { accessToken } = useContext(authContext);
   const { theme } = useContext(ThemeContext);
+  const { unreadCount } = useContext(NotificationsContext);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [user, setUser] = useState(userFromParams || null);
   const [userListings, setUserListings] = useState([]);
@@ -56,7 +61,7 @@ export default function UserProfileScreen({ navigation, route }) {
     }
   }, [accessToken]);
 
-  const renderRatingStars = (ratingValue = 0, size = 18) => {
+  const renderRatingStars = (ratingValue = 0) => {
     const value = Number(ratingValue || 0);
     const stars = [];
     for (let i = 1; i <= 5; i += 1) {
@@ -70,9 +75,9 @@ export default function UserProfileScreen({ navigation, route }) {
         <Ionicons
           key={`profile-rating-star-${i}`}
           name={iconName}
-          size={size}
+          size={16}
           color={iconName === 'star-outline' ? theme.textMuted : '#FFD700'}
-          style={{ marginRight: i === 5 ? 0 : 3 }}
+          style={{ marginRight: i === 5 ? 0 : 2 }}
         />
       );
     }
@@ -113,6 +118,24 @@ const [selectedHand, setSelectedHand] = useState(initialFilters.hand || null); /
 const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(initialFilters.status || 'Available'));
   const [sortBy, setSortBy] = useState('recentlyListed');
   const [showSortModal, setShowSortModal] = useState(false);
+
+  // Load inbox unread count
+  const loadInboxUnread = useCallback(async () => {
+    if (!accessToken) return;
+    try {
+      const { unreadCount: inboxCount } = await getConversations();
+      setInboxUnreadCount(inboxCount || 0);
+    } catch (error) {
+      console.error('Failed to load inbox unread count:', error.response?.data || error.message);
+      setInboxUnreadCount(0);
+    }
+  }, [accessToken]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadInboxUnread();
+    }, [loadInboxUnread])
+  );
 
   // Fetch user data and listings
   useEffect(() => {
@@ -191,7 +214,8 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         }
 
         if (targetUserId) {
-            await fetchRatingsAndListings(targetUserId, userData);
+            // Initial fetch - will be refetched when filters change via useEffect
+            await fetchUserListingsWithFilters(targetUserId, userData);
             await fetchFollowerInfo(targetUserId);
           } else {
             console.warn('No targetUserId available, cannot fetch listings');
@@ -223,13 +247,57 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     }
   }, [user?.id, fetchFollowerInfo]);
 
-  const fetchRatingsAndListings = async (targetUserId, userData) => {
+  // Fetch user listings with filters
+  const fetchUserListingsWithFilters = useCallback(async (targetUserId, userData) => {
+    if (!targetUserId) return;
+
     try {
       setRatingsLoading(true);
+      
+      // Build filters object for backend
+      const filters = {
+        user_id: targetUserId,
+      };
+
+      // Add search filter
+      if (searchQuery.trim().length > 0) {
+        filters.search = searchQuery.trim();
+      }
+
+      // Add category filter
+      if (selectedCategory && selectedCategory !== 'All') {
+        filters.category = selectedCategory.trim();
+      }
+
+      // Add condition filter
+      if (selectedCondition) {
+        filters.condition = selectedCondition;
+      }
+
+      // Add flex filter
+      if (selectedFlex) {
+        filters.flex = selectedFlex;
+      }
+
+      // Add hand filter
+      if (selectedHand) {
+        filters.hand = selectedHand;
+      }
+
+      // Add status filter
+      if (selectedStatus && selectedStatus !== 'All') {
+        const statusMap = {
+          'Available': 'available',
+          'Sold': 'sold',
+          'Pending': 'pending',
+        };
+        filters.status = statusMap[selectedStatus] || selectedStatus.toLowerCase();
+      }
+
       const [summaryRes, ratingsRes, listings] = await Promise.all([
         fetchUserRatingSummary(targetUserId),
         fetchUserRatings(targetUserId),
-        fetchUserListings(targetUserId)
+        fetchListings(filters)
       ]);
 
       setRatingSummary({
@@ -280,7 +348,17 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     } finally {
       setRatingsLoading(false);
     }
-  };
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus]);
+
+  // Refetch listings when filters change
+  useEffect(() => {
+    if (user?.id) {
+      const targetUserId = userIdFromParams || userFromParams?.id || user?.id;
+      if (targetUserId) {
+        fetchUserListingsWithFilters(targetUserId, user);
+      }
+    }
+  }, [searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, user?.id, userIdFromParams, userFromParams?.id, fetchUserListingsWithFilters]);
 
   const handleFollowToggle = useCallback(async () => {
     if (!user?.id || followLoading) return;
@@ -317,12 +395,16 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
     header: { backgroundColor: theme.background },
     scrollView: { backgroundColor: theme.background },
     scrollContent: { backgroundColor: 'transparent' },
-    profileSection: { backgroundColor: 'transparent' },
+    profileHeaderCard: { backgroundColor: theme.card },
     username: { color: theme.text },
-    statText: { color: theme.textSecondary },
-    reputationText: { color: theme.text },
-    reputationSubtext: { color: theme.textMuted },
-    bioSection: { backgroundColor: 'transparent' },
+    statCard: { backgroundColor: theme.backgroundAlt || '#F6EDE2' },
+    statValue: { color: theme.text },
+    statLabel: { color: theme.textMuted },
+    reputationTitle: { color: theme.text },
+    ratingValue: { color: theme.text },
+    reviewCount: { color: theme.textMuted },
+    bioCard: { backgroundColor: theme.card },
+    bioTitle: { color: theme.text },
     bioText: { color: theme.text },
     bioPlaceholderText: { color: theme.textMuted },
     searchBar: { backgroundColor: theme.card },
@@ -350,84 +432,42 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
   };
 
   // Filter and sort products
+  // Sort products (filtering is now done on backend)
   const filteredAndSortedProducts = React.useMemo(() => {
-    console.log('Filtering products - userListings length:', userListings.length);
-    console.log('Filtering products - userListings:', userListings);
-    console.log('Current filters:', { searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, sortBy });
-    
-    let filtered = [...userListings];
-
-    // Search filter
-    if (searchQuery.trim().length > 0) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      console.log('After search filter:', filtered.length);
-    }
-
-    // Category filter
-    if (selectedCategory && selectedCategory !== 'All') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-      console.log('After category filter:', filtered.length, 'category:', selectedCategory);
-    }
-
-    // Condition filter
-    if (selectedCondition) {
-      filtered = filtered.filter(product => product.condition === selectedCondition);
-      console.log('After condition filter:', filtered.length);
-    }
-
-    // Flex filter
-    if (selectedFlex) {
-      filtered = filtered.filter(product => product.flex === selectedFlex);
-      console.log('After flex filter:', filtered.length);
-    }
-
-    // Hand filter
-    if (selectedHand) {
-      filtered = filtered.filter(product => product.hand === selectedHand);
-      console.log('After hand filter:', filtered.length);
-    }
-
-    // Status filter
-    if (selectedStatus) {
-      const normalizedSelected = normalizeListingStatus(selectedStatus);
-      filtered = filtered.filter(product => normalizeListingStatus(product.status) === normalizedSelected);
-      console.log('After status filter:', filtered.length);
-    }
+    let sorted = [...userListings];
 
     // Sort
     switch (sortBy) {
       case 'recentlyListed':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
           const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
           return dateB - dateA;
         });
         break;
       case 'oldestListing':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
           const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
           return dateA - dateB;
         });
         break;
       case 'mostExpensive':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const priceA = typeof a.priceValue === 'number' ? a.priceValue : parseFloat(a.priceValue) || 0;
           const priceB = typeof b.priceValue === 'number' ? b.priceValue : parseFloat(b.priceValue) || 0;
           return priceB - priceA;
         });
         break;
       case 'cheapest':
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const priceA = typeof a.priceValue === 'number' ? a.priceValue : parseFloat(a.priceValue) || 0;
           const priceB = typeof b.priceValue === 'number' ? b.priceValue : parseFloat(b.priceValue) || 0;
           return priceA - priceB;
         });
         break;
       default:
-        filtered.sort((a, b) => {
+        sorted.sort((a, b) => {
           const dateA = a.listedDate instanceof Date ? a.listedDate : new Date(a.listedDate);
           const dateB = b.listedDate instanceof Date ? b.listedDate : new Date(b.listedDate);
           return dateB - dateA;
@@ -435,10 +475,8 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         break;
     }
 
-    console.log('Final filtered products:', filtered.length);
-    console.log('Final filtered products data:', filtered);
-    return filtered;
-  }, [userListings, searchQuery, selectedCategory, selectedCondition, selectedFlex, selectedHand, selectedStatus, sortBy]);
+    return sorted;
+  }, [userListings, sortBy]);
 
   const renderProductCard = (item, index) => {
     const isLeft = index % 2 === 0;
@@ -629,84 +667,115 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         contentContainerStyle={[styles.scrollContent, dynamicStyles.scrollContent, { paddingBottom: 160 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Summary Card */}
-        <View style={[styles.profileSection, dynamicStyles.profileSection]}>
-          <View style={styles.profilePhotoContainer}>
-            {user.profile_image ? (
-              <Image 
-                source={{ uri: user.profile_image }}
-                style={[styles.profilePhoto, { borderColor: user.avatarColor || '#E0E0E0' }]}
-                resizeMode="cover"
-                onError={(error) => {
-                  console.error('Profile image load error:', error.nativeEvent.error);
-                  console.error('Failed URL:', user.profile_image);
-                }}
-              />
-            ) : (
-              <View style={[styles.profilePhoto, { borderColor: user.avatarColor || '#E0E0E0' }]}>
-                <Ionicons name="person" size={50} color={user.avatarColor || '#FF6B35'} />
-              </View>
-            )}
-          </View>
-          
-          <Text style={[styles.username, dynamicStyles.username]}>{user.username || user.name}</Text>
-          
-          <View style={styles.statsContainer}>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Active Listings: {user.activeListings}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Total Listings: {userListings.length}
-            </Text>
-            <Text style={[styles.statText, dynamicStyles.statText]}>
-              Sold: {userListings.filter(l => normalizeListingStatus(l.status) === 'Sold').length}
-            </Text>
-          </View>
-          
-          <View style={styles.reputationContainer}>
-            <Text style={[styles.reputationText, dynamicStyles.reputationText]}>
-              {hasReviews
-                ? `User Reputation: ${ratingValue.toFixed(2)}`
-                : 'No ratings yet'}
-            </Text>
-            <View style={styles.starsContainer}>
-              {renderRatingStars(ratingValue)}
+        {/* Profile Header Card */}
+        <View style={[styles.profileHeaderCard, dynamicStyles.profileHeaderCard]}>
+          {/* Profile Photo and Name */}
+          <View style={styles.profileHeaderTop}>
+            <View style={styles.profilePhotoContainer}>
+              {user.profile_image ? (
+                <Image 
+                  source={{ uri: user.profile_image }}
+                  style={styles.profilePhoto}
+                  resizeMode="cover"
+                  onError={(error) => {
+                    console.error('Profile image load error:', error.nativeEvent.error);
+                    console.error('Failed URL:', user.profile_image);
+                  }}
+                />
+              ) : (
+                <View style={styles.profilePhoto}>
+                  <Ionicons name="person" size={50} color={theme.primary} />
+                </View>
+              )}
             </View>
-            <Text style={[styles.reputationSubtext, dynamicStyles.reputationSubtext]}>
-              {hasReviews
-                ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
-                : 'This user has not received any reviews yet.'}
-            </Text>
+            <Text style={[styles.username, dynamicStyles.username]}>{user.username || user.name}</Text>
           </View>
 
-          {!isOwnProfile && (
-            <TouchableOpacity
-              style={[
-                styles.followButton,
-                isFollowing && styles.followButtonActive,
-              ]}
-              onPress={handleFollowToggle}
-              activeOpacity={0.8}
-              disabled={followLoading}
-            >
-              {followLoading ? (
-                <ActivityIndicator size="small" color={isFollowing ? '#111' : '#FFF'} />
-              ) : (
-                <Text
-                  style={[
-                    styles.followButtonText,
-                    isFollowing && styles.followButtonTextActive,
-                  ]}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
+          {/* Stats Cards Row */}
+          <View style={styles.statsCardsRow}>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="cube-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {userListings.filter(l => normalizeListingStatus(l.status) === 'Available').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Active</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="list-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {userListings.length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Total</Text>
+            </View>
+            <View style={[styles.statCard, dynamicStyles.statCard]}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={theme.primary} />
+              <Text style={[styles.statValue, dynamicStyles.statValue]}>
+                {userListings.filter(l => normalizeListingStatus(l.status) === 'Sold').length}
+              </Text>
+              <Text style={[styles.statLabel, dynamicStyles.statLabel]}>Sold</Text>
+            </View>
+          </View>
+
+          {/* Reputation Section */}
+          <View style={styles.reputationSection}>
+            <View style={styles.reputationHeader}>
+              <Ionicons name="star" size={20} color="#FFD700" />
+              <Text style={[styles.reputationTitle, dynamicStyles.reputationTitle]}>Reputation</Text>
+            </View>
+            <View style={styles.reputationContent}>
+              <View style={styles.ratingDisplay}>
+                <Text style={[styles.ratingValue, dynamicStyles.ratingValue]}>
+                  {hasReviews
+                    ? Number(ratingValue || 0).toFixed(1)
+                    : '0.0'}
                 </Text>
-              )}
-            </TouchableOpacity>
+                <View style={styles.starsContainer}>
+                  {renderRatingStars(ratingValue)}
+                </View>
+              </View>
+              <Text style={[styles.reviewCount, dynamicStyles.reviewCount]}>
+                {hasReviews
+                  ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}`
+                  : 'No reviews yet'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Follow Button */}
+          {!isOwnProfile && (
+            <View style={styles.followButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.followButton,
+                  isFollowing && styles.followButtonActive,
+                ]}
+                onPress={handleFollowToggle}
+                activeOpacity={0.8}
+                disabled={followLoading}
+              >
+                {followLoading ? (
+                  <ActivityIndicator size="small" color={isFollowing ? '#111' : '#FFF'} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.followButtonText,
+                      isFollowing && styles.followButtonTextActive,
+                    ]}
+                  >
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
         {/* Bio Section */}
-        <View style={[styles.bioSection, dynamicStyles.bioSection]}>
+        <View style={[styles.bioCard, dynamicStyles.bioCard]}>
+          <View style={styles.bioHeader}>
+            <Ionicons name="document-text-outline" size={18} color={theme.textMuted} />
+            <Text style={[styles.bioTitle, dynamicStyles.bioTitle]}>About</Text>
+          </View>
           <Text
             style={[
               styles.bioText,
@@ -716,7 +785,7 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
           >
             {user.bio && user.bio.trim().length
               ? user.bio.trim()
-              : 'Add a short bio so other golfers know what you sell or how you prefer to meet up.'}
+              : 'No bio available.'}
           </Text>
         </View>
 
@@ -867,6 +936,13 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         >
           <Ionicons name="chatbubble-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Inbox</Text>
+          {inboxUnreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {inboxUnreadCount > 99 ? '99+' : inboxUnreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}
@@ -881,6 +957,13 @@ const [selectedStatus, setSelectedStatus] = useState(normalizeListingStatus(init
         >
           <Ionicons name="notifications-outline" size={22} color={theme.textMuted} />
           <Text style={[styles.navLabel, { color: theme.textMuted }]}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem}

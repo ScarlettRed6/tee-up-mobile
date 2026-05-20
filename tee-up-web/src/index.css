@@ -1,0 +1,194 @@
+@import "tailwindcss";
+@import './styles/variables.css';
+@import './styles/AppFeedback.css';
+@import './styles/AppControls.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  line-height: var(--line-height-heading);
+  color: var(--color-text-primary);
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-bold);
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-bold);
+}
+
+h3 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+}
+
+h4 {
+  font-size: var(--font-size-h4);
+  font-weight: var(--font-weight-semibold);
+}
+
+button {
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input, textarea, select {
+  font-family: var(--font-family);
+}
+
+/* Scrollbar styling - applies globally */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+@keyframes login-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes login-float {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(4px, -6px);
+  }
+}
+
+.login-form-enter {
+  animation: login-fade-in-up 0.6s ease-out forwards;
+}
+
+.login-brand-enter {
+  animation: login-fade-in 0.8s ease-out forwards;
+}
+
+.login-float-slow {
+  animation: login-float 8s ease-in-out infinite;
+}
+
+.login-float-slower {
+  animation: login-float 12s ease-in-out infinite;
+  animation-delay: -2s;
+}
+
+/* Form view switch (login ↔ signup) */
+@keyframes login-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-view-enter {
+  animation: login-view-in 0.35s ease-out forwards;
+}
+
+/* Staggered form fields */
+@keyframes login-field-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-form-stagger > * {
+  animation: login-field-in 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+.login-form-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.login-form-stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.login-form-stagger > *:nth-child(3) { animation-delay: 0.19s; }
+.login-form-stagger > *:nth-child(4) { animation-delay: 0.26s; }
+.login-form-stagger > *:nth-child(5) { animation-delay: 0.33s; }
+.login-form-stagger > *:nth-child(6) { animation-delay: 0.4s; }
+.login-form-stagger > *:nth-child(7) { animation-delay: 0.47s; }
+.login-form-stagger > *:nth-child(8) { animation-delay: 0.54s; }
+.login-form-stagger > *:nth-child(9) { animation-delay: 0.61s; }
+.login-form-stagger > *:nth-child(10) { animation-delay: 0.68s; }
+.login-form-stagger > *:nth-child(11) { animation-delay: 0.75s; }
+.login-form-stagger > *:nth-child(12) { animation-delay: 0.82s; }

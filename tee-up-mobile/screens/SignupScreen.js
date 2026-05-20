@@ -27,6 +27,8 @@ export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -375,24 +377,37 @@ export default function SignupScreen({ navigation }) {
 
           <View style={styles.fieldGroup}>
             <Text style={[styles.label, dynamicStyles.label]}>Password</Text>
-            <TextInput 
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (errors.password) {
-                  setErrors(prev => ({ ...prev, password: null }));
-                }
-                if (errors.confirmPassword && text === confirmPassword) {
-                  setErrors(prev => ({ ...prev, confirmPassword: null }));
-                }
-              }}
-              secureTextEntry
-              returnKeyType="next"
-              blurOnSubmit={false}
-              style={[styles.input, dynamicStyles.input, errors.password && styles.inputError]} 
-              placeholder="••••••••"
-              placeholderTextColor={theme.textMuted}
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput 
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (errors.password) {
+                    setErrors(prev => ({ ...prev, password: null }));
+                  }
+                  if (errors.confirmPassword && text === confirmPassword) {
+                    setErrors(prev => ({ ...prev, confirmPassword: null }));
+                  }
+                }}
+                secureTextEntry={!showPassword}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                style={[styles.input, styles.passwordInput, dynamicStyles.input, errors.password && styles.inputError]} 
+                placeholder="••••••••"
+                placeholderTextColor={theme.textMuted}
+              />
+              <TouchableOpacity
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword(!showPassword)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
             {errors.password && (
               <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.password}</Text>
             )}
@@ -400,21 +415,34 @@ export default function SignupScreen({ navigation }) {
 
           <View style={styles.fieldGroup}>
             <Text style={[styles.label, dynamicStyles.label]}>Confirm password</Text>
-            <TextInput 
-              value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                if (errors.confirmPassword) {
-                  setErrors(prev => ({ ...prev, confirmPassword: null }));
-                }
-              }}
-              secureTextEntry
-              returnKeyType="done"
-              onSubmitEditing={handleSignup}
-              style={[styles.input, dynamicStyles.input, errors.confirmPassword && styles.inputError]} 
-              placeholder="••••••••"
-              placeholderTextColor={theme.textMuted}
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput 
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  if (errors.confirmPassword) {
+                    setErrors(prev => ({ ...prev, confirmPassword: null }));
+                  }
+                }}
+                secureTextEntry={!showConfirmPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleSignup}
+                style={[styles.input, styles.passwordInput, dynamicStyles.input, errors.confirmPassword && styles.inputError]} 
+                placeholder="••••••••"
+                placeholderTextColor={theme.textMuted}
+              />
+              <TouchableOpacity
+                style={styles.passwordToggle}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={theme.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
             {errors.confirmPassword && (
               <Text style={[styles.errorText, dynamicStyles.errorText]}>{errors.confirmPassword}</Text>
             )}

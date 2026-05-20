@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import styles from './styles/PostItemScreen.styles';
 import { createListing, updateListing } from '../api/listingsApi';
+import { ambiguousListingSubmitMessage, getUserIdFromAccessToken } from '../utils/listingSubmitRecovery';
 import { ListingsContext } from '../context/listingsContext';
 import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
@@ -147,6 +148,8 @@ export default function PostItemScreen({ navigation, route }) {
         description: description.trim(),
         category: category,
         brand: brand.trim() || null, // Optional field
+        flex: flex || null, // Optional field
+        hand: hand || null, // Optional field
         condition: condition,
         price: parseFloat(price.replace(/,/g, '')) || parseFloat(price), // Remove commas if any
         status: isEditMode ? (listingData?.status || 'available') : 'available', // Keep existing status in edit mode
@@ -157,16 +160,22 @@ export default function PostItemScreen({ navigation, route }) {
       console.log('Photos to upload:', photos);
       console.log('User authenticated:', !!accessToken);
 
+      const submitUserId = getUserIdFromAccessToken(accessToken);
+
       let result;
       if (isEditMode && listingData?.listing_id) {
         // Update existing listing - pass photos separately
-        result = await updateListing(listingData.listing_id, listingDataToSubmit, photos);
+        result = await updateListing(listingData.listing_id, listingDataToSubmit, photos, {
+          userId: submitUserId,
+        });
         console.log('Listing updated successfully:', result);
       } else {
         // Create new listing - pass photos separately
         // Filter out existing photos (URLs) for new listings, only send new files
         const newPhotos = photos.filter(photo => !photo.isExisting);
-        result = await createListing(listingDataToSubmit, newPhotos);
+        result = await createListing(listingDataToSubmit, newPhotos, {
+          userId: submitUserId,
+        });
         console.log('Listing created successfully:', result);
         console.log('Listing user_id:', result.user_id);
       }
@@ -207,7 +216,11 @@ export default function PostItemScreen({ navigation, route }) {
       } else {
         Alert.alert(
           'Error',
-          error.response?.data?.error || error.response?.data?.message || error.message || `Failed to ${isEditMode ? 'update' : 'post'} listing. Please try again.`,
+          error.response?.data?.error ||
+            error.response?.data?.message ||
+            error.message ||
+            ambiguousListingSubmitMessage() ||
+            `Failed to ${isEditMode ? 'update' : 'post'} listing. Please try again.`,
           [{ text: 'OK' }]
         );
       }
