@@ -14,6 +14,7 @@ import PriceDisplay from './PriceDisplay';
 import { buildOfferMessage, formatOfferMessage, parseOfferMessage } from '../utils/chatOffers';
 import { getExistingUserOfferForListing } from '../utils/listingOffer';
 import OfferConfirmModal from './OfferConfirmModal';
+import ReportIconButton from './ReportIconButton';
 import './ListingView.css';
 
 function normalizeListing(row) {
@@ -343,18 +344,29 @@ export default function ListingView({
           <div className="listing-view-info">
             <div className="listing-view-title-row">
               <h1 className="listing-view-title">{listing.title || 'Untitled'}</h1>
-              {onToggleFavorite && !isOwnListing ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="listing-view-favorite-btn"
-                  onClick={onToggleFavorite}
-                  aria-label={isFavorite ? 'Remove from saved' : 'Save listing'}
-                >
-                  <Heart className={isFavorite ? 'fill-current' : ''} />
-                </Button>
-              ) : null}
+              <div className="listing-view-title-actions">
+                {!isOwnListing ? (
+                  <ReportIconButton
+                    reportType="listing"
+                    targetId={listing.listing_id ?? listing.id}
+                    targetLabel={listing.title}
+                    user={user}
+                    title="Report listing"
+                  />
+                ) : null}
+                {onToggleFavorite && !isOwnListing ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="listing-view-favorite-btn"
+                    onClick={onToggleFavorite}
+                    aria-label={isFavorite ? 'Remove from saved' : 'Save listing'}
+                  >
+                    <Heart className={isFavorite ? 'fill-current' : ''} />
+                  </Button>
+                ) : null}
+              </div>
             </div>
             <PriceDisplay
               listing={listing}

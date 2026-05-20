@@ -12,6 +12,7 @@ import ListingSearchFilters from './ListingSearchFilters';
 import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import { cn } from '@/lib/utils';
+import ReportIconButton from './ReportIconButton';
 import './ProfilePage.css';
 
 const TABS = [
@@ -174,6 +175,8 @@ export default function PublicProfilePage({
   const rating = profile?.rating != null ? Number(profile.rating).toFixed(1) : '—';
   const reviewsCount = profile?.total_ratings ?? 0;
   const activeItemsCount = profile?.active_listings ?? listings.length;
+  const isOwnProfile =
+    currentUser?.id != null && profileUserId != null && String(currentUser.id) === String(profileUserId);
 
   return (
     <div className="profile-page">
@@ -212,6 +215,16 @@ export default function PublicProfilePage({
                 </p>
               </div>
               <div className="profile-hero-actions public-profile-actions">
+                {!isOwnProfile ? (
+                  <ReportIconButton
+                    reportType="user"
+                    targetId={profileUserId}
+                    targetLabel={displayName}
+                    user={currentUser}
+                    className="public-profile-report-btn"
+                    title="Report user"
+                  />
+                ) : null}
                 <Button
                   variant={following ? 'secondary' : 'outline'}
                   size="default"

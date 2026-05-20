@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { ChevronLeft, Star, Send } from 'lucide-react';
+import ReportIconButton from './ReportIconButton';
 import UserHeader from './UserHeader';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -462,19 +463,32 @@ export default function MessagesPage({
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="messages-thread-listing-btn"
-                    type="button"
-                    onClick={() => {
-                      if (onViewListing && activeConversation.listingId) {
-                        onViewListing(activeConversation.listingId);
-                      }
-                    }}
-                  >
-                    View Listing
-                  </Button>
+                  <div className="messages-thread-header-actions">
+                    {activeConversation.otherUserId &&
+                    String(activeConversation.otherUserId) !== String(user?.id) ? (
+                      <ReportIconButton
+                        reportType="user"
+                        targetId={activeConversation.otherUserId}
+                        targetLabel={activeConversation.username}
+                        user={user}
+                        className="messages-thread-report-btn"
+                        title="Report user"
+                      />
+                    ) : null}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="messages-thread-listing-btn"
+                      type="button"
+                      onClick={() => {
+                        if (onViewListing && activeConversation.listingId) {
+                          onViewListing(activeConversation.listingId);
+                        }
+                      }}
+                    >
+                      View Listing
+                    </Button>
+                  </div>
                 </header>
 
                 <div className="messages-thread-body">

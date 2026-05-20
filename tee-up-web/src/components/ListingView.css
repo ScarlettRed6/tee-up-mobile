@@ -160,6 +160,13 @@
   gap: var(--spacing-md);
 }
 
+.listing-view-title-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
 .listing-view-favorite-btn {
   flex-shrink: 0;
 }

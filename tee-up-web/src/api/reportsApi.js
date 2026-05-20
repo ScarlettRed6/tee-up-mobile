@@ -1,5 +1,44 @@
 import axiosInstance from './axiosInstance';
 
+function buildReportFormData(reason, photoFile) {
+  const formData = new FormData();
+  formData.append('reason', reason);
+  if (photoFile) {
+    formData.append('photo', photoFile);
+  }
+  return formData;
+}
+
+/**
+ * Submit a listing report (authenticated marketplace user).
+ * @param {number|string} listingId
+ * @param {string} reason
+ * @param {File|null} photoFile
+ */
+export const submitReportListing = async (listingId, reason, photoFile = null) => {
+  const response = await axiosInstance.post(
+    `/reports/listing/${listingId}`,
+    buildReportFormData(reason, photoFile),
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return response.data;
+};
+
+/**
+ * Submit a user report (authenticated marketplace user).
+ * @param {number|string} userId
+ * @param {string} reason
+ * @param {File|null} photoFile
+ */
+export const submitReportUser = async (userId, reason, photoFile = null) => {
+  const response = await axiosInstance.post(
+    `/reports/user/${userId}`,
+    buildReportFormData(reason, photoFile),
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return response.data;
+};
+
 /**
  * Get all reports with optional filters
  * @param {string} search - Search term for report ID, reason, or reporter name

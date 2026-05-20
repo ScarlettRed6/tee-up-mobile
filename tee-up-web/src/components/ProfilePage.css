@@ -698,6 +698,17 @@
   min-width: 120px;
 }
 
+.public-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.public-profile-report-btn {
+  flex-shrink: 0;
+}
+
 @media (max-width: 640px) {
   .profile-page-container {
     padding: 0 var(--spacing-lg);

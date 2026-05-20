@@ -162,6 +162,13 @@
   flex-wrap: wrap;
 }
 
+.messages-thread-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
 .messages-thread-heading {
   display: flex;
   align-items: center;
