@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { getListings } from '../api/userListingsApi';
+import { isDraftListingStatus } from '../constants/listings';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import ListingSearchFilters from './ListingSearchFilters';
@@ -35,6 +36,7 @@ export default function MyListings({
   onOpenProfile,
   onLogout,
   onGoHome,
+  onContinueEditing,
 }) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,14 +120,20 @@ export default function MyListings({
             <p className="my-listings-empty">You haven&apos;t listed anything yet.</p>
           ) : (
             <div className="my-listings-grid">
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.listing_id ?? listing.id}
-                  listing={listing}
-                  tagline={listing.seller_name}
-                  onClick={() => onSelectListing?.(String(listing.listing_id ?? listing.id))}
-                />
-              ))}
+              {listings.map((listing) => {
+                const isDraft = isDraftListingStatus(listing.status);
+                return (
+                  <ListingCard
+                    key={listing.listing_id ?? listing.id}
+                    listing={listing}
+                    tagline={listing.seller_name}
+                    statusLabel={isDraft ? 'Draft' : null}
+                    ownerActionLabel={isDraft && onContinueEditing ? 'Continue editing' : null}
+                    onOwnerAction={isDraft && onContinueEditing ? onContinueEditing : undefined}
+                    onClick={() => onSelectListing?.(String(listing.listing_id ?? listing.id))}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

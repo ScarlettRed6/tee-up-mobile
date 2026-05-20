@@ -9,7 +9,17 @@ import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import './ListingCard.css';
 
-function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, variant }) {
+function ListingCard({
+  listing,
+  tagline,
+  onFavorite,
+  isFavorite,
+  onClick,
+  variant,
+  statusLabel,
+  ownerActionLabel,
+  onOwnerAction,
+}) {
   const photos = Array.isArray(listing.photos) ? listing.photos : (listing.photos ? JSON.parse(listing.photos || '[]') : []);
   const imageUrl = photos[0] || null;
   const subtitle = listing.seller_name || tagline || listing.brand || '';
@@ -42,6 +52,9 @@ function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, varian
             </div>
           )}
         </div>
+        {statusLabel ? (
+          <Badge variant="secondary" className="listing-card-badge-status">{statusLabel}</Badge>
+        ) : null}
         {isFavorite && (
           <Badge variant="default" className="listing-card-badge-saved">Saved</Badge>
         )}
@@ -76,11 +89,25 @@ function ListingCard({ listing, tagline, onFavorite, isFavorite, onClick, varian
             <span className="listing-card-subtitle-name">{subtitle}</span>
           </p>
         )}
-        {variant === 'grid' && (
+        {variant === 'grid' && !ownerActionLabel && (
           <span className="listing-card-view-hint">
             View details <ChevronRight className="listing-card-view-icon" />
           </span>
         )}
+        {ownerActionLabel && onOwnerAction ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="listing-card-owner-action"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOwnerAction(listing);
+            }}
+          >
+            {ownerActionLabel}
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

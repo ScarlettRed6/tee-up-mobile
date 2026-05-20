@@ -69,11 +69,22 @@
   opacity: 0.5;
 }
 
-.listing-card-badge-saved {
+.listing-card-badge-saved,
+.listing-card-badge-status {
   position: absolute;
   top: 10px;
   left: 10px;
   z-index: 1;
+}
+
+.listing-card-badge-status {
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 20%, var(--color-white));
+  color: var(--color-text-primary);
+}
+
+.listing-card-owner-action {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .listing-card-image-wrap::after {

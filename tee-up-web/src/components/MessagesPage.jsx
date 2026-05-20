@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { ChevronLeft, Star } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -9,6 +9,8 @@ import { getConversations, getMessages, findOrCreateConversation } from '../api/
 import { getSocket } from '../utils/socketClient';
 import { formatChatSnippet } from '../utils/chatOffers';
 import { resolveMediaUrl } from '../utils/mediaUrl';
+import { rateUser, fetchUserRatings } from '../api/ratingsApi';
+import { getExchangeHint, hasMinimumExchange } from '../utils/chatExchange';
 import './MessagesPage.css';
 
 /** Match login/signup text field padding */
@@ -87,6 +89,11 @@ export default function MessagesPage({
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingReview, setRatingReview] = useState('');
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [hasRatedUser, setHasRatedUser] = useState(false);
   const socketRef = useRef(null);
 
   const currentUserId = user?.id;
@@ -121,6 +128,7 @@ export default function MessagesPage({
       socketRef.current = socket;
 
       socket.off('new_message');
+      socket.off('error_message');
       socket.on('new_message', (payload) => {
         const convId = payload?.conversation_id;
         if (!convId) return;
@@ -128,10 +136,17 @@ export default function MessagesPage({
         if (String(convId) !== String(selectedConversationId)) return;
         const normalizedIncoming = normalizeMessage(payload, currentUserId);
         setMessages((prev) => {
-          const alreadyExists = prev.some((m) => String(m.id) === String(normalizedIncoming.id));
-          if (alreadyExists) return prev;
-          return [...prev, normalizedIncoming];
+          const withoutTemps = prev.filter((m) => !String(m.id).startsWith('temp_'));
+          const alreadyExists = withoutTemps.some(
+            (m) => String(m.id) === String(normalizedIncoming.id)
+          );
+          if (alreadyExists) return withoutTemps;
+          return [...withoutTemps, normalizedIncoming];
         });
+      });
+      socket.on('error_message', (payload) => {
+        setSendError(payload?.message || 'Message not sent.');
+        setMessages((prev) => prev.filter((m) => !String(m.id).startsWith('temp_')));
       });
     } catch (err) {
       console.error('Failed to init websocket for messages page', err);
@@ -140,6 +155,7 @@ export default function MessagesPage({
     return () => {
       if (socketRef.current) {
         socketRef.current.off('new_message');
+        socketRef.current.off('error_message');
       }
     };
   }, [currentUserId, selectedConversationId, loadConversations]);
@@ -197,12 +213,76 @@ export default function MessagesPage({
     (c) => c.conversation_id === selectedConversationId
   );
 
+  const otherUserId = activeConversation?.otherUserId ?? listingContext?.sellerId ?? null;
+  const otherName = activeConversation?.username || 'the other person';
+
+  const exchangeHint = useMemo(
+    () => getExchangeHint(messages, otherName),
+    [messages, otherName]
+  );
+  const showRatingCard = useMemo(
+    () => Boolean(otherUserId && !hasRatedUser && hasMinimumExchange(messages)),
+    [otherUserId, hasRatedUser, messages]
+  );
+
+  useEffect(() => {
+    setRatingValue(0);
+    setRatingReview('');
+    setSendError('');
+    setHasRatedUser(false);
+  }, [selectedConversationId]);
+
+  useEffect(() => {
+    if (!otherUserId || !currentUserId) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const ratings = await fetchUserRatings(otherUserId);
+        if (cancelled) return;
+        const already = ratings.some(
+          (r) => String(r.rater_user_id) === String(currentUserId)
+        );
+        setHasRatedUser(already);
+      } catch {
+        if (!cancelled) setHasRatedUser(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [otherUserId, currentUserId]);
+
+  const handleSubmitRating = async () => {
+    if (!otherUserId || ratingValue < 1) return;
+    setRatingSubmitting(true);
+    try {
+      await rateUser(otherUserId, {
+        rating: ratingValue,
+        review: ratingReview.trim() || undefined,
+      });
+      setHasRatedUser(true);
+      setRatingValue(0);
+      setRatingReview('');
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Failed to submit review.';
+      setSendError(msg);
+    } finally {
+      setRatingSubmitting(false);
+    }
+  };
+
   const handleSend = async () => {
     const text = messageInput.trim();
     if (!text || !socketRef.current || sending) return;
 
     setSending(true);
+    setSendError('');
     let conversationId = activeConversation?.conversation_id ?? null;
+    const tempId = `temp_${Date.now()}`;
 
     try {
       if (!conversationId) {
@@ -224,6 +304,16 @@ export default function MessagesPage({
       }
 
       setMessageInput('');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: tempId,
+          text,
+          imageUrl: null,
+          sender: 'me',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
 
       socketRef.current.emit('send_message', {
         conversationId,
@@ -233,6 +323,8 @@ export default function MessagesPage({
     } catch (err) {
       console.error('Failed to send message over websocket', err);
       setMessageInput(text);
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setSendError(err.message || 'Failed to send message.');
     } finally {
       setSending(false);
     }
@@ -416,6 +508,17 @@ export default function MessagesPage({
                       No messages yet. Say hi to start the conversation.
                     </div>
                   ) : (
+                    <>
+                    {exchangeHint ? (
+                      <p className="messages-exchange-hint" role="status">
+                        {exchangeHint}
+                      </p>
+                    ) : null}
+                    {sendError ? (
+                      <p className="messages-send-error" role="alert">
+                        {sendError}
+                      </p>
+                    ) : null}
                     <div className="messages-thread-scroll">
                       {messages.map((m) => {
                         const otherPic = resolveMediaUrl(
@@ -456,6 +559,52 @@ export default function MessagesPage({
                         );
                       })}
                     </div>
+                  {showRatingCard ? (
+                    <div className="messages-rating-card">
+                      <h3 className="messages-rating-title">Rate your experience with {otherName}</h3>
+                      <p className="messages-rating-subtitle">
+                        You&apos;ve had enough back-and-forth — share how the deal went.
+                      </p>
+                      <div className="messages-rating-stars">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            className="messages-rating-star-btn"
+                            onClick={() => setRatingValue(star)}
+                            aria-label={`${star} star${star === 1 ? '' : 's'}`}
+                          >
+                            <Star
+                              className={cn(
+                                'h-7 w-7',
+                                star <= ratingValue
+                                  ? 'messages-rating-star-filled'
+                                  : 'messages-rating-star-empty'
+                              )}
+                              fill={star <= ratingValue ? 'currentColor' : 'none'}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        className="messages-rating-review"
+                        placeholder="Write a short review (optional)"
+                        value={ratingReview}
+                        onChange={(e) => setRatingReview(e.target.value)}
+                        maxLength={250}
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        className="messages-rating-submit"
+                        disabled={ratingSubmitting || ratingValue < 1}
+                        onClick={handleSubmitRating}
+                      >
+                        {ratingSubmitting ? 'Submitting…' : 'Submit review'}
+                      </Button>
+                    </div>
+                  ) : null}
+                    </>
                   )}
                 </div>
 
@@ -467,7 +616,10 @@ export default function MessagesPage({
                   type="text"
                   placeholder="Type your message…"
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
+                  onChange={(e) => {
+                    setMessageInput(e.target.value);
+                    if (sendError) setSendError('');
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();

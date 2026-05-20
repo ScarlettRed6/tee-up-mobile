@@ -9,11 +9,10 @@ import { authContext } from '../context/authContext';
 import { ThemeContext } from '../context/themeContext';
 import { getUserProfile } from '../api/userApi';
 import jwtDecode from 'jwt-decode';
-import { rateUser } from '../api/ratingApi';
+import { rateUser, fetchUserRatings } from '../api/ratingApi';
 import * as ImagePicker from 'expo-image-picker';
 import { formatChatSnippet } from '../utils/chatOffers';
-
-const MIN_MESSAGES_FOR_RATING = 6;
+import { getExchangeHint, hasMinimumExchange } from '../utils/chatExchange';
 
 export default function ChatDetailScreen({ navigation, route }) {
   const { accessToken } = useContext(authContext);
@@ -37,14 +36,16 @@ export default function ChatDetailScreen({ navigation, route }) {
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
   const [lastRatingPromptCount, setLastRatingPromptCount] = useState(0);
   const [hasRatedUser, setHasRatedUser] = useState(false);
+  const exchangeHintText = useMemo(
+    () => getExchangeHint(messages, conversation?.other_user_name || 'them'),
+    [messages, conversation?.other_user_name]
+  );
 
   // Get route params
   const conversationId = route?.params?.conversationId;
   const existingChat = route?.params?.chat;
   const listingInfo = route?.params?.listingInfo;
   const isNewConversation = route?.params?.isNewConversation || false;
-
-  const ratingThreshold = MIN_MESSAGES_FOR_RATING;
 
   const conversationIdentifier = useMemo(() => {
     if (conversation?.conversation_id) return conversation.conversation_id;
@@ -513,11 +514,33 @@ export default function ChatDetailScreen({ navigation, route }) {
       setShowRatingPrompt(false);
       return;
     }
-    const totalMessages = messages.length;
-    if (!showRatingPrompt && totalMessages - lastRatingPromptCount >= ratingThreshold) {
+    if (hasMinimumExchange(messages)) {
       setShowRatingPrompt(true);
+      setLastRatingPromptCount(messages.length);
     }
-  }, [messages.length, resolvedOtherUserId, conversationIdentifier, ratingThreshold, lastRatingPromptCount, showRatingPrompt, hasRatedUser]);
+  }, [messages, resolvedOtherUserId, conversationIdentifier, hasRatedUser]);
+
+  useEffect(() => {
+    if (!resolvedOtherUserId || !currentUserIdRef.current) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchUserRatings(resolvedOtherUserId);
+        const list = Array.isArray(data) ? data : data?.ratings ?? [];
+        if (cancelled) return;
+        const already = list.some(
+          (r) => String(r.rater_user_id) === String(currentUserIdRef.current)
+        );
+        setHasRatedUser(already);
+        if (already) setShowRatingPrompt(false);
+      } catch {
+        if (!cancelled) setHasRatedUser(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedOtherUserId, conversationIdentifier]);
 
   const handleSubmitRating = async () => {
     if (!resolvedOtherUserId) return;
@@ -616,7 +639,7 @@ export default function ChatDetailScreen({ navigation, route }) {
     } finally {
       setSending(false);
     }
-  }, [ensureConversationReady, sending, currentUserProfileImage, scrollToBottom]);
+  }, [ensureConversationReady, sending, currentUserProfileImage, scrollToBottom, messages, conversation?.other_user_name]);
 
   const handleSend = async () => {
     const messageText = message.trim();
@@ -1031,6 +1054,10 @@ export default function ChatDetailScreen({ navigation, route }) {
         )}
         {renderRatingPrompt()}
       </ScrollView>
+
+      {exchangeHintText ? (
+        <Text style={[styles.exchangeHint, { color: theme.textMuted }]}>{exchangeHintText}</Text>
+      ) : null}
 
       {/* Message Input Bar */}
       <View style={[

@@ -16,7 +16,12 @@ from "../models/listingsModel.js";
 import { createNotification } from "../utils/notifications.js";
 import { sendNotification } from "../utils/socketHandler.js";
 import { getIO } from "../utils/getIo.js";
-import { notifyFollowersNewListing } from "../utils/notifyFollowersNewListing.js";
+import {
+    notifyFollowersNewListing,
+    normalizeListingStatus,
+    isPublicListingStatus,
+    shouldNotifyFollowersOnStatusChange,
+} from "../utils/notifyFollowersNewListing.js";
 import { findUserById } from "../models/userModel.js";
 
 
@@ -66,11 +71,14 @@ export async function createListing(req, res) {
         // (slow connections were timing out after the listing was already saved).
         res.status(201).json({ message: "New listing added successfully!", listing: newListing });
 
-        setImmediate(() => {
-            notifyFollowersNewListing(io, user_id, newListing, title).catch((err) => {
-                console.error("Background follower notification failed:", err.message);
+        const createdStatus = normalizeListingStatus(newListing.status ?? status);
+        if (isPublicListingStatus(createdStatus)) {
+            setImmediate(() => {
+                notifyFollowersNewListing(io, user_id, newListing, title).catch((err) => {
+                    console.error("Background follower notification failed:", err.message);
+                });
             });
-        });
+        }
     }catch(err){
         console.error("Error creating listing:", err);
         res.status(500).json({ error: err.message });
@@ -151,6 +159,8 @@ export async function updateListingItem(req, res) {
         if(!listing) return res.status(404).json({ message: "Listing not found!" });
         
         if(listing.user_id !== userId) return res.status(403).json({ message: "Unauthorized: you don't own this listing!" });
+
+        const previousStatus = normalizeListingStatus(listing.status);
 
         // Normalize status to lowercase to match database constraint
         // Allowed values: "available", "pending", "sold"
@@ -233,6 +243,16 @@ export async function updateListingItem(req, res) {
         }
 
         res.status(200).json({ message: "Listing updated successfully!",  listing: updatedListingWithOriginal});
+
+        const io = getIO(req);
+        const nextStatus = normalizeListingStatus(updatedListingWithOriginal.status ?? status);
+        if (shouldNotifyFollowersOnStatusChange(previousStatus, nextStatus)) {
+            setImmediate(() => {
+                notifyFollowersNewListing(io, userId, updatedListingWithOriginal, title).catch((err) => {
+                    console.error("Background follower notification failed:", err.message);
+                });
+            });
+        }
     }catch(err){
         res.status(500).json({ error: err.message });
     }
@@ -250,6 +270,12 @@ export async function changeListingStatus(req, res) {
         if(!allowed.includes(status)){
             return res.status(400).json({ message: "Invalid status value" });
         }
+
+        const existingListing = await getListingById(listing_id);
+        if (!existingListing) {
+            return res.status(404).json({ message: "Listing not found!" });
+        }
+        const previousStatus = normalizeListingStatus(existingListing.status);
 
         const updatedListing = await updateListingStatus(listing_id, user_id, status);
         if(!updatedListing){
@@ -282,6 +308,14 @@ export async function changeListingStatus(req, res) {
                     sendNotification(io, u.user_id, notif);
                 }
             }
+        }
+
+        if (shouldNotifyFollowersOnStatusChange(previousStatus, status)) {
+            setImmediate(() => {
+                notifyFollowersNewListing(io, user_id, updatedListing, updatedListing?.title).catch((err) => {
+                    console.error("Background follower notification failed:", err.message);
+                });
+            });
         }
 
         console.log("Listings status updated successfully");

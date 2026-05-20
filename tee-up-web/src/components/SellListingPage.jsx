@@ -9,6 +9,7 @@ import { ChevronDown, ChevronLeft } from 'lucide-react';
 import BrandPickerModal from './BrandPickerModal';
 import { createListing, updateListing } from '../api/userListingsApi';
 import { ambiguousListingSubmitMessage } from '../utils/listingSubmitRecovery';
+import { isDraftListingStatus } from '../constants/listings';
 import { PHILIPPINE_CITIES_BY_REGION, PHILIPPINE_LOCATION_OPTIONS } from '../constants/philippineLocations';
 import './SellListingPage.css';
 
@@ -133,13 +134,13 @@ function SellListingPage({
           initialListing.listing_id,
           {
             ...listingData,
-            status: initialListing.status || 'available',
+            status: status || initialListing.status || 'available',
           },
           files,
           existingPhotos,
           { userId: user?.id ?? user?.user_id }
         );
-        onListingUpdated?.(updated);
+        onListingUpdated?.(updated, status);
       } else {
         const created = await createListing(listingData, files, {
           userId: user?.id ?? user?.user_id,
@@ -438,17 +439,47 @@ function SellListingPage({
                 disabled={submitting}
                 onClick={() => handleSubmit('pending')}
               >
-                Save Draft
+                Save draft
               </Button>
             )}
-            <Button
-              size="lg"
-              className="sell-btn-primary"
-              disabled={!isFormValid || submitting}
-              onClick={() => handleSubmit(mode === 'edit' ? (initialListing?.status || 'available') : 'available')}
-            >
-              {submitting ? (mode === 'edit' ? 'Saving…' : 'Posting…') : mode === 'edit' ? 'Save Changes' : 'Post to Marketplace'}
-            </Button>
+            {mode === 'edit' && isDraftListingStatus(initialListing?.status) ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="sell-btn-secondary"
+                  disabled={submitting}
+                  onClick={() => handleSubmit('pending')}
+                >
+                  {submitting ? 'Saving…' : 'Save draft'}
+                </Button>
+                <Button
+                  size="lg"
+                  className="sell-btn-primary"
+                  disabled={!isFormValid || submitting}
+                  onClick={() => handleSubmit('available')}
+                >
+                  {submitting ? 'Publishing…' : 'Publish to marketplace'}
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="lg"
+                className="sell-btn-primary"
+                disabled={!isFormValid || submitting}
+                onClick={() =>
+                  handleSubmit(mode === 'edit' ? initialListing?.status || 'available' : 'available')
+                }
+              >
+                {submitting
+                  ? mode === 'edit'
+                    ? 'Saving…'
+                    : 'Posting…'
+                  : mode === 'edit'
+                    ? 'Save changes'
+                    : 'Post to marketplace'}
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </main>

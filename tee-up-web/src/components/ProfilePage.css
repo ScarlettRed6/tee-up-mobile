@@ -275,6 +275,35 @@
   font-weight: var(--font-weight-bold);
 }
 
+.profile-listing-card--draft .profile-listing-image-wrap {
+  position: relative;
+}
+
+.profile-listing-draft-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-semibold);
+  background: color-mix(in srgb, var(--color-warning, #f59e0b) 18%, var(--color-white));
+  color: var(--color-text-primary);
+  border: 1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 35%, transparent);
+}
+
+.profile-listing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.profile-listing-continue-btn {
+  flex: 1;
+  min-width: 8rem;
+}
+
 .profile-listing-view-btn {
   width: 100%;
 }

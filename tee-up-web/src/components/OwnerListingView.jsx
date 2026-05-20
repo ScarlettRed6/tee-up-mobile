@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { resolveMediaUrl } from '../utils/mediaUrl';
 import PriceDisplay from './PriceDisplay';
 import { parseOfferMessage } from '../utils/chatOffers';
+import { isDraftListingStatus } from '../constants/listings';
 import './OwnerListingView.css';
 
 function normalizeListing(row) {
@@ -308,6 +309,20 @@ export default function OwnerListingView({
       }
       : null;
   const isConfirming = actionLoading === 'sold' || actionLoading === 'available' || actionLoading === 'delete';
+  const isDraft = listing ? isDraftListingStatus(listing.status) : false;
+
+  const handlePublishDraft = async () => {
+    if (!listing?.listing_id) return;
+    setActionLoading('available');
+    try {
+      await updateListingStatus(listing.listing_id, 'available');
+      setListing((prev) => (prev ? { ...prev, status: 'available' } : null));
+    } catch (err) {
+      setError(err?.message ?? 'Failed to publish listing');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div className="owner-listing-view" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -446,7 +461,10 @@ export default function OwnerListingView({
           </div>
 
           <div className="owner-listing-info">
-            <h1 className="owner-listing-title">{listing.title || 'Untitled'}</h1>
+            <h1 className="owner-listing-title">
+              {listing.title || 'Untitled'}
+              {isDraft ? <span className="owner-listing-draft-pill">Draft</span> : null}
+            </h1>
             <PriceDisplay
               listing={listing}
               className="owner-listing-price"
@@ -466,21 +484,32 @@ export default function OwnerListingView({
                 onClick={() => onEditListing?.(listing)}
                 disabled={listing.status === 'sold'}
               >
-                Edit Listing Details
+                {isDraft ? 'Continue editing' : 'Edit listing details'}
               </Button>
-              <Button
-                variant="secondary"
-                size="default"
-                className="owner-listing-action-btn"
-                onClick={listing.status === 'sold' ? openAvailableConfirmation : openSoldConfirmation}
-                disabled={actionLoading === 'sold' || actionLoading === 'available'}
-              >
-                {actionLoading === 'sold' || actionLoading === 'available'
-                  ? 'Updating…'
-                  : listing.status === 'sold'
-                    ? 'Mark as Available'
-                    : 'Mark as Sold'}
-              </Button>
+              {isDraft ? (
+                <Button
+                  size="default"
+                  className="owner-listing-action-btn owner-listing-action-btn-primary"
+                  onClick={handlePublishDraft}
+                  disabled={actionLoading === 'available'}
+                >
+                  {actionLoading === 'available' ? 'Publishing…' : 'Publish to marketplace'}
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="default"
+                  className="owner-listing-action-btn"
+                  onClick={listing.status === 'sold' ? openAvailableConfirmation : openSoldConfirmation}
+                  disabled={actionLoading === 'sold' || actionLoading === 'available'}
+                >
+                  {actionLoading === 'sold' || actionLoading === 'available'
+                    ? 'Updating…'
+                    : listing.status === 'sold'
+                      ? 'Mark as Available'
+                      : 'Mark as Sold'}
+                </Button>
+              )}
             </div>
 
             <section className="owner-listing-section">

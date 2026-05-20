@@ -14,6 +14,13 @@ export const LISTING_SORT_OPTIONS = [
 export const LISTING_STATUS_FILTERS = [
   { value: '', label: 'All statuses' },
   { value: 'available', label: 'Available' },
-  { value: 'pending', label: 'Pending' },
+  { value: 'pending', label: 'Draft' },
   { value: 'sold', label: 'Sold' },
 ];
+
+/** Saved via "Save draft" — stored as `pending` in the database. */
+export const DRAFT_LISTING_STATUS = 'pending';
+
+export function isDraftListingStatus(status) {
+  return String(status || '').trim().toLowerCase() === DRAFT_LISTING_STATUS;
+}

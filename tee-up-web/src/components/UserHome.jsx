@@ -60,6 +60,7 @@ function UserHome({ guest = false }) {
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   const [ownerListingFromView, setOwnerListingFromView] = useState('feed');
   const [editingListing, setEditingListing] = useState(null);
+  const [profileInitialTab, setProfileInitialTab] = useState('listings');
   const [heroIndex, setHeroIndex] = useState(0);
   const [messagesListingContext, setMessagesListingContext] = useState(null);
   const [initialMessagesConversationId, setInitialMessagesConversationId] = useState(null);
@@ -495,7 +496,13 @@ function UserHome({ guest = false }) {
     // No longer used; dropdown uses onOpenProfile / onLogout
   };
 
-  const handleOpenProfile = () => {
+  const handleContinueEditing = (listing) => {
+    setEditingListing(listing);
+    setView('editListing');
+  };
+
+  const handleOpenProfile = (tab = 'listings') => {
+    setProfileInitialTab(tab);
     if (guest) {
       openLogin({ fromBrowse: true });
       return;
@@ -629,6 +636,8 @@ function UserHome({ guest = false }) {
             setSelectedOwnerListingId(String(id));
             setView('ownerListing');
           }}
+          onContinueEditing={handleContinueEditing}
+          initialTab={profileInitialTab}
         />
       ) : view === 'publicProfile' && selectedProfileUserId ? (
         <PublicProfilePage
@@ -760,6 +769,7 @@ function UserHome({ guest = false }) {
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
+          onContinueEditing={handleContinueEditing}
         />
       ) : view === 'sell' ? (
         <SellListingPage
@@ -776,7 +786,12 @@ function UserHome({ guest = false }) {
           onGoHome={handleGoHome}
           onListingCreated={async (_created, status) => {
             await loadData();
-            setView(status === 'pending' ? 'myListings' : 'feed');
+            if (status === 'pending') {
+              setProfileInitialTab('drafts');
+              setView('profile');
+            } else {
+              setView('feed');
+            }
           }}
         />
       ) : view === 'editListing' && editingListing ? (
@@ -795,10 +810,16 @@ function UserHome({ guest = false }) {
           onLogout={handleLogout}
           onGoHome={handleGoHome}
           onBack={() => setView('ownerListing')}
-          onListingUpdated={async (updated) => {
+          onListingUpdated={async (updated, status) => {
             await loadData();
-            if (updated?.listing_id || updated?.id) {
-              setSelectedOwnerListingId(String(updated.listing_id ?? updated.id));
+            const id = updated?.listing_id ?? updated?.id;
+            if (status === 'pending') {
+              setProfileInitialTab('drafts');
+              setView('profile');
+              return;
+            }
+            if (id) {
+              setSelectedOwnerListingId(String(id));
             }
             setView('ownerListing');
           }}

@@ -3,12 +3,32 @@ import { findUserById } from "../models/userModel.js";
 import { createNotification } from "./notifications.js";
 import { sendNotification } from "./socketHandler.js";
 
+/** Only public marketplace listings should alert followers (not drafts/pending or sold). */
+export function normalizeListingStatus(status) {
+    return String(status || "").trim().toLowerCase();
+}
+
+export function isPublicListingStatus(status) {
+    return normalizeListingStatus(status) === "available";
+}
+
+/** Notify when a listing becomes public for the first time (e.g. draft → available). */
+export function shouldNotifyFollowersOnStatusChange(previousStatus, newStatus) {
+    return (
+        isPublicListingStatus(newStatus) &&
+        !isPublicListingStatus(previousStatus)
+    );
+}
+
 /**
  * Notify followers about a new listing. Run after the HTTP response is sent
  * so slow networks do not time out while this work completes.
  */
 export async function notifyFollowersNewListing(io, sellerId, listing, titleFallback = "") {
     if (!sellerId || !listing?.listing_id) return;
+
+    const listingStatus = normalizeListingStatus(listing.status);
+    if (!isPublicListingStatus(listingStatus)) return;
 
     try {
         const followers = await getFollowersForUser(sellerId);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Star, User, Settings, Camera } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Button } from './ui/button';
@@ -58,12 +58,16 @@ export default function ProfilePage({
   onEditProfile,
   onSettings,
   onViewListing,
+  onContinueEditing,
+  initialTab = 'listings',
 }) {
-  const [activeTab, setActiveTab] = useState('listings');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [myListings, setMyListings] = useState([]);
   const [savedItems, setSavedItems] = useState([]);
   const [savedCount, setSavedCount] = useState(0);
+  const [draftListings, setDraftListings] = useState([]);
   const [draftsCount, setDraftsCount] = useState(0);
+  const [draftsLoading, setDraftsLoading] = useState(false);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savedLoading, setSavedLoading] = useState(false);
@@ -86,6 +90,30 @@ export default function ProfilePage({
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
+  const loadDrafts = useCallback(() => {
+    if (!user?.id) {
+      setDraftListings([]);
+      setDraftsCount(0);
+      return Promise.resolve();
+    }
+    setDraftsLoading(true);
+    return getListings({ user_id: user.id, status: 'pending', sort: 'newest' })
+      .then((data) => {
+        const arr = Array.isArray(data) ? data.map(normalizeListing) : [];
+        setDraftListings(arr);
+        setDraftsCount(arr.length);
+      })
+      .catch(() => {
+        setDraftListings([]);
+        setDraftsCount(0);
+      })
+      .finally(() => setDraftsLoading(false));
+  }, [user?.id]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   useEffect(() => {
     if (!user?.id) {
       setLoading(false);
@@ -94,23 +122,19 @@ export default function ProfilePage({
     setSavedLoading(true);
     Promise.all([
       getFavorites().catch(() => []),
-      getListings({ user_id: user.id, status: 'pending' }).catch(() => []),
+      loadDrafts(),
       getProfileStats().catch(() => null),
     ])
-      .then(([favorites, drafts, statsRes]) => {
+      .then(([favorites, , statsRes]) => {
         const favArray = Array.isArray(favorites) ? favorites.map(normalizeListing) : [];
         setSavedItems(favArray);
         setSavedCount(favArray.length);
-
-        const draftsArray = Array.isArray(drafts) ? drafts : [];
-        setDraftsCount(draftsArray.length);
-
         setStats(statsRes);
       })
       .finally(() => {
         setSavedLoading(false);
       });
-  }, [user?.id]);
+  }, [user?.id, loadDrafts]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -397,7 +421,65 @@ export default function ProfilePage({
               </>
             )}
             {activeTab === 'drafts' && (
-              <p className="profile-content-muted">Draft listings will appear here.</p>
+              <div className="profile-listings-grid">
+                {draftsLoading ? (
+                  <p className="profile-content-muted">Loading drafts…</p>
+                ) : draftListings.length === 0 ? (
+                  <p className="profile-content-muted">
+                    No drafts yet. Start a listing and choose <strong>Save draft</strong> to finish later.
+                  </p>
+                ) : (
+                  draftListings.map((listing) => {
+                    const photos = listing.photos ?? [];
+                    const imageUrl = photos[0] || null;
+                    const id = listing.listing_id ?? listing.id;
+                    return (
+                      <div key={id} className="profile-listing-card profile-listing-card--draft">
+                        <div className="profile-listing-image-wrap">
+                          {imageUrl ? (
+                            <img src={resolveMediaUrl(imageUrl)} alt="" className="profile-listing-image" />
+                          ) : (
+                            <div className="profile-listing-image-placeholder">
+                              <User className="h-10 w-10" />
+                            </div>
+                          )}
+                          <span className="profile-listing-draft-badge">Draft</span>
+                        </div>
+                        <div className="profile-listing-body">
+                          <h3 className="profile-listing-title">{listing.title || 'Untitled draft'}</h3>
+                          <PriceDisplay
+                            listing={listing}
+                            className="profile-listing-price"
+                            currentClassName="profile-listing-price-current"
+                            originalClassName="profile-listing-price-original"
+                          />
+                          <div className="profile-listing-actions">
+                            {onContinueEditing ? (
+                              <Button
+                                size="sm"
+                                className="profile-listing-continue-btn"
+                                onClick={() => onContinueEditing(listing)}
+                              >
+                                Continue editing
+                              </Button>
+                            ) : null}
+                            {onViewListing ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="profile-listing-view-btn"
+                                onClick={() => onViewListing(id)}
+                              >
+                                View
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             )}
             {activeTab === 'saved' && (
               <>
