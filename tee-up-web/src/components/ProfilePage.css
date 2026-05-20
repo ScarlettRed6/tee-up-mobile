@@ -110,7 +110,14 @@
 .profile-hero-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
+  min-height: var(--btn-min-height) !important;
+  height: auto !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: var(--font-size-body-small) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  white-space: nowrap;
 }
 
 /* Stats row - below hero */
@@ -473,7 +480,7 @@
 .profile-edit-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--form-field-gap);
   margin-bottom: var(--spacing-lg);
 }
 
@@ -483,18 +490,26 @@
   font-weight: var(--font-weight-medium);
 }
 
-.profile-edit-field input {
-  box-sizing: border-box;
-  min-height: var(--input-min-height);
-  padding: var(--input-padding);
+/* Explicit padding — global * reset + Tailwind var utilities often leave inputs flush */
+.profile-edit-field input,
+.profile-password-fields input,
+.profile-form-input {
+  box-sizing: border-box !important;
+  min-height: var(--input-min-height) !important;
+  padding: var(--input-padding-y) var(--input-padding-x) !important;
+  font-size: var(--font-size-body) !important;
+  line-height: 1.45 !important;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--color-background-alt) 60%, var(--color-white));
-  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
-  font-size: var(--font-size-body-small);
-  line-height: 1.4;
 }
 
-.profile-edit-field input:focus {
+.profile-edit-field input {
+  background: color-mix(in srgb, var(--color-background-alt) 60%, var(--color-white));
+  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
+}
+
+.profile-edit-field input:focus,
+.profile-password-fields input:focus,
+.profile-form-input:focus {
   border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
@@ -528,19 +543,28 @@
 .profile-edit-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
   margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-md);
+  padding-top: var(--spacing-lg);
   border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+}
+
+.profile-edit-actions > button,
+.profile-password-actions > button,
+.profile-password-head > button {
+  min-height: 2.75rem !important;
+  height: auto !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: var(--font-size-body-small) !important;
 }
 
 .profile-password-section {
   margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
   border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
   background: color-mix(in srgb, var(--color-background-alt) 56%, transparent);
   border-radius: 14px;
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
 }
 
 .profile-password-head {
@@ -565,7 +589,8 @@
 
 .profile-password-fields {
   display: grid;
-  gap: var(--spacing-sm);
+  gap: var(--form-stack-gap);
+  margin-top: var(--spacing-sm);
 }
 
 .profile-password-helper {
@@ -575,20 +600,20 @@
 }
 
 .profile-password-fields input {
-  border-radius: 12px;
+  min-height: 50px !important;
+  padding: 14px 18px !important;
   background: color-mix(in srgb, var(--color-background-alt) 58%, var(--color-white));
   border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
-}
-
-.profile-password-fields input:focus {
-  border-color: color-mix(in srgb, var(--color-primary) 48%, var(--color-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .profile-password-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-xs);
 }
 
 .profile-password-error {
@@ -650,8 +675,21 @@
     flex-direction: column;
   }
 
-  .profile-edit-actions {
+  .profile-edit-actions,
+  .profile-password-actions {
     flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .profile-edit-actions > button,
+  .profile-password-actions > button,
+  .profile-password-head > button {
+    width: 100%;
+  }
+
+  .profile-hero-actions .profile-hero-btn {
+    flex: 1;
+    min-width: 140px;
   }
 }
 

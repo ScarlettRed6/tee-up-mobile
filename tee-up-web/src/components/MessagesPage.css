@@ -371,6 +371,23 @@
   border-radius: var(--radius-pill);
 }
 
+.messages-thread-send-btn {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-circle);
+  background-color: var(--color-primary) !important;
+  color: var(--color-white) !important;
+}
+
+.messages-thread-send-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.messages-thread-send-btn:disabled {
+  opacity: 0.45;
+}
+
 /* Mobile master/detail: see marketplace/MarketplaceResponsive.css */
 
 .messages-thread-back {

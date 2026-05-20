@@ -42,6 +42,11 @@ function formatMemberSince(createdAt) {
 
 const BIO_MAX_LENGTH = 200;
 
+const profileFormInputClass =
+  'profile-form-input min-h-[var(--input-min-height)] text-base leading-normal';
+
+const profileFormInputPad = { paddingInline: '18px', paddingBlock: '14px' };
+
 export default function ProfilePage({
   user,
   onBack,
@@ -599,6 +604,8 @@ export default function ProfilePage({
               <Label htmlFor="edit-name">Name</Label>
               <Input
                 id="edit-name"
+                className={profileFormInputClass}
+                style={profileFormInputPad}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="Enter your name"
@@ -607,7 +614,13 @@ export default function ProfilePage({
 
             <div className="profile-edit-field">
               <Label htmlFor="edit-email">Email</Label>
-              <Input id="edit-email" value={user?.email || ''} disabled />
+              <Input
+                id="edit-email"
+                className={profileFormInputClass}
+                style={profileFormInputPad}
+                value={user?.email || ''}
+                disabled
+              />
               <p className="profile-edit-note">Email cannot be changed.</p>
             </div>
 
@@ -632,7 +645,7 @@ export default function ProfilePage({
                     <p className="profile-password-subtitle">Leave this unchanged if you do not want to update your password.</p>
                   </div>
                   {!passwordOpen && (
-                    <Button variant="outline" size="sm" onClick={() => setPasswordOpen(true)}>
+                    <Button variant="outline" onClick={() => setPasswordOpen(true)}>
                       Edit Password
                     </Button>
                   )}
@@ -644,26 +657,31 @@ export default function ProfilePage({
                     <p className="profile-password-helper">Enter all fields below to replace your current password.</p>
                     <Input
                       type="password"
+                      className={profileFormInputClass}
+                      style={profileFormInputPad}
                       placeholder="Current password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                     />
                     <Input
                       type="password"
+                      className={profileFormInputClass}
+                      style={profileFormInputPad}
                       placeholder="New password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
                     <Input
                       type="password"
+                      className={profileFormInputClass}
+                      style={profileFormInputPad}
                       placeholder="Re-enter new password"
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                     />
-                    <div className="profile-password-actions">
+                    <div className="profile-password-actions app-btn-row">
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => {
                           setPasswordOpen(false);
                           setCurrentPassword('');
@@ -676,7 +694,6 @@ export default function ProfilePage({
                         Keep Current Password
                       </Button>
                       <Button
-                        size="sm"
                         className="profile-password-update-btn"
                         onClick={handleChangePassword}
                         disabled={savingPassword}
@@ -689,7 +706,7 @@ export default function ProfilePage({
               </div>
             )}
 
-            <div className="profile-edit-actions">
+            <div className="profile-edit-actions app-btn-row">
               <Button variant="outline" onClick={() => setEditOpen(false)} disabled={savingProfile}>
                 Cancel
               </Button>

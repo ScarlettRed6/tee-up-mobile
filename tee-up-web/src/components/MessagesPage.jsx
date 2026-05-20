@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { ChevronLeft, Star } from 'lucide-react';
+import { ChevronLeft, Star, Send } from 'lucide-react';
 import UserHeader from './UserHeader';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -630,11 +630,15 @@ export default function MessagesPage({
                   style={alignedAuthInputPad}
                 />
                 <Button
-                  size="sm"
+                  type="button"
+                  size="icon"
+                  variant="default"
+                  className="messages-thread-send-btn"
                   disabled={!messageInput.trim() || sending}
                   onClick={handleSend}
+                  aria-label={sending ? 'Sending message' : 'Send message'}
                 >
-                  Send
+                  <Send className="h-5 w-5" aria-hidden />
                 </Button>
               </footer>
             )}

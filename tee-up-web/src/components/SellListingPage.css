@@ -225,7 +225,7 @@
 .sell-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--form-field-gap);
 }
 
 .sell-field.span-2 {

@@ -280,6 +280,12 @@
 
 .listing-view-seller-btn {
   flex-shrink: 0;
+  min-height: var(--btn-min-height) !important;
+  height: auto !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: var(--font-size-body-small) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  white-space: nowrap;
 }
 
 /* Make Offer */

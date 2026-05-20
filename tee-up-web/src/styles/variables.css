@@ -43,10 +43,13 @@
   --page-padding: 20px 24px;
   
   /* Inputs – shared padding / min heights (aligned across admin + marketplace) */
-  --input-padding-y: 11px;
+  --input-padding-y: 12px;
   --input-padding-x: 16px;
   --input-padding: var(--input-padding-y) var(--input-padding-x);
-  --input-min-height: 46px;
+  --input-min-height: 48px;
+  /* Form stacks – vertical gap between fields */
+  --form-field-gap: 14px;
+  --form-stack-gap: 16px;
   /* Textareas – slightly taller line box, same horizontal rhythm */
   --textarea-padding-y: 12px;
   --textarea-padding-x: var(--input-padding-x);
@@ -54,7 +57,11 @@
   
   /* Button Padding */
   --button-padding: 14px 24px;
-  --button-padding-small: 10px 20px;
+  --button-padding-small: 11px 20px;
+  --btn-min-height: 44px;
+  --btn-min-height-sm: 40px;
+  --btn-padding-x: 1.375rem;
+  --btn-padding-x-sm: 1.125rem;
   
   /* Border Radius */
   --radius-small: 8px;

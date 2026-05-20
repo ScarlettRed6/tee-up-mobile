@@ -395,7 +395,7 @@ export default function ListingView({
                 </div>
                 <Button
                   variant="secondary"
-                  size="sm"
+                  size="default"
                   className="listing-view-seller-btn"
                   onClick={() => onViewSellerProfile?.(listing.user_id)}
                 >
