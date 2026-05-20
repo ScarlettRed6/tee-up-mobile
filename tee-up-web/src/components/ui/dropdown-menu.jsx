@@ -16,7 +16,7 @@ const DropdownMenuContent = React.forwardRef(
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-          "z-[1200] min-w-[8rem] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] p-1 text-[var(--color-text-primary)] shadow-[var(--shadow-modal)]",
+          "z-[1200] min-w-[10rem] overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-white)] p-2 text-[var(--color-text-primary)] shadow-[var(--shadow-modal)]",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           className
         )}
@@ -32,7 +32,7 @@ const DropdownMenuItem = React.forwardRef(
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 text-sm outline-none transition-colors focus:bg-[var(--color-background-alt)] focus:text-[var(--color-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0",
+        "relative flex min-h-[2.5rem] cursor-pointer select-none items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm leading-snug outline-none transition-colors focus:bg-[var(--color-background-alt)] focus:text-[var(--color-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-[1.125rem] [&>svg]:shrink-0",
         inset && "pl-9",
         variant === "destructive" &&
           "text-[var(--color-error)] focus:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] focus:text-[var(--color-error)] data-[highlighted]:bg-[color-mix(in_srgb,var(--color-error)_10%,transparent)] data-[highlighted]:text-[var(--color-error)]",

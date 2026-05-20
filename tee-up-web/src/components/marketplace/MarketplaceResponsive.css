@@ -153,8 +153,10 @@
   }
 
   .messages-thread-header {
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 12px 14px;
+    min-height: 64px;
   }
 
   .messages-thread-back {
@@ -178,11 +180,6 @@
   .messages-thread-back:hover {
     background: var(--color-background-alt);
     color: var(--color-primary);
-  }
-
-  .messages-thread-listing-btn {
-    width: 100%;
-    min-height: 44px;
   }
 
   .messages-thread-input {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { ChevronLeft, Star, Send, X, Pencil } from 'lucide-react';
-import ReportIconButton from './ReportIconButton';
+import { ChevronLeft, Star, Send, X } from 'lucide-react';
+import MessagesThreadToolbar from './MessagesThreadToolbar';
 import UserHeader from './UserHeader';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -516,97 +516,39 @@ export default function MessagesPage({
                         <div className="messages-thread-avatar-fallback" />
                       )}
                     </div>
-                    <div>
-                      <div className="messages-thread-product">
+                    <div className="messages-thread-heading-text">
+                      <div className="messages-thread-product" title={activeConversation.productName}>
                         {activeConversation.productName}
                       </div>
                       <div className="messages-thread-meta">
-                        with <span className="messages-thread-name">{activeConversation.username}</span>{' '}
+                        with <span className="messages-thread-name">{activeConversation.username}</span>
                         {activeConversation.price != null && (
                           <span className="messages-thread-price">
+                            {' '}
                             · ₱{Number(activeConversation.price).toLocaleString()}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="messages-thread-header-actions">
-                    {canRate && !ratingsLoading ? (
-                      hasRatedUser ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="messages-thread-rate-btn"
-                          onClick={() => openRatingForm(true)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" aria-hidden />
-                          Edit review
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="messages-thread-rate-btn"
-                          onClick={() => openRatingForm(false)}
-                        >
-                          <Star className="h-3.5 w-3.5" aria-hidden />
-                          Rate {otherName.split(' ')[0] || 'user'}
-                        </Button>
-                      )
-                    ) : null}
-                    {activeConversation.otherUserId &&
-                    String(activeConversation.otherUserId) !== String(user?.id) ? (
-                      <ReportIconButton
-                        reportType="user"
-                        targetId={activeConversation.otherUserId}
-                        targetLabel={activeConversation.username}
-                        user={user}
-                        className="messages-thread-report-btn"
-                        title="Report user"
-                      />
-                    ) : null}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="messages-thread-listing-btn"
-                      type="button"
-                      onClick={() => {
-                        if (onViewListing && activeConversation.listingId) {
-                          onViewListing(activeConversation.listingId);
-                        }
-                      }}
-                    >
-                      View Listing
-                    </Button>
-                  </div>
+                  <MessagesThreadToolbar
+                    listingId={activeConversation.listingId}
+                    onViewListing={onViewListing}
+                    canRate={canRate}
+                    ratingsLoading={ratingsLoading}
+                    hasRatedUser={hasRatedUser}
+                    onOpenRating={() => openRatingForm(hasRatedUser)}
+                    showReport={
+                      Boolean(activeConversation.otherUserId) &&
+                      String(activeConversation.otherUserId) !== String(user?.id)
+                    }
+                    reportUserId={activeConversation.otherUserId}
+                    reportUserLabel={activeConversation.username}
+                    user={user}
+                  />
                 </header>
 
                 <div className="messages-thread-body">
-                  <div className="messages-thread-listing-summary">
-                    <div className="messages-thread-listing-thumb">
-                      {activeConversation.image ? (
-                        <img src={resolveMediaUrl(activeConversation.image)} alt={activeConversation.productName} />
-                      ) : (
-                        <div className="messages-thread-listing-thumb-fallback" />
-                      )}
-                    </div>
-                    <div className="messages-thread-listing-text">
-                      <div className="messages-thread-listing-title">
-                        {activeConversation.productName}
-                      </div>
-                      {activeConversation.price != null && (
-                        <div className="messages-thread-listing-price">
-                          ₱{Number(activeConversation.price).toLocaleString()}
-                        </div>
-                      )}
-                      <div className="messages-thread-listing-caption">
-                        Listing you&apos;re chatting about.
-                      </div>
-                    </div>
-                  </div>
-
                   {loadingMessages ? (
                     <div className="messages-thread-empty">Loading messages…</div>
                   ) : messages.length === 0 ? (
