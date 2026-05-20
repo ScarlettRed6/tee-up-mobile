@@ -40,6 +40,14 @@ export const submitReportUser = async (userId, reason, photoFile = null) => {
 };
 
 /**
+ * Reports submitted by the logged-in user (for Settings → My tickets).
+ */
+export const fetchMyReports = async () => {
+  const response = await axiosInstance.get('/reports/mine');
+  return response.data?.reports ?? [];
+};
+
+/**
  * Get all reports with optional filters
  * @param {string} search - Search term for report ID, reason, or reporter name
  * @param {string} status - Filter by status: 'pending', 'reviewed', 'resolved', 'dismissed'

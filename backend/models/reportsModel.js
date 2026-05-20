@@ -10,6 +10,31 @@ export async function addReport(reporter_id, listing_id, reported_user_id, reaso
 }
 
 //For admin functions
+export async function getReportsByReporter(reporter_id) {
+    const result = await pool.query(
+        `SELECT
+            r.report_id,
+            r.reporter_id,
+            r.reported_listing_id,
+            r.reported_user_id,
+            r.reason,
+            r.photo_url,
+            r.status,
+            r.reviewed_by,
+            r.reviewed_at,
+            r.created_at,
+            l.title AS listing_title,
+            ru.name AS reported_user_name
+        FROM reports r
+        LEFT JOIN listings l ON r.reported_listing_id = l.listing_id
+        LEFT JOIN users ru ON r.reported_user_id = ru.id
+        WHERE r.reporter_id = $1
+        ORDER BY r.created_at DESC`,
+        [reporter_id]
+    );
+    return result.rows;
+}
+
 export async function getAllReports() {
     const result = await pool.query(
         `SELECT r.*, u.name AS reporter_name, l.title AS listing_title

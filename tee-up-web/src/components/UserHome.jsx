@@ -13,6 +13,7 @@ import OwnerListingView from './OwnerListingView';
 import MyListings from './MyListings';
 import SellListingPage from './SellListingPage';
 import ProfilePage from './ProfilePage';
+import SettingsPage from './SettingsPage';
 import PublicProfilePage from './PublicProfilePage';
 import MessagesPage from './MessagesPage';
 import { Alert } from './ui/alert';
@@ -59,6 +60,7 @@ function UserHome({ guest = false }) {
   const [selectedOwnerListingId, setSelectedOwnerListingId] = useState(null);
   const [selectedProfileUserId, setSelectedProfileUserId] = useState(null);
   const [ownerListingFromView, setOwnerListingFromView] = useState('feed');
+  const [listingDetailReturnView, setListingDetailReturnView] = useState('feed');
   const [editingListing, setEditingListing] = useState(null);
   const [profileInitialTab, setProfileInitialTab] = useState('listings');
   const [heroIndex, setHeroIndex] = useState(0);
@@ -550,12 +552,14 @@ function UserHome({ guest = false }) {
     const isOwnListing = user?.id != null && Number(listing.user_id) === Number(user.id);
     if (isOwnListing) {
       setSelectedOwnerListingId(id);
-      setOwnerListingFromView('feed');
+      setOwnerListingFromView(view);
       setView('ownerListing');
       setSelectedListingId(null);
     } else {
       setSelectedListingId(id);
       setSelectedOwnerListingId(null);
+      setListingDetailReturnView(view);
+      setView('feed');
     }
   };
 
@@ -615,7 +619,22 @@ function UserHome({ guest = false }) {
 
   return (
     <div className="user-home" style={{ backgroundColor: 'var(--color-background)' }}>
-      {view === 'profile' ? (
+      {view === 'settings' ? (
+        <SettingsPage
+          user={user}
+          onBack={() => setView('profile')}
+          onSearch={handleSearch}
+          onSell={handleSell}
+          onMessages={handleMessages}
+          onMyListings={handleMyListings}
+          onNotifications={() => {}}
+          onViewAllNotifications={handleViewAllNotifications}
+          onNotificationClick={handleNotificationClick}
+          onOpenProfile={handleOpenProfile}
+          onLogout={handleLogout}
+          onGoHome={handleGoHome}
+        />
+      ) : view === 'profile' ? (
         <ProfilePage
           user={user}
           onBack={() => setView('feed')}
@@ -632,10 +651,8 @@ function UserHome({ guest = false }) {
           onEditProfile={async () => {
             await refreshProfile();
           }}
-          onViewListing={(id) => {
-            setSelectedOwnerListingId(String(id));
-            setView('ownerListing');
-          }}
+          onSettings={() => setView('settings')}
+          onViewListing={openListingById}
           onContinueEditing={handleContinueEditing}
           initialTab={profileInitialTab}
         />
@@ -684,7 +701,10 @@ function UserHome({ guest = false }) {
       ) : selectedListingId != null ? (
         <ListingView
           listingId={selectedListingId}
-          onBack={() => setSelectedListingId(null)}
+          onBack={() => {
+            setSelectedListingId(null);
+            setView(listingDetailReturnView);
+          }}
           user={user}
           userHeaderExtras={marketplaceHeaderProps}
           onSearch={handleSearch}

@@ -1,6 +1,7 @@
 import { 
     addReport, 
-    getAllReports, 
+    getAllReports,
+    getReportsByReporter,
     updateReportsStatus,
     getPendingReportsCount,
     getCompletedReportsCount
@@ -50,6 +51,17 @@ export async function reportUser(req, res) {
         res.status(500).json({ error: err.message });
     }
 }//End of reportUser function
+
+export async function getMyReports(req, res) {
+    try {
+        const reporter_id = req.user.id;
+        const reports = await getReportsByReporter(reporter_id);
+        res.status(200).json({ reports });
+    } catch (err) {
+        console.log(`getMyReports error: ${err}`);
+        res.status(500).json({ error: err.message });
+    }
+}
 
 //ADMIN SPECIFIC CONTROLLERS
 export async function getAdminReports(req, res){

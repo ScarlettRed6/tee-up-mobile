@@ -3,6 +3,7 @@ import { verifyToken, verifyAdmin } from "../middleware/authMiddleware.js";
 import { 
     reportListing, 
     reportUser,
+    getMyReports,
     getAdminReports,
     reviewReport,
     adminGetPendingReportsCount,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.post("/listing/:listing_id", verifyToken, upload.single("photo"), reportListing);
 router.post("/user/:user_id", verifyToken, upload.single("photo"), reportUser);
+router.get("/mine", verifyToken, getMyReports);
 
 //Admin report routes
 router.get("/admin/all", verifyToken, verifyAdmin, getAdminReports);
