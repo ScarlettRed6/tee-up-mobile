@@ -47,6 +47,21 @@ function normalizeListing(row) {
   };
 }
 
+/** Context passed to Messages when opening chat from this listing. */
+function buildChatListingContext(listing) {
+  const images = listing.photos?.length ? listing.photos : [];
+  const firstImage = images[0] ? resolveMediaUrl(images[0]) : null;
+  return {
+    sellerId: listing.user_id,
+    listingId: listing.listing_id ?? listing.id,
+    listingTitle: listing.title || 'Listing',
+    listingImage: firstImage,
+    sellerName: listing.seller || listing.seller_name || 'Seller',
+    sellerProfileImage: listing.seller_profile_image || null,
+    price: listing.price ?? listing.listing_price ?? null,
+  };
+}
+
 export default function ListingView({
   listingId,
   onBack,
@@ -255,9 +270,7 @@ export default function ListingView({
     setOfferConfirmOpen(false);
     setPendingOfferAmount(null);
     onMessages?.({
-      sellerId: listing.user_id,
-      listingId: listing.listing_id ?? listing.id,
-      listingTitle: listing.title,
+      ...buildChatListingContext(listing),
       intent: 'offer',
       offerRequestId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       initialMessage: payload,
@@ -430,13 +443,7 @@ export default function ListingView({
                 <Button
                   className="listing-view-make-offer"
                   size="lg"
-                  onClick={() => {
-                    onMessages?.({
-                      sellerId: listing.user_id,
-                      listingId: listing.listing_id ?? listing.id,
-                      listingTitle: listing.title,
-                    });
-                  }}
+                  onClick={() => onMessages?.(buildChatListingContext(listing))}
                 >
                   Chat with Seller
                 </Button>
@@ -456,13 +463,7 @@ export default function ListingView({
                         variant="outline"
                         size="lg"
                         className="listing-view-offer-locked-btn"
-                        onClick={() => {
-                          onMessages?.({
-                            sellerId: listing.user_id,
-                            listingId: listing.listing_id ?? listing.id,
-                            listingTitle: listing.title,
-                          });
-                        }}
+                        onClick={() => onMessages?.(buildChatListingContext(listing))}
                       >
                         View conversation
                       </Button>

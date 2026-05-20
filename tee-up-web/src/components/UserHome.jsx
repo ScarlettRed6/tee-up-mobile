@@ -392,6 +392,10 @@ function UserHome({ guest = false }) {
           sellerId: listingContext.sellerId,
           listingId: listingContext.listingId,
           listingTitle: listingContext.listingTitle,
+          listingImage: listingContext.listingImage ?? null,
+          sellerName: listingContext.sellerName ?? null,
+          sellerProfileImage: listingContext.sellerProfileImage ?? null,
+          price: listingContext.price ?? null,
         });
       } catch (err) {
         console.error('Failed to send offer from listing', err);
@@ -400,10 +404,25 @@ function UserHome({ guest = false }) {
           sellerId: listingContext.sellerId,
           listingId: listingContext.listingId,
           listingTitle: listingContext.listingTitle,
+          listingImage: listingContext.listingImage ?? null,
+          sellerName: listingContext.sellerName ?? null,
+          sellerProfileImage: listingContext.sellerProfileImage ?? null,
+          price: listingContext.price ?? null,
         });
       } finally {
         sendingOfferRef.current = false;
       }
+    } else if (listingContext?.sellerId && listingContext?.listingId) {
+      setInitialMessagesConversationId(listingContext?.conversationId ?? null);
+      setMessagesListingContext({
+        sellerId: listingContext.sellerId,
+        listingId: listingContext.listingId,
+        listingTitle: listingContext.listingTitle,
+        listingImage: listingContext.listingImage ?? null,
+        sellerName: listingContext.sellerName ?? null,
+        sellerProfileImage: listingContext.sellerProfileImage ?? null,
+        price: listingContext.price ?? null,
+      });
     } else {
       setInitialMessagesConversationId(listingContext?.conversationId ?? null);
       setMessagesListingContext(listingContext);

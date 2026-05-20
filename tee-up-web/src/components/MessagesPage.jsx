@@ -185,7 +185,7 @@ export default function MessagesPage({
   }, [selectedConversationId]);
 
   useEffect(() => {
-    if (!listingContext || !listingContext.sellerId || !listingContext.listingId) return;
+    if (!listingContext?.sellerId || !listingContext?.listingId) return;
     const existingConversation = conversations.find(
       (conv) =>
         String(conv.otherUserId) === String(listingContext.sellerId) &&
@@ -193,6 +193,9 @@ export default function MessagesPage({
     );
     if (existingConversation) {
       setSelectedConversationId(existingConversation.conversation_id);
+    } else {
+      setSelectedConversationId(null);
+      setMessages([]);
     }
   }, [listingContext, conversations]);
 
@@ -232,8 +235,34 @@ export default function MessagesPage({
     (c) => c.conversation_id === selectedConversationId
   );
 
-  const otherUserId = activeConversation?.otherUserId ?? listingContext?.sellerId ?? null;
-  const otherName = activeConversation?.username || 'the other person';
+  const threadMeta = useMemo(() => {
+    if (activeConversation) {
+      return {
+        productName: activeConversation.productName,
+        username: activeConversation.username,
+        image: activeConversation.image,
+        price: activeConversation.price,
+        listingId: activeConversation.listingId,
+        otherUserId: activeConversation.otherUserId,
+        otherUserProfileImage: activeConversation.otherUserProfileImage,
+      };
+    }
+    if (listingContext?.listingId) {
+      return {
+        productName: listingContext.listingTitle || 'Listing',
+        username: listingContext.sellerName || 'Seller',
+        image: listingContext.listingImage || null,
+        price: listingContext.price ?? null,
+        listingId: listingContext.listingId,
+        otherUserId: listingContext.sellerId ?? null,
+        otherUserProfileImage: listingContext.sellerProfileImage || null,
+      };
+    }
+    return null;
+  }, [activeConversation, listingContext]);
+
+  const otherUserId = threadMeta?.otherUserId ?? null;
+  const otherName = threadMeta?.username || 'the other person';
 
   const exchangeHint = useMemo(
     () => getExchangeHint(messages, otherName),
@@ -349,7 +378,8 @@ export default function MessagesPage({
 
     setSending(true);
     setSendError('');
-    let conversationId = activeConversation?.conversation_id ?? null;
+    let conversationId =
+      selectedConversationId ?? activeConversation?.conversation_id ?? null;
     const tempId = `temp_${Date.now()}`;
 
     try {
@@ -398,7 +428,7 @@ export default function MessagesPage({
     }
   };
 
-  const showThreadPanel = Boolean(selectedConversationId || listingContext?.listingId);
+  const showThreadPanel = Boolean(threadMeta?.listingId);
 
   return (
     <div className="messages-page" style={{ backgroundColor: 'var(--color-background)' }}>
@@ -488,13 +518,9 @@ export default function MessagesPage({
           </aside>
 
           <section className="messages-thread">
-            {!activeConversation ? (
+            {!threadMeta ? (
               <div className="messages-thread-empty">
-                {listingContext?.listingId ? (
-                  <p>Type a message below to start a conversation for this listing.</p>
-                ) : (
-                  <p>Select a conversation on the left to start chatting.</p>
-                )}
+                <p>Select a conversation on the left to start chatting.</p>
               </div>
             ) : (
               <>
@@ -510,40 +536,40 @@ export default function MessagesPage({
                   </button>
                   <div className="messages-thread-heading">
                     <div className="messages-thread-avatar">
-                      {activeConversation.image ? (
-                        <img src={resolveMediaUrl(activeConversation.image)} alt="" />
+                      {threadMeta.image ? (
+                        <img src={resolveMediaUrl(threadMeta.image)} alt="" />
                       ) : (
                         <div className="messages-thread-avatar-fallback" />
                       )}
                     </div>
                     <div className="messages-thread-heading-text">
-                      <div className="messages-thread-product" title={activeConversation.productName}>
-                        {activeConversation.productName}
+                      <div className="messages-thread-product" title={threadMeta.productName}>
+                        {threadMeta.productName}
                       </div>
                       <div className="messages-thread-meta">
-                        with <span className="messages-thread-name">{activeConversation.username}</span>
-                        {activeConversation.price != null && (
+                        with <span className="messages-thread-name">{threadMeta.username}</span>
+                        {threadMeta.price != null && threadMeta.price !== '' && (
                           <span className="messages-thread-price">
                             {' '}
-                            · ₱{Number(activeConversation.price).toLocaleString()}
+                            · ₱{Number(threadMeta.price).toLocaleString()}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
                   <MessagesThreadToolbar
-                    listingId={activeConversation.listingId}
+                    listingId={threadMeta.listingId}
                     onViewListing={onViewListing}
                     canRate={canRate}
                     ratingsLoading={ratingsLoading}
                     hasRatedUser={hasRatedUser}
                     onOpenRating={() => openRatingForm(hasRatedUser)}
                     showReport={
-                      Boolean(activeConversation.otherUserId) &&
-                      String(activeConversation.otherUserId) !== String(user?.id)
+                      Boolean(threadMeta.otherUserId) &&
+                      String(threadMeta.otherUserId) !== String(user?.id)
                     }
-                    reportUserId={activeConversation.otherUserId}
-                    reportUserLabel={activeConversation.username}
+                    reportUserId={threadMeta.otherUserId}
+                    reportUserLabel={threadMeta.username}
                     user={user}
                   />
                 </header>
@@ -553,7 +579,9 @@ export default function MessagesPage({
                     <div className="messages-thread-empty">Loading messages…</div>
                   ) : messages.length === 0 ? (
                     <div className="messages-thread-empty">
-                      No messages yet. Say hi to start the conversation.
+                      {selectedConversationId
+                        ? 'No messages yet. Say hi to start the conversation.'
+                        : 'Send a message below to start chatting about this listing.'}
                     </div>
                   ) : (
                     <>
@@ -570,7 +598,7 @@ export default function MessagesPage({
                     <div className="messages-thread-scroll">
                       {messages.map((m) => {
                         const otherPic = resolveMediaUrl(
-                          m.senderAvatar || activeConversation?.otherUserProfileImage
+                          m.senderAvatar || threadMeta?.otherUserProfileImage
                         );
                         const mePic = resolveMediaUrl(user?.profile_image);
                         return (
@@ -584,7 +612,7 @@ export default function MessagesPage({
                               <Avatar className="messages-bubble-avatar h-7 w-7 shrink-0" aria-hidden>
                                 <AvatarImage src={otherPic} alt="" />
                                 <AvatarFallback className="messages-bubble-avatar-fallback">
-                                  {(activeConversation?.username || '?').trim().charAt(0).toUpperCase() || '?'}
+                                  {(threadMeta?.username || '?').trim().charAt(0).toUpperCase() || '?'}
                                 </AvatarFallback>
                               </Avatar>
                             ) : null}
@@ -689,7 +717,7 @@ export default function MessagesPage({
 
               </>
             )}
-            {(activeConversation || listingContext?.listingId) && (
+            {threadMeta?.listingId && (
               <footer className="messages-thread-input">
                 <Input
                   type="text"
