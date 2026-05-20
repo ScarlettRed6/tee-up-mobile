@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { ChevronLeft, Star, Send } from 'lucide-react';
+import { ChevronLeft, Star, Send, X, Pencil } from 'lucide-react';
 import ReportIconButton from './ReportIconButton';
 import UserHeader from './UserHeader';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -18,6 +18,21 @@ import './MessagesPage.css';
 const alignedAuthInputPad = { paddingInline: '1rem', paddingBlock: '0.875rem' };
 const alignedInputClassName =
   'min-h-[52px] text-[17px] leading-normal transition-all duration-200 hover:border-[var(--color-primary)]/50';
+
+function ratingDismissStorageKey(currentUserId, otherUserId) {
+  return `teeup-rating-dismissed:${currentUserId}:${otherUserId}`;
+}
+
+function writeRatingDismissed(currentUserId, otherUserId, dismissed) {
+  if (!currentUserId || !otherUserId) return;
+  try {
+    const key = ratingDismissStorageKey(currentUserId, otherUserId);
+    if (dismissed) sessionStorage.setItem(key, '1');
+    else sessionStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
 
 function normalizeConversation(conv) {
   let listingPhotos = [];
@@ -95,6 +110,9 @@ export default function MessagesPage({
   const [ratingReview, setRatingReview] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [hasRatedUser, setHasRatedUser] = useState(false);
+  const [existingRating, setExistingRating] = useState(null);
+  const [ratingFormOpen, setRatingFormOpen] = useState(false);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
   const socketRef = useRef(null);
 
   const currentUserId = user?.id;
@@ -221,37 +239,83 @@ export default function MessagesPage({
     () => getExchangeHint(messages, otherName),
     [messages, otherName]
   );
-  const showRatingCard = useMemo(
-    () => Boolean(otherUserId && !hasRatedUser && hasMinimumExchange(messages)),
-    [otherUserId, hasRatedUser, messages]
+  const canRate = useMemo(
+    () => Boolean(otherUserId && currentUserId && hasMinimumExchange(messages)),
+    [otherUserId, currentUserId, messages]
   );
+
+  const showRatingForm = ratingFormOpen && canRate;
 
   useEffect(() => {
     setRatingValue(0);
     setRatingReview('');
     setSendError('');
     setHasRatedUser(false);
+    setExistingRating(null);
+    setRatingFormOpen(false);
+    setRatingsLoading(false);
   }, [selectedConversationId]);
 
   useEffect(() => {
     if (!otherUserId || !currentUserId) return undefined;
     let cancelled = false;
+    setRatingsLoading(true);
     (async () => {
       try {
         const ratings = await fetchUserRatings(otherUserId);
         if (cancelled) return;
-        const already = ratings.some(
+        const mine = ratings.find(
           (r) => String(r.rater_user_id) === String(currentUserId)
         );
-        setHasRatedUser(already);
+        if (mine) {
+          setHasRatedUser(true);
+          setExistingRating({
+            rating: Number(mine.rating) || 0,
+            review: mine.review || '',
+          });
+        } else {
+          setHasRatedUser(false);
+          setExistingRating(null);
+        }
       } catch {
-        if (!cancelled) setHasRatedUser(false);
+        if (!cancelled) {
+          setHasRatedUser(false);
+          setExistingRating(null);
+        }
+      } finally {
+        if (!cancelled) setRatingsLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [otherUserId, currentUserId]);
+
+  const openRatingForm = useCallback(
+    (edit = false) => {
+      writeRatingDismissed(currentUserId, otherUserId, false);
+      if (edit && existingRating) {
+        setRatingValue(existingRating.rating);
+        setRatingReview(existingRating.review || '');
+      } else {
+        setRatingValue(0);
+        setRatingReview('');
+      }
+      setRatingFormOpen(true);
+    },
+    [currentUserId, otherUserId, existingRating]
+  );
+
+  const closeRatingForm = useCallback(() => {
+    setRatingFormOpen(false);
+  }, []);
+
+  const dismissRatingPrompt = useCallback(() => {
+    writeRatingDismissed(currentUserId, otherUserId, true);
+    setRatingFormOpen(false);
+    setRatingValue(0);
+    setRatingReview('');
+  }, [currentUserId, otherUserId]);
 
   const handleSubmitRating = async () => {
     if (!otherUserId || ratingValue < 1) return;
@@ -261,9 +325,12 @@ export default function MessagesPage({
         rating: ratingValue,
         review: ratingReview.trim() || undefined,
       });
+      const reviewText = ratingReview.trim();
       setHasRatedUser(true);
-      setRatingValue(0);
-      setRatingReview('');
+      setExistingRating({ rating: ratingValue, review: reviewText });
+      setRatingFormOpen(false);
+      setRatingValue(ratingValue);
+      setRatingReview(reviewText);
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -464,6 +531,31 @@ export default function MessagesPage({
                     </div>
                   </div>
                   <div className="messages-thread-header-actions">
+                    {canRate && !ratingsLoading ? (
+                      hasRatedUser ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="messages-thread-rate-btn"
+                          onClick={() => openRatingForm(true)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          Edit review
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="messages-thread-rate-btn"
+                          onClick={() => openRatingForm(false)}
+                        >
+                          <Star className="h-3.5 w-3.5" aria-hidden />
+                          Rate {otherName.split(' ')[0] || 'user'}
+                        </Button>
+                      )
+                    ) : null}
                     {activeConversation.otherUserId &&
                     String(activeConversation.otherUserId) !== String(user?.id) ? (
                       <ReportIconButton
@@ -573,11 +665,27 @@ export default function MessagesPage({
                         );
                       })}
                     </div>
-                  {showRatingCard ? (
+                  {showRatingForm ? (
                     <div className="messages-rating-card">
-                      <h3 className="messages-rating-title">Rate your experience with {otherName}</h3>
+                      <div className="messages-rating-card-head">
+                        <h3 className="messages-rating-title">
+                          {hasRatedUser && existingRating
+                            ? `Edit your review of ${otherName}`
+                            : `Rate your experience with ${otherName}`}
+                        </h3>
+                        <button
+                          type="button"
+                          className="messages-rating-close"
+                          onClick={closeRatingForm}
+                          aria-label="Close review form"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
                       <p className="messages-rating-subtitle">
-                        You&apos;ve had enough back-and-forth — share how the deal went.
+                        {hasRatedUser && existingRating
+                          ? 'Update your stars or review text below.'
+                          : 'Share how the deal went — you can close this and rate later.'}
                       </p>
                       <div className="messages-rating-stars">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -608,14 +716,29 @@ export default function MessagesPage({
                         maxLength={250}
                         rows={3}
                       />
-                      <Button
-                        type="button"
-                        className="messages-rating-submit"
-                        disabled={ratingSubmitting || ratingValue < 1}
-                        onClick={handleSubmitRating}
-                      >
-                        {ratingSubmitting ? 'Submitting…' : 'Submit review'}
-                      </Button>
+                      <div className="messages-rating-actions">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="messages-rating-secondary"
+                          disabled={ratingSubmitting}
+                          onClick={dismissRatingPrompt}
+                        >
+                          Not now
+                        </Button>
+                        <Button
+                          type="button"
+                          className="messages-rating-submit"
+                          disabled={ratingSubmitting || ratingValue < 1}
+                          onClick={handleSubmitRating}
+                        >
+                          {ratingSubmitting
+                            ? 'Saving…'
+                            : hasRatedUser && existingRating
+                              ? 'Update review'
+                              : 'Submit review'}
+                        </Button>
+                      </div>
                     </div>
                   ) : null}
                     </>
