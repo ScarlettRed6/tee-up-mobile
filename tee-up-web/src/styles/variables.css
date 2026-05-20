@@ -106,6 +106,8 @@
   /* Layout */
   --sidebar-width: 260px;
   --header-height: 64px;
+  /* Sticky marketplace header stack height (logo row + padding; mobile includes search row) */
+  --user-header-sticky-height: 80px;
   --admin-content-offset: var(--sidebar-width);
   --admin-mobile-max: 1023px;
 

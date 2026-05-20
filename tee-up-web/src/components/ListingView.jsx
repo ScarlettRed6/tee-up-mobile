@@ -17,6 +17,22 @@ import OfferConfirmModal from './OfferConfirmModal';
 import ReportIconButton from './ReportIconButton';
 import './ListingView.css';
 
+function ListingViewBackFloat({ onBack }) {
+  if (!onBack) return null;
+  return (
+    <button
+      type="button"
+      className="listing-view-back-float"
+      onClick={onBack}
+      aria-label="Back to listings"
+    >
+      <ChevronLeft className="listing-view-back-float-icon" aria-hidden />
+      <span className="listing-view-back-float-text listing-view-back-float-text--short">Back</span>
+      <span className="listing-view-back-float-text listing-view-back-float-text--long">Back to listings</span>
+    </button>
+  );
+}
+
 function normalizeListing(row) {
   const photos = row.photos != null
     ? (Array.isArray(row.photos) ? row.photos : (typeof row.photos === 'string' ? (() => { try { return JSON.parse(row.photos); } catch { return []; } })() : []))
@@ -161,10 +177,8 @@ export default function ListingView({
           onGoHome={onGoHome}
           {...userHeaderExtras}
         />
+        <ListingViewBackFloat onBack={onBack} />
         <div className="listing-view-container">
-          <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
-            <ChevronLeft className="h-4 w-4" /> Back to listings
-          </Button>
           <div className="listing-view-layout">
             <Skeleton className="listing-view-gallery-skeleton" />
             <div className="listing-view-info-skeleton">
@@ -189,10 +203,8 @@ export default function ListingView({
           onGoHome={onGoHome}
           {...userHeaderExtras}
         />
-        <div className="listing-view-container">
-          <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
-            <ChevronLeft className="h-4 w-4" /> Back to listings
-          </Button>
+        <ListingViewBackFloat onBack={onBack} />
+        <div className="listing-view-container listing-view-container--with-float-back">
           <Alert variant="destructive" className="app-page-alert">{error || 'Listing not found.'}</Alert>
         </div>
       </div>
@@ -262,11 +274,8 @@ export default function ListingView({
         {...userHeaderExtras}
       />
 
-      <div className="listing-view-container">
-        <Button variant="ghost" size="sm" className="listing-view-back" onClick={onBack}>
-          <ChevronLeft className="h-4 w-4" /> Back to listings
-        </Button>
-
+      <ListingViewBackFloat onBack={onBack} />
+      <div className="listing-view-container listing-view-container--with-float-back">
         <div className="listing-view-layout">
           {/* Gallery */}
           <div className="listing-view-gallery">
