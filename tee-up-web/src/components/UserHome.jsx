@@ -6,6 +6,7 @@ import { followUser, unfollowUser } from '../api/followerApi';
 import { findOrCreateConversation } from '../api/chatApi';
 import { getExistingUserOfferForListing } from '../utils/listingOffer';
 import { parseOfferMessage } from '../utils/chatOffers';
+import { resolveNotificationRoute } from '../utils/notificationNavigation';
 import UserHeader from './UserHeader';
 import ListingCard from './ListingCard';
 import ListingView from './ListingView';
@@ -439,38 +440,31 @@ function UserHome({ guest = false }) {
       openLogin({ fromBrowse: true });
       return;
     }
-    const { type, data } = notification;
-    if (type === 'new_message' && data?.conversationId) {
-      setInitialMessagesConversationId(data.conversationId);
+    const route = resolveNotificationRoute(notification);
+    if (route.kind === 'none') return;
+
+    setSelectedListingId(null);
+    setSelectedOwnerListingId(null);
+    setSelectedProfileUserId(null);
+
+    if (route.kind === 'messages') {
+      setInitialMessagesConversationId(route.conversationId);
+      setMessagesListingContext(null);
       setView('messages');
-      setSelectedListingId(null);
-      setSelectedOwnerListingId(null);
-      setSelectedProfileUserId(null);
       return;
     }
-    if (
-      (type === 'favorite_sold' ||
-        type === 'favorite_status_changed' ||
-        type === 'listing_favorited' ||
-        type === 'followed_new_listing') &&
-      data?.listing_id
-    ) {
-      openListingById(data.listing_id);
+    if (route.kind === 'listing') {
+      openListingById(route.listingId);
       return;
     }
-    if (type === 'new_follower' && data?.follower_id) {
-      setSelectedProfileUserId(String(data.follower_id));
+    if (route.kind === 'publicProfile') {
+      setSelectedProfileUserId(route.userId);
       setView('publicProfile');
-      setSelectedListingId(null);
-      setSelectedOwnerListingId(null);
       return;
     }
-    if (type === 'rating_received') {
+    if (route.kind === 'profile') {
+      setProfileInitialTab(route.tab || 'listings');
       setView('profile');
-      setSelectedListingId(null);
-      setSelectedOwnerListingId(null);
-      setSelectedProfileUserId(null);
-      return;
     }
   };
 
@@ -749,9 +743,6 @@ function UserHome({ guest = false }) {
           onOpenProfile={handleOpenProfile}
           onLogout={handleLogout}
           onGoHome={handleGoHome}
-          onViewListing={openListingById}
-          onOpenMessages={handleOpenMessages}
-          onOpenUserProfile={handleOpenUserProfile}
         />
       ) : view === 'messages' ? (
         <MessagesPage

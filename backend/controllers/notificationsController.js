@@ -175,6 +175,27 @@ export async function listNotifications(req, res) {
                 };
             }
 
+            if (notification.type === "new_message") {
+                const conversationId =
+                    parsedData?.conversationId ?? parsedData?.conversation_id;
+                return {
+                    ...notification,
+                    notification_id: notificationId,
+                    data: {
+                        ...parsedData,
+                        conversationId,
+                    },
+                };
+            }
+
+            if (notification.type === "rating_received") {
+                return {
+                    ...notification,
+                    notification_id: notificationId,
+                    data: parsedData,
+                };
+            }
+
             return {
                 ...notification,
                 notification_id: notificationId,

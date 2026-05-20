@@ -50,9 +50,6 @@ export default function NotificationsPage({
   onOpenProfile,
   onLogout,
   onGoHome,
-  onViewListing,
-  onOpenMessages,
-  onOpenUserProfile,
 }) {
   const {
     notifications,
@@ -66,38 +63,9 @@ export default function NotificationsPage({
     (notification) => {
       const id = notification.id ?? notification.notification_id;
       if (id) markNotificationAsRead(id);
-
-      const { type, data } = notification;
-
-      if (type === 'new_message' && data?.conversationId) {
-        onOpenMessages?.(data.conversationId);
-        return;
-      }
-      if (
-        (type === 'favorite_sold' ||
-          type === 'favorite_status_changed' ||
-          type === 'listing_favorited' ||
-          type === 'followed_new_listing') &&
-        data?.listing_id
-      ) {
-        onViewListing?.(data.listing_id);
-        return;
-      }
-      if (type === 'new_follower' && data?.follower_id) {
-        onOpenUserProfile?.(data.follower_id);
-        return;
-      }
-      if (type === 'rating_received') {
-        onOpenProfile?.();
-      }
+      onNotificationClick?.(notification);
     },
-    [
-      markNotificationAsRead,
-      onOpenMessages,
-      onViewListing,
-      onOpenUserProfile,
-      onOpenProfile,
-    ]
+    [markNotificationAsRead, onNotificationClick]
   );
 
   const totalCount = notifications.length;
